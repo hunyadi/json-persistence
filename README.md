@@ -8,12 +8,16 @@ This header-only C++17 library provides type-safe serialization of C++ objects i
 * Compile-time correctness.
 * (De-)serialize fundamental types `bool`, `short`, `int`, `long`, `float`, `double`, etc. to/from their respective JSON type.
 * (De-)serialize `time_point<system_clock>` type as ISO 8601 date-time string in time zone UTC.
-* (De-)serialize heterogeneous `tuple<T...>` to/from a JSON array.
+* (De-)serialize enumeration types as their underlying integer type.
+* (De-)serialize heterogeneous `pair<T1,T2>` and `tuple<T...>` to/from a JSON array.
 * (De-)serialize container types `vector<T>`, `array<T, N>`, `set<T>`, etc. to/from a JSON array.
 * (De-)serialize dictionary types `map<string, T>` and `unordered_map<string, T>` to/from a JSON object.
 * Serialize variant types to their stored type. De-serialize variant types using the first matching type.
 * (De-)serialize class types by enumerating their member variables.
 * Omit object fields for missing value in `optional<T>`.
+* (De-)serialize pointer types such as `shared_ptr<T>` and `unique_ptr<T>`.
+* Back-reference support for (de-)serialization of C++ pointer types via JSON pointer `{"$ref": "/path/to/previous/occurrence"}`.
+* Serialize C++ objects that share pointers only once. De-serialize back-references as C++ pointers to the same object.
 
 ## Design goals
 

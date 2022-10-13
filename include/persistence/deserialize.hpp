@@ -1,18 +1,32 @@
 #pragma once
 #include "deserialize_base.hpp"
+#include "detail/deserialize_aware.hpp"
 #include "detail/traits.hpp"
 #include <stdexcept>
 #include <string>
 
 namespace persistence
 {
+    template<typename T>
+    auto make_deserializer(DeserializerContext& context)
+    {
+        using value_type = typename unqualified<T>::type;
+        using deserializer_type = JsonDeserializer<value_type>;
+
+        if constexpr (std::is_base_of<JsonContextAwareDeserializer, deserializer_type>::value) {
+            return deserializer_type(context);
+        } else {
+            return deserializer_type();
+        }
+    }
+
     /**
     * Parses the JSON representation of an object.
     */
     template<typename T>
-    bool deserialize(const rapidjson::Value& json, T& obj)
+    bool deserialize(const rapidjson::Value& json, T& obj, DeserializerContext& context)
     {
-        JsonDeserializer<typename unqualified<T>::type> deserializer;
+        auto deserializer = make_deserializer<typename unqualified<T>::type>(context);
         return deserializer(json, obj);
     }
 
@@ -27,7 +41,9 @@ namespace persistence
         if (doc.HasParseError()) {
             return false;
         } else {
-            return deserialize(doc, obj);
+            GlobalDeserializerContext global(doc);
+            DeserializerContext local(global);
+            return deserialize(doc, obj, local);
         }
     }
 

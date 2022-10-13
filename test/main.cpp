@@ -204,6 +204,27 @@ TEST(Serialization, Optional)
     EXPECT_EQ(serialize_to_string(opt2), "{\"optional_value\":42}");
 }
 
+TEST(Serialization, BackReferenceArray)
+{
+    auto val = std::make_shared<TestValue>("one");
+    auto rep = std::make_shared<TestValue>("two");
+    TestBackReferenceArray obj;
+    obj.values.push_back(val);
+    obj.values.push_back(rep);
+    obj.values.push_back(rep);
+    obj.values.push_back(rep);
+    EXPECT_EQ(serialize_to_string(obj), "{\"values\":[{\"value\":\"one\"},{\"value\":\"two\"},{\"$ref\":\"/values/1\"},{\"$ref\":\"/values/1\"}]}");
+}
+
+TEST(Serialization, BackReferenceObject)
+{
+    TestBackReferenceObject obj;
+    obj.outer = std::make_shared<TestValue>("string");
+    obj.inner.push_back(obj.outer);
+    obj.inner.push_back(obj.outer);
+    EXPECT_EQ(serialize_to_string(obj), "{\"outer\":{\"value\":\"string\"},\"inner\":[{\"$ref\":\"/outer\"},{\"$ref\":\"/outer\"}]}");
+}
+
 TEST(Deserialization, SpecialTypes)
 {
     EXPECT_EQ(deserialize<nullptr_t>("null"), nullptr);
@@ -429,4 +450,36 @@ TEST(Deserialization, Optional)
 {
     EXPECT_EQ(deserialize<TestOptionalObjectMember>("{}"), TestOptionalObjectMember());
     EXPECT_EQ(deserialize<TestOptionalObjectMember>("{\"optional_value\": 42}"), TestOptionalObjectMember(42));
+}
+
+TEST(Deserialization, BackReferenceArray)
+{
+    const char* json =
+        "{\"values\":["
+            "{\"value\":\"string\"},"
+            "{\"value\":\"string\"},"
+            "{\"$ref\":\"/values/1\"},"
+            "{\"$ref\":\"/values/1\"}"
+        "]}";
+
+    auto val = deserialize<TestBackReferenceArray>(json);
+    EXPECT_NE(val.values[0], val.values[1]);
+    EXPECT_EQ(val.values[1], val.values[2]);
+    EXPECT_EQ(val.values[2], val.values[3]);
+}
+
+TEST(Deserialization, BackReferenceObject)
+{
+    const char* json =
+        "{"
+            "\"outer\": {\"value\": \"string\"},"
+            "\"inner\": ["
+                "{\"$ref\": \"/outer\"},"
+                "{\"$ref\": \"/outer\"}"
+            "]"
+        "}";
+
+    auto val = deserialize<TestBackReferenceObject>(json);
+    EXPECT_EQ(val.outer, val.inner[0]);
+    EXPECT_EQ(val.outer, val.inner[1]);
 }

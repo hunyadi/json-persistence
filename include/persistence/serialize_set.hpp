@@ -1,25 +1,28 @@
 #pragma once
-#include "serialize_allocate.hpp"
 #include "serialize_base.hpp"
+#include "detail/serialize_aware.hpp"
 #include <set>
 
 namespace persistence
 {
     template<typename T>
-    struct JsonSerializer<std::set<T>> : JsonAllocatingSerializer
+    struct JsonSerializer<std::set<T>> : JsonContextAwareSerializer
     {
-        using JsonAllocatingSerializer::JsonAllocatingSerializer;
+        using JsonContextAwareSerializer::JsonContextAwareSerializer;
 
         bool operator()(const std::set<T>& container, rapidjson::Value& json) const
         {
             json.SetArray();
-            json.Reserve(container.size(), allocator);
+            json.Reserve(container.size(), context.allocator());
+            std::size_t k = 0;
             for (const auto& item : container) {
-                rapidjson::Value json_item;
-                if (!serialize<T>(item, json_item, allocator)) {
+                rapidjson::Value item_json;
+                SerializerContext item_context(context, Segment(k));
+                if (!serialize<T>(item, item_json, context)) {
                     return false;
                 }
-                json.PushBack(json_item, allocator);  // ownership of value is transferred
+                json.PushBack(item_json, context.allocator());  // ownership of value is transferred
+                ++k;
             }
             return true;
         }

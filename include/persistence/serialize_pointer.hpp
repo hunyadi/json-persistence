@@ -1,30 +1,50 @@
 #pragma once
-#include "detail/engine.hpp"
-#include "serialize_allocate.hpp"
 #include "serialize_base.hpp"
+#include "detail/serialize_aware.hpp"
+#include "detail/serialize_path.hpp"
 
 namespace persistence
 {
-    template<typename P>
-    struct JsonPointerSerializer : JsonAllocatingSerializer
+    template<typename T>
+    struct JsonSerializer<std::unique_ptr<T>> : JsonContextAwareSerializer
     {
-        using JsonAllocatingSerializer::JsonAllocatingSerializer;
+        using JsonContextAwareSerializer::JsonContextAwareSerializer;
 
-        bool operator()(const P& pointer, rapidjson::Value& json) const
+        bool operator()(const std::unique_ptr<T>& pointer, rapidjson::Value& json) const
         {
-            return serialize(*pointer, json, allocator);
+            return serialize(*pointer, json, context);
         }
     };
 
     template<typename T>
-    struct JsonSerializer<std::unique_ptr<T>> : JsonPointerSerializer<std::unique_ptr<T>>
+    struct JsonSerializer<std::shared_ptr<T>> : JsonContextAwareSerializer
     {
-        using JsonPointerSerializer<std::unique_ptr<T>>::JsonPointerSerializer;
-    };
+        using JsonContextAwareSerializer::JsonContextAwareSerializer;
 
-    template<typename T>
-    struct JsonSerializer<std::shared_ptr<T>> : JsonPointerSerializer<std::shared_ptr<T>>
-    {
-        using JsonPointerSerializer<std::shared_ptr<T>>::JsonPointerSerializer;
+        bool operator()(const std::shared_ptr<T>& pointer, rapidjson::Value& json) const
+        {
+            auto&& segments = context.get(pointer);
+            if (!segments.empty()) {
+                std::string ref = Path(segments).str();
+
+                // create a JSON string "/path/to/earlier/occurrence"
+                rapidjson::Value ref_json;
+                ref_json.SetString(ref.data(), ref.size(), context.allocator());
+
+                // create a {"$ref": "/path/to/earlier/occurrence"}
+                json.SetObject();
+                rapidjson::Value::StringRefType ref_key("$ref");
+                json.AddMember(ref_key, ref_json, context.allocator());
+
+            } else {
+                if (!serialize(*pointer, json, context)) {
+                    return false;
+                }
+
+                // assign a "/path/to/this/occurrence"
+                context.put(pointer);
+            }
+            return true;
+        }
     };
 }

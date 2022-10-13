@@ -1,7 +1,7 @@
 #pragma once
-#include "serialize_allocate.hpp"
-#include "serialize_base.hpp"
 #include "datetime.hpp"
+#include "serialize_base.hpp"
+#include "detail/serialize_aware.hpp"
 #include <charconv>
 #include <chrono>
 #include <string>
@@ -49,9 +49,9 @@ namespace persistence
     }
 
     template<>
-    struct JsonSerializer<timestamp> : JsonAllocatingSerializer
+    struct JsonSerializer<timestamp> : JsonContextAwareSerializer
     {
-        using JsonAllocatingSerializer::JsonAllocatingSerializer;
+        using JsonContextAwareSerializer::JsonContextAwareSerializer;
 
         bool operator()(timestamp value, rapidjson::Value& json) const
         {
@@ -78,7 +78,7 @@ namespace persistence
             to_aligned_digits<2>(text + 17, second);
 
             // emit JSON value
-            json.SetString(text, 20, allocator);
+            json.SetString(text, 20, context.allocator());
             return true;
         }
     };

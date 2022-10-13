@@ -1,19 +1,19 @@
 #pragma once
-#include "serialize_allocate.hpp"
 #include "serialize_base.hpp"
+#include "detail/serialize_aware.hpp"
 #include "detail/traits.hpp"
 #include <stdexcept>
 
 namespace persistence
 {
     template<typename T>
-    auto make_serializer(rapidjson::MemoryPoolAllocator<>& allocator)
+    auto make_serializer(SerializerContext& context)
     {
         using value_type = typename unqualified<T>::type;
         using serializer_type = JsonSerializer<value_type>;
 
-        if constexpr (std::is_base_of<JsonAllocatingSerializer, serializer_type>::value) {
-            return serializer_type(allocator);
+        if constexpr (std::is_base_of<JsonContextAwareSerializer, serializer_type>::value) {
+            return serializer_type(context);
         } else {
             return serializer_type();
         }
@@ -23,9 +23,9 @@ namespace persistence
     * Generates the JSON representation of an object.
     */
     template<typename T>
-    bool serialize(const T& obj, rapidjson::Value& json, rapidjson::MemoryPoolAllocator<>& allocator)
+    bool serialize(const T& obj, rapidjson::Value& json, SerializerContext& context)
     {
-        auto serializer = make_serializer<typename unqualified<T>::type>(allocator);
+        auto serializer = make_serializer<typename unqualified<T>::type>(context);
         return serializer(obj, json);
     }
 
@@ -33,7 +33,9 @@ namespace persistence
     bool serialize(const T& obj, rapidjson::Writer<rapidjson::StringBuffer>& writer)
     {
         rapidjson::Document doc;
-        bool result = serialize(obj, doc, doc.GetAllocator());
+        GlobalSerializerContext global(doc);
+        SerializerContext local(global);
+        bool result = serialize(obj, doc, local);
         if (result) {
             doc.Accept(writer);
             return true;

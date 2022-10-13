@@ -9,6 +9,8 @@ namespace persistence
     template<typename T, typename Enable = void>
     struct JsonSerializer;
 
+    struct SerializerContext;
+
     template<typename T>
-    bool serialize(const T& obj, rapidjson::Value& json, rapidjson::MemoryPoolAllocator<>& allocator);
+    bool serialize(const T& obj, rapidjson::Value& json, SerializerContext& context);
 }

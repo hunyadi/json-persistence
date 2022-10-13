@@ -131,6 +131,34 @@ struct TestOptionalObjectMember
     }
 };
 
+struct TestBackReferenceArray
+{
+    std::vector<std::shared_ptr<TestValue>> values;
+
+    template <typename Archive>
+    void persist(Archive& ar)
+    {
+        ar
+            & MEMBER_VARIABLE(values)
+            ;
+    }
+};
+
+struct TestBackReferenceObject
+{
+    std::shared_ptr<TestValue> outer;
+    std::vector<std::shared_ptr<TestValue>> inner;
+
+    template <typename Archive>
+    void persist(Archive& ar)
+    {
+        ar
+            & MEMBER_VARIABLE(outer)
+            & MEMBER_VARIABLE(inner)
+            ;
+    }
+};
+
 /** Documentation example. */
 struct UserDefinedType
 {

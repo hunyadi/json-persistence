@@ -1,42 +1,45 @@
 #pragma once
-#include "serialize_allocate.hpp"
 #include "serialize_base.hpp"
+#include "detail/serialize_aware.hpp"
 #include <tuple>
 #include <utility>
 
 namespace persistence
 {
     template<typename T1, typename T2>
-    struct JsonSerializer<std::pair<T1, T2>> : JsonAllocatingSerializer
+    struct JsonSerializer<std::pair<T1, T2>> : JsonContextAwareSerializer
     {
-        using JsonAllocatingSerializer::JsonAllocatingSerializer;
+        using JsonContextAwareSerializer::JsonContextAwareSerializer;
 
         bool operator()(const std::pair<T1, T2>& container, rapidjson::Value& json) const
         {
             json.SetArray();
-            json.Reserve(2, allocator);
-            rapidjson::Value json_first, json_second;
-            if (!serialize(container.first, json_first, allocator)) {
+            json.Reserve(2, context.allocator());
+            rapidjson::Value json_first;
+            SerializerContext context_first(context, Segment(0));
+            if (!serialize(container.first, json_first, context_first)) {
                 return false;
             }
-            if (!serialize(container.second, json_second, allocator)) {
+            rapidjson::Value json_second;
+            SerializerContext context_second(context, Segment(1));
+            if (!serialize(container.second, json_second, context_second)) {
                 return false;
             }
-            json.PushBack(json_first, allocator);
-            json.PushBack(json_second, allocator);
+            json.PushBack(json_first, context.allocator());
+            json.PushBack(json_second, context.allocator());
             return true;
         }
     };
 
     template<typename... Ts>
-    struct JsonSerializer<std::tuple<Ts...>> : JsonAllocatingSerializer
+    struct JsonSerializer<std::tuple<Ts...>> : JsonContextAwareSerializer
     {
-        using JsonAllocatingSerializer::JsonAllocatingSerializer;
+        using JsonContextAwareSerializer::JsonContextAwareSerializer;
 
         bool operator()(const std::tuple<Ts...>& container, rapidjson::Value& json) const
         {
             json.SetArray();
-            json.Reserve(sizeof...(Ts), allocator);
+            json.Reserve(sizeof...(Ts), context.allocator());
             return serialize_elements(container, json, std::make_index_sequence<sizeof...(Ts)>());
         }
 
@@ -45,20 +48,22 @@ namespace persistence
         bool serialize_elements(const std::tuple<Ts...>& container, rapidjson::Value& json, std::index_sequence<I...>) const
         {
             return (serialize_element(
+                I,
                 std::get<I>(container),
                 json
             ) && ...);
         }
 
         template<typename T>
-        bool serialize_element(const T& item, rapidjson::Value& json) const
+        bool serialize_element(std::size_t index, const T& item, rapidjson::Value& json) const
         {
-            rapidjson::Value json_item;
-            if (!serialize(item, json_item, allocator)) {
+            rapidjson::Value item_json;
+            SerializerContext item_context(context, Segment(index));
+            if (!serialize(item, item_json, item_context)) {
                 return false;
             }
 
-            json.PushBack(json_item, allocator);  // ownership of value is transferred
+            json.PushBack(item_json, context.allocator());  // ownership of value is transferred
             return true;
         }
     };

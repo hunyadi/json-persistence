@@ -1,12 +1,15 @@
 #pragma once
 #include "deserialize_base.hpp"
+#include "detail/deserialize_aware.hpp"
 #include <array>
 
 namespace persistence
 {
     template<typename T, std::size_t N>
-    struct JsonDeserializer<std::array<T, N>>
+    struct JsonDeserializer<std::array<T, N>> : JsonContextAwareDeserializer
     {
+        using JsonContextAwareDeserializer::JsonContextAwareDeserializer;
+
         bool operator()(const rapidjson::Value& json, std::array<T, N>& container) const
         {
             if (!json.IsArray()) {
@@ -21,7 +24,8 @@ namespace persistence
                 }
 
                 T item;
-                if (!deserialize(*it, item)) {
+                DeserializerContext item_context(context, Segment(idx));
+                if (!deserialize(*it, item, item_context)) {
                     return false;
                 }
                 output[idx++] = item;

@@ -1,15 +1,15 @@
 #pragma once
-#include "serialize_allocate.hpp"
 #include "serialize_base.hpp"
+#include "detail/serialize_aware.hpp"
 #include "object.hpp"
 #include <optional>
 
 namespace persistence
 {
-    struct JsonObjectSerializer : JsonAllocatingSerializer
+    struct JsonObjectSerializer : JsonContextAwareSerializer
     {
-        JsonObjectSerializer(rapidjson::MemoryPoolAllocator<>& allocator, rapidjson::Value& object)
-            : JsonAllocatingSerializer(allocator)
+        JsonObjectSerializer(SerializerContext& context, rapidjson::Value& object)
+            : JsonContextAwareSerializer(context)
             , object(object)
         {}
 
@@ -43,11 +43,12 @@ namespace persistence
         template<typename T>
         JsonObjectSerializer& write(const std::string_view& name, const T& ref)
         {
-            rapidjson::Value item;
-            result = result && serialize(ref, item, allocator);
+            rapidjson::Value member_json;
+            SerializerContext member_context(context, Segment(name));
+            result = result && serialize(ref, member_json, member_context);
             if (result) {
                 rapidjson::Value::StringRefType str(name.data(), name.size());
-                object.AddMember(str, item, allocator);
+                object.AddMember(str, member_json, context.allocator());
             }
             return *this;
         }
@@ -73,8 +74,8 @@ namespace persistence
     * Writes a value with a specific type to JSON.
     */
     template<typename T, typename Enable>
-    struct JsonSerializer : JsonAllocatingSerializer {
-        using JsonAllocatingSerializer::JsonAllocatingSerializer;
+    struct JsonSerializer : JsonContextAwareSerializer {
+        using JsonContextAwareSerializer::JsonContextAwareSerializer;
 
         bool operator()(const T& value, rapidjson::Value& json) const
         {
@@ -82,7 +83,7 @@ namespace persistence
 
             json.SetObject();
 
-            JsonObjectSerializer serializer(allocator, json);
+            JsonObjectSerializer serializer(context, json);
             const_cast<T&>(value).persist(serializer);
             return static_cast<bool>(serializer);
         }

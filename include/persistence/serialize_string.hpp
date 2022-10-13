@@ -1,6 +1,6 @@
 #pragma once
-#include "serialize_allocate.hpp"
 #include "serialize_base.hpp"
+#include "detail/serialize_aware.hpp"
 #include <string>
 #include <string_view>
 
@@ -27,13 +27,13 @@ namespace persistence
     };
 
     template<>
-    struct JsonSerializer<std::string> : JsonAllocatingSerializer
+    struct JsonSerializer<std::string> : JsonContextAwareSerializer
     {
-        using JsonAllocatingSerializer::JsonAllocatingSerializer;
+        using JsonContextAwareSerializer::JsonContextAwareSerializer;
 
         bool operator()(const std::string& value, rapidjson::Value& json) const
         {
-            json.SetString(value.data(), value.size(), allocator);
+            json.SetString(value.data(), value.size(), context.allocator());
             return true;
         }
     };

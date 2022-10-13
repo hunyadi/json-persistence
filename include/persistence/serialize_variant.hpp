@@ -1,20 +1,20 @@
 #pragma once
-#include "serialize_allocate.hpp"
 #include "serialize_base.hpp"
+#include "detail/serialize_aware.hpp"
 #include <variant>
 
 namespace persistence
 {
     template<typename... Ts>
-    struct JsonSerializer<std::variant<Ts...>> : JsonAllocatingSerializer
+    struct JsonSerializer<std::variant<Ts...>> : JsonContextAwareSerializer
     {
-        using JsonAllocatingSerializer::JsonAllocatingSerializer;
+        using JsonContextAwareSerializer::JsonContextAwareSerializer;
 
         bool operator()(const std::variant<Ts...>& value, rapidjson::Value& json) const
         {
             return std::visit(
                 [&](auto&& arg) -> bool {
-                    return serialize(arg, json, allocator);
+                    return serialize(arg, json, context);
                 },
                 value
             );

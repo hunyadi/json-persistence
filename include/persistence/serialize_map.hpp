@@ -1,27 +1,28 @@
 #pragma once
-#include "serialize_allocate.hpp"
 #include "serialize_base.hpp"
+#include "detail/serialize_aware.hpp"
 #include <map>
 #include <unordered_map>
 
 namespace persistence
 {
     template<typename C>
-    struct JsonDictionarySerializer : JsonAllocatingSerializer
+    struct JsonDictionarySerializer : JsonContextAwareSerializer
     {
-        using JsonAllocatingSerializer::JsonAllocatingSerializer;
+        using JsonContextAwareSerializer::JsonContextAwareSerializer;
 
         bool operator()(const C& container, rapidjson::Value& json) const
         {
             json.SetObject();
-            for (const auto& [key, value] : container) {
-                rapidjson::Value json_item;
-                if (!serialize<typename C::mapped_type>(value, json_item, allocator)) {
+            for (auto&& [key, value] : container) {
+                rapidjson::Value value_json;
+                SerializerContext value_context(context, Segment(key));
+                if (!serialize<typename C::mapped_type>(value, value_json, value_context)) {
                     return false;
                 }
-                rapidjson::Value json_key;
-                json_key.SetString(key.data(), key.size(), allocator);
-                json.AddMember(json_key, json_item, allocator);  // ownership of key and value is transferred
+                rapidjson::Value key_json;
+                key_json.SetString(key.data(), key.size(), context.allocator());
+                json.AddMember(key_json, value_json, context.allocator());  // ownership of key and value is transferred
             }
             return true;
         }

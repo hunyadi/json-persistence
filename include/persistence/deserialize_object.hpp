@@ -1,13 +1,16 @@
 #pragma once
-#include "deserialize_base.hpp"
 #include "object.hpp"
+#include "deserialize_base.hpp"
+#include "detail/deserialize_aware.hpp"
 #include <optional>
 
 namespace persistence
 {
-    struct JsonObjectDeserializer
+    struct JsonObjectDeserializer : JsonContextAwareDeserializer
     {
-        JsonObjectDeserializer(const rapidjson::Value& object) : object(object)
+        JsonObjectDeserializer(DeserializerContext& context, const rapidjson::Value& object)
+            : JsonContextAwareDeserializer(context)
+            , object(object)
         {}
 
         template<typename T>
@@ -20,7 +23,8 @@ namespace persistence
             auto it = object.FindMember(member.name.data());
             if (it != object.MemberEnd()) {
                 T value;
-                result = deserialize(it->value, value);
+                DeserializerContext value_context(context, Segment(it->name.GetString()));
+                result = deserialize(it->value, value, value_context);
                 member.ref = std::move(value);
             }
             return *this;
@@ -35,7 +39,8 @@ namespace persistence
 
             auto it = object.FindMember(member.name.data());
             if (it != object.MemberEnd()) {
-                result = deserialize(it->value, member.ref);
+                DeserializerContext value_context(context, Segment(it->name.GetString()));
+                result = deserialize(it->value, member.ref, value_context);
             } else {
                 result = false;
             }
@@ -74,7 +79,9 @@ namespace persistence
     * Writes a value with a specific type to JSON.
     */
     template<typename T, typename Enable>
-    struct JsonDeserializer {
+    struct JsonDeserializer : JsonContextAwareDeserializer {
+        using JsonContextAwareDeserializer::JsonContextAwareDeserializer;
+
         bool operator()(const rapidjson::Value& json, T& value) const
         {
             static_assert(has_custom_deserializer<T>::value, "expected a type that can be deserialized from JSON");
@@ -83,7 +90,7 @@ namespace persistence
                 return false;
             }
 
-            JsonObjectDeserializer deserializer(json);
+            JsonObjectDeserializer deserializer(context, json);
             value.persist(deserializer);
             return static_cast<bool>(deserializer);
         }

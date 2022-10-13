@@ -9,6 +9,8 @@ namespace persistence
     template<typename T, typename Enable = void>
     struct JsonDeserializer;
 
+    struct DeserializerContext;
+
     template<typename T>
-    bool deserialize(const rapidjson::Value& json, T& obj);
+    bool deserialize(const rapidjson::Value& json, T& obj, DeserializerContext& context);
 }
