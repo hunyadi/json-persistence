@@ -2,6 +2,7 @@
 #include "deserialize.hpp"
 #include "deserialize_fundamental.hpp"
 #include "deserialize_object.hpp"
+#include "deserialize_pointer.hpp"
 #include "deserialize_array.hpp"
 #include "deserialize_datetime.hpp"
 #include "deserialize_enum.hpp"

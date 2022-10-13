@@ -1,6 +1,5 @@
 #pragma once
 #include "deserialize_base.hpp"
-#include "detail/engine.hpp"
 #include <map>
 #include <unordered_map>
 
@@ -11,13 +10,15 @@ namespace persistence
     {
         bool operator()(const rapidjson::Value& json, C& value) const
         {
+            using item_type = typename C::mapped_type;
+
             if (!json.IsObject()) {
                 return false;
             }
 
             value.clear();
             for (auto&& it = json.MemberBegin(); it != json.MemberEnd(); ++it) {
-                typename C::mapped_type item;
+                item_type item;
                 if (!deserialize(it->value, item)) {
                     return false;
                 }

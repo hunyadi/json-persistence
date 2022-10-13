@@ -1,7 +1,5 @@
 #pragma once
-#include "detail/engine.hpp"
 #include "deserialize_base.hpp"
-#include "deserialize.hpp"
 #include "object.hpp"
 #include <optional>
 
@@ -22,7 +20,7 @@ namespace persistence
             auto it = object.FindMember(member.name.data());
             if (it != object.MemberEnd()) {
                 T value;
-                result = deserialize<T>(it->value, value);
+                result = deserialize(it->value, value);
                 member.ref = std::move(value);
             }
             return *this;
@@ -37,7 +35,7 @@ namespace persistence
 
             auto it = object.FindMember(member.name.data());
             if (it != object.MemberEnd()) {
-                result = deserialize<T>(it->value, member.ref);
+                result = deserialize(it->value, member.ref);
             } else {
                 result = false;
             }

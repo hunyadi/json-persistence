@@ -1,6 +1,5 @@
 #pragma once
 #include "deserialize_base.hpp"
-#include "detail/engine.hpp"
 #include <variant>
 
 namespace persistence

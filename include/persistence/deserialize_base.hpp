@@ -1,4 +1,5 @@
 #pragma once
+#include "detail/engine.hpp"
 
 namespace persistence
 {
@@ -7,4 +8,7 @@ namespace persistence
     */
     template<typename T, typename Enable = void>
     struct JsonDeserializer;
+
+    template<typename T>
+    bool deserialize(const rapidjson::Value& json, T& obj);
 }

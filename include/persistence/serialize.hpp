@@ -1,8 +1,7 @@
 #pragma once
-#include "detail/engine.hpp"
-#include "detail/traits.hpp"
 #include "serialize_allocate.hpp"
 #include "serialize_base.hpp"
+#include "detail/traits.hpp"
 #include <stdexcept>
 
 namespace persistence

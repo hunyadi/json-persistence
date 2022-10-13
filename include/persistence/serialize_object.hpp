@@ -1,7 +1,6 @@
 #pragma once
 #include "serialize_allocate.hpp"
 #include "serialize_base.hpp"
-#include "serialize.hpp"
 #include "object.hpp"
 #include <optional>
 
@@ -45,7 +44,7 @@ namespace persistence
         JsonObjectSerializer& write(const std::string_view& name, const T& ref)
         {
             rapidjson::Value item;
-            result = result && serialize<T>(ref, item, allocator);
+            result = result && serialize(ref, item, allocator);
             if (result) {
                 rapidjson::Value::StringRefType str(name.data(), name.size());
                 object.AddMember(str, item, allocator);

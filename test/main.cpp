@@ -82,6 +82,15 @@ TEST(Serialization, DateTimeTypes)
     );
 }
 
+TEST(Serialization, Pointer)
+{
+    auto unique_pointer = std::make_unique<TestValue>("string");
+    EXPECT_EQ(serialize_to_string(unique_pointer), "{\"value\":\"string\"}");
+
+    auto shared_pointer = std::make_shared<TestValue>("string");
+    EXPECT_EQ(serialize_to_string(shared_pointer), "{\"value\":\"string\"}");
+}
+
 TEST(Serialization, Pair)
 {
     EXPECT_EQ(
@@ -282,6 +291,12 @@ TEST(Deserialization, DateTimeTypes)
     EXPECT_FALSE(deserialize<timestamp>("\"2022-02-01T23:02:SSZ\"", result));
 }
 
+TEST(Deserialization, Pointer)
+{
+    EXPECT_EQ(*deserialize<std::unique_ptr<TestValue>>("{\"value\": \"string\"}"), TestValue("string"));
+    EXPECT_EQ(*deserialize<std::shared_ptr<TestValue>>("{\"value\": \"string\"}"), TestValue("string"));
+}
+
 TEST(Deserialization, Pair)
 {
     auto ref = std::make_pair(19, std::string("eighty-two"));
@@ -406,6 +421,8 @@ TEST(Deserialization, Object)
     EXPECT_EQ(val.string_list, ref.string_list);
     EXPECT_EQ(val.object_value, ref.object_value);
     EXPECT_EQ(val.object_list, ref.object_list);
+
+    EXPECT_EQ(deserialize<TestNonCopyable>("{\"member\":{\"value\": \"string\"}}"), TestNonCopyable("string"));
 }
 
 TEST(Deserialization, Optional)

@@ -21,6 +21,8 @@ enum class Suit
 struct TestValue
 {
     TestValue() = default;
+    TestValue(const TestValue&) = delete;
+    TestValue(TestValue&&) = default;
     TestValue(const std::string& value) : value(value) {}
 
     template <typename Archive>
@@ -31,8 +33,34 @@ struct TestValue
             ;
     }
 
+    bool operator==(const TestValue& op) const
+    {
+        return value == op.value;
+    }
+
 private:
     std::string value;
+};
+
+struct TestNonCopyable
+{
+    TestNonCopyable() = default;
+    TestNonCopyable(const std::string& value) : member(value) {}
+
+    TestValue member;
+
+    template <typename Archive>
+    void persist(Archive& ar)
+    {
+        ar
+            & MEMBER_VARIABLE(member)
+            ;
+    }
+
+    bool operator==(const TestNonCopyable& op) const
+    {
+        return member == op.member;
+    }
 };
 
 class TestDataTransferSubObject
