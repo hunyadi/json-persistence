@@ -13,7 +13,7 @@ namespace persistence
         bool operator()(const std::vector<T>& container, rapidjson::Value& json) const
         {
             json.SetArray();
-            json.Reserve(container.size(), context.allocator());
+            json.Reserve(container.size(), context.global().allocator());
             std::size_t k = 0;
             for (const auto& item : container) {
                 rapidjson::Value item_json;
@@ -21,7 +21,7 @@ namespace persistence
                 if (!serialize<T>(item, item_json, item_context)) {
                     return false;
                 }
-                json.PushBack(item_json, context.allocator());  // ownership of value is transferred
+                json.PushBack(item_json, context.global().allocator());  // ownership of value is transferred
                 ++k;
             }
             return true;

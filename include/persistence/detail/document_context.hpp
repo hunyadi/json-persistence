@@ -1,12 +1,13 @@
 #pragma once
-#include "engine.hpp"
+#include "config.hpp"
+#include <rapidjson/document.h>
 
 namespace persistence
 {
-    struct GlobalContext
+    struct DocumentContext
     {
     public:
-        GlobalContext(rapidjson::Document& document)
+        DocumentContext(rapidjson::Document& document)
             : document(document)
         {}
 

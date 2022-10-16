@@ -9,8 +9,8 @@ namespace persistence
         bool operator()(T value, rapidjson::Value& json) const
         {
             using integer_type = typename std::underlying_type<T>::type;
-            JsonSerializer<integer_type> serializer;
-            return serializer(static_cast<integer_type>(value), json);
+            JsonSerializer<integer_type> integer_serializer;
+            return integer_serializer(static_cast<integer_type>(value), json);
         }
     };
 }

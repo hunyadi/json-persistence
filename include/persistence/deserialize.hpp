@@ -30,14 +30,9 @@ namespace persistence
         return deserializer(json, obj);
     }
 
-    /**
-     * Parses the JSON representation of an object.
-     */
     template<typename T>
-    bool deserialize(const std::string& str, T& obj)
+    bool deserialize(rapidjson::Document& doc, T& obj)
     {
-        rapidjson::Document doc;
-        doc.Parse(str.c_str());
         if (doc.HasParseError()) {
             return false;
         } else {
@@ -47,16 +42,35 @@ namespace persistence
         }
     }
 
+    /**
+     * Parses the JSON representation of an object.
+     */
+    template<typename T>
+    bool deserialize(const std::string& str, T& obj)
+    {
+        rapidjson::Document doc;
+        doc.Parse(str.data());
+        return deserialize(doc, obj);
+    }
+
+    template<typename T>
+    bool deserialize(std::string&& str, T& obj)
+    {
+        rapidjson::Document doc;
+        doc.ParseInsitu(str.data());
+        return deserialize(doc, obj);
+    }
+
     struct JsonDeserializationError : std::runtime_error
     {
         JsonDeserializationError() : std::runtime_error("deserialization failed") {}
     };
 
-    template<typename T>
-    T deserialize(const std::string& str)
+    template<typename T, typename S>
+    T deserialize(S&& str)
     {
         T obj;
-        if (!deserialize(str, obj)) {
+        if (!deserialize(std::forward<S>(str), obj)) {
             throw JsonDeserializationError();
         }
         return obj;

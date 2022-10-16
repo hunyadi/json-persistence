@@ -1,13 +1,12 @@
 #pragma once
 #include "deserialize_base.hpp"
-#include "detail/engine.hpp"
 
 namespace persistence
 {
     template<typename T>
     struct JsonSignedIntegerDeserializer
     {
-        static_assert(std::is_integral<T>::value&& std::is_signed<T>::value, "T must be a signed integer");
+        static_assert(std::is_integral<T>::value && std::is_signed<T>::value, "T must be a signed integer");
 
         bool operator()(const rapidjson::Value& json, T& value) const
         {
@@ -25,7 +24,7 @@ namespace persistence
     template<typename T>
     struct JsonUnsignedIntegerDeserializer
     {
-        static_assert(std::is_integral<T>::value&& std::is_unsigned<T>::value, "T must be an unsigned integer");
+        static_assert(std::is_integral<T>::value && std::is_unsigned<T>::value, "T must be an unsigned integer");
 
         bool operator()(const rapidjson::Value& json, T& value) const
         {
@@ -43,7 +42,7 @@ namespace persistence
     template<typename T>
     struct JsonSignedLongIntegerDeserializer
     {
-        static_assert(std::is_integral<T>::value&& std::is_signed<T>::value, "T must be a signed integer");
+        static_assert(std::is_integral<T>::value && std::is_signed<T>::value, "T must be a signed integer");
 
         bool operator()(const rapidjson::Value& json, T& value) const
         {
@@ -61,7 +60,7 @@ namespace persistence
     template<typename T>
     struct JsonUnsignedLongIntegerDeserializer
     {
-        static_assert(std::is_integral<T>::value&& std::is_unsigned<T>::value, "T must be an unsigned integer");
+        static_assert(std::is_integral<T>::value && std::is_unsigned<T>::value, "T must be an unsigned integer");
 
         bool operator()(const rapidjson::Value& json, T& value) const
         {

@@ -14,7 +14,7 @@ namespace persistence
         bool operator()(const std::pair<T1, T2>& container, rapidjson::Value& json) const
         {
             json.SetArray();
-            json.Reserve(2, context.allocator());
+            json.Reserve(2, context.global().allocator());
             rapidjson::Value json_first;
             SerializerContext context_first(context, Segment(0));
             if (!serialize(container.first, json_first, context_first)) {
@@ -25,8 +25,8 @@ namespace persistence
             if (!serialize(container.second, json_second, context_second)) {
                 return false;
             }
-            json.PushBack(json_first, context.allocator());
-            json.PushBack(json_second, context.allocator());
+            json.PushBack(json_first, context.global().allocator());
+            json.PushBack(json_second, context.global().allocator());
             return true;
         }
     };
@@ -39,7 +39,7 @@ namespace persistence
         bool operator()(const std::tuple<Ts...>& container, rapidjson::Value& json) const
         {
             json.SetArray();
-            json.Reserve(sizeof...(Ts), context.allocator());
+            json.Reserve(sizeof...(Ts), context.global().allocator());
             return serialize_elements(container, json, std::make_index_sequence<sizeof...(Ts)>());
         }
 
@@ -63,7 +63,7 @@ namespace persistence
                 return false;
             }
 
-            json.PushBack(item_json, context.allocator());  // ownership of value is transferred
+            json.PushBack(item_json, context.global().allocator());  // ownership of value is transferred
             return true;
         }
     };

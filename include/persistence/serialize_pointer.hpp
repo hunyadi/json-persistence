@@ -1,7 +1,7 @@
 #pragma once
 #include "serialize_base.hpp"
 #include "detail/serialize_aware.hpp"
-#include "detail/serialize_path.hpp"
+#include "detail/path.hpp"
 
 namespace persistence
 {
@@ -29,12 +29,12 @@ namespace persistence
 
                 // create a JSON string "/path/to/earlier/occurrence"
                 rapidjson::Value ref_json;
-                ref_json.SetString(ref.data(), ref.size(), context.allocator());
+                ref_json.SetString(ref.data(), ref.size(), context.global().allocator());
 
                 // create a {"$ref": "/path/to/earlier/occurrence"}
                 json.SetObject();
                 rapidjson::Value::StringRefType ref_key("$ref");
-                json.AddMember(ref_key, ref_json, context.allocator());
+                json.AddMember(ref_key, ref_json, context.global().allocator());
 
             } else {
                 if (!serialize(*pointer, json, context)) {

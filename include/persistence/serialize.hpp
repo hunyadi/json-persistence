@@ -25,54 +25,18 @@ namespace persistence
     template<typename T>
     bool serialize(const T& obj, rapidjson::Value& json, SerializerContext& context)
     {
-        auto serializer = make_serializer<typename unqualified<T>::type>(context);
-        return serializer(obj, json);
-    }
-
-    template<typename T>
-    bool serialize(const T& obj, rapidjson::Writer<rapidjson::StringBuffer>& writer)
-    {
-        rapidjson::Document doc;
-        GlobalSerializerContext global(doc);
-        SerializerContext local(global);
-        bool result = serialize(obj, doc, local);
-        if (result) {
-            doc.Accept(writer);
-            return true;
-        } else {
-            return false;
-        }
+        auto json_serializer = make_serializer<typename unqualified<T>::type>(context);
+        return json_serializer(obj, json);
     }
 
     /**
-    * Generates the JSON representation of an object.
+    * Generates the JSON DOM representation of an object.
     */
     template<typename T>
-    bool serialize(const T& obj, std::string& str)
+    bool serialize_to_document(const T& obj, rapidjson::Document& doc)
     {
-        rapidjson::StringBuffer buffer;
-        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-        bool result = serialize(obj, writer);
-        if (result) {
-            str.assign(buffer.GetString(), buffer.GetString() + buffer.GetSize());
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    struct JsonSerializationError : std::runtime_error
-    {
-        JsonSerializationError() : std::runtime_error("serialization failed") {}
-    };
-
-    template<typename T>
-    std::string serialize_to_string(const T& obj)
-    {
-        std::string str;
-        if (!serialize(obj, str)) {
-            throw JsonSerializationError();
-        }
-        return str;
+        GlobalSerializerContext global(doc);
+        SerializerContext local(global);
+        return serialize(obj, doc, local);
     }
 }

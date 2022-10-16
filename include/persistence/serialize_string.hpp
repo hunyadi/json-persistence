@@ -33,7 +33,7 @@ namespace persistence
 
         bool operator()(const std::string& value, rapidjson::Value& json) const
         {
-            json.SetString(value.data(), value.size(), context.allocator());
+            json.SetString(value.data(), value.size(), context.global().allocator());
             return true;
         }
     };

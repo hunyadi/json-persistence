@@ -1,12 +1,13 @@
 #pragma once
-#include "context.hpp"
+#include "document_context.hpp"
 #include "references.hpp"
+#include "segment.hpp"
 
 namespace persistence
 {
-    struct GlobalDeserializerContext : GlobalContext
+    struct GlobalDeserializerContext : DocumentContext
     {
-        using GlobalContext::GlobalContext;
+        using DocumentContext::DocumentContext;
 
         ReferenceTable<const rapidjson::Value*, std::shared_ptr<void>> references;
     };

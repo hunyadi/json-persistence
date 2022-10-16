@@ -1,5 +1,6 @@
 #pragma once
-#include "detail/engine.hpp"
+#include "detail/config.hpp"
+#include <rapidjson/document.h>
 
 namespace persistence
 {

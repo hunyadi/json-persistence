@@ -87,8 +87,8 @@ class TestDataTransferObject
 public:
     bool bool_value = false;
     std::vector<bool> bool_list;
-    int32_t int_value = 0;
-    std::vector<int32_t> int_list;
+    int int_value = 0;
+    std::vector<int> int_list;
     std::string string_value;
     std::vector<std::string> string_list;
     TestDataTransferSubObject object_value;

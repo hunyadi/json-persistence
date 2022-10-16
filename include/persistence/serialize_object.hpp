@@ -1,7 +1,7 @@
 #pragma once
+#include "object.hpp"
 #include "serialize_base.hpp"
 #include "detail/serialize_aware.hpp"
-#include "object.hpp"
 #include <optional>
 
 namespace persistence
@@ -43,12 +43,16 @@ namespace persistence
         template<typename T>
         JsonObjectSerializer& write(const std::string_view& name, const T& ref)
         {
+            if (!result) {
+                return *this;
+            }
+
             rapidjson::Value member_json;
             SerializerContext member_context(context, Segment(name));
             result = result && serialize(ref, member_json, member_context);
             if (result) {
                 rapidjson::Value::StringRefType str(name.data(), name.size());
-                object.AddMember(str, member_json, context.allocator());
+                object.AddMember(str, member_json, context.global().allocator());
             }
             return *this;
         }
@@ -74,16 +78,17 @@ namespace persistence
     * Writes a value with a specific type to JSON.
     */
     template<typename T, typename Enable>
-    struct JsonSerializer : JsonContextAwareSerializer {
+    struct JsonSerializer : JsonContextAwareSerializer
+    {
         using JsonContextAwareSerializer::JsonContextAwareSerializer;
 
         bool operator()(const T& value, rapidjson::Value& json) const
         {
             static_assert(has_custom_serializer<T>::value, "expected a type that can be serialized to JSON");
 
-            json.SetObject();
-
             JsonObjectSerializer serializer(context, json);
+
+            json.SetObject();
             const_cast<T&>(value).persist(serializer);
             return static_cast<bool>(serializer);
         }

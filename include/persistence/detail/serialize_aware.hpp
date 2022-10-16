@@ -3,8 +3,6 @@
 
 namespace persistence
 {
-    struct SerializerContext;
-
     struct JsonContextAwareSerializer
     {
         SerializerContext& context;

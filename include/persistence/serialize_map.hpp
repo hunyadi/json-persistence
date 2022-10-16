@@ -20,9 +20,10 @@ namespace persistence
                 if (!serialize<typename C::mapped_type>(value, value_json, value_context)) {
                     return false;
                 }
+
                 rapidjson::Value key_json;
-                key_json.SetString(key.data(), key.size(), context.allocator());
-                json.AddMember(key_json, value_json, context.allocator());  // ownership of key and value is transferred
+                key_json.SetString(key.data(), key.size(), context.global().allocator());
+                json.AddMember(key_json, value_json, context.global().allocator());  // ownership of key and value is transferred
             }
             return true;
         }

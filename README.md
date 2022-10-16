@@ -51,7 +51,10 @@ struct Example
 ### Ease of use
 
 * Get started by including `<persistence/persistence.hpp>`, which includes all features.
-* Selectively include headers such as `<persistence/serialize_object.hpp>` to tackle a specific use case.
+* Selectively include headers such as `<persistence/write_object.hpp>` to tackle a specific use case:
+    * Use `<persistence/write_*.hpp>` for writing a C++ object to a string.
+    * Use `<persistence/serialize_*.hpp>` for serializing a C++ object to a JSON DOM document.
+    * Use `<persistence/deserialize_*.hpp>` for parsing a string into a C++ object.
 * Use `<persistence/object.hpp>` to import helper macro `MEMBER_VARIABLE` only.
 
 ### Speed and efficiency
