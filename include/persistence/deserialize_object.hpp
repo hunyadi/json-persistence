@@ -6,41 +6,43 @@
 
 namespace persistence
 {
+    template<typename C>
     struct JsonObjectDeserializer : JsonContextAwareDeserializer
     {
-        JsonObjectDeserializer(DeserializerContext& context, const rapidjson::Value& object)
+        JsonObjectDeserializer(DeserializerContext& context, const rapidjson::Value& json_object, C& object)
             : JsonContextAwareDeserializer(context)
+            , json_object(json_object)
             , object(object)
         {}
 
         template<typename T>
-        JsonObjectDeserializer& operator&(const member_variable<std::optional<T>>& member)
+        JsonObjectDeserializer& operator&(const member_variable<std::optional<T>, C>& member)
         {
             if (!result) {
                 return *this;
             }
 
-            auto it = object.FindMember(member.name.data());
-            if (it != object.MemberEnd()) {
+            auto it = json_object.FindMember(member.name.data());
+            if (it != json_object.MemberEnd()) {
                 T value;
                 DeserializerContext value_context(context, Segment(it->name.GetString()));
                 result = deserialize(it->value, value, value_context);
-                member.ref = std::move(value);
+                member.ref(object) = std::move(value);
             }
             return *this;
         }
 
         template<typename T>
-        JsonObjectDeserializer& operator&(const member_variable<T>& member)
+        JsonObjectDeserializer& operator&(const member_variable<T, C>& member)
         {
             if (!result) {
                 return *this;
             }
 
-            auto it = object.FindMember(member.name.data());
-            if (it != object.MemberEnd()) {
+            auto it = json_object.FindMember(member.name.data());
+            if (it != json_object.MemberEnd()) {
                 DeserializerContext value_context(context, Segment(it->name.GetString()));
-                result = deserialize(it->value, member.ref, value_context);
+                result = deserialize(it->value, member.ref(object), value_context);
             } else {
                 result = false;
             }
@@ -59,7 +61,10 @@ namespace persistence
 
     private:
         /** The JSON object from which data is read. */
-        const rapidjson::Value& object;
+        const rapidjson::Value& json_object;
+
+        /** The C++ object into which data is written. */
+        C& object;
 
         /** The result of deserializing the entire object. */
         bool result = true;
@@ -71,7 +76,7 @@ namespace persistence
     template<typename T>
     struct has_custom_deserializer<T, std::void_t<
         decltype(
-            std::declval<T&>().persist(std::declval<JsonObjectDeserializer&>())
+            std::declval<T&>().persist(std::declval<JsonObjectDeserializer<T>&>())
         )
         >> : std::true_type {};
 
@@ -90,7 +95,7 @@ namespace persistence
                 return false;
             }
 
-            JsonObjectDeserializer deserializer(context, json);
+            JsonObjectDeserializer<T> deserializer(context, json, value);
             value.persist(deserializer);
             return static_cast<bool>(deserializer);
         }

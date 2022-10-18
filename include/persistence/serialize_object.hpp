@@ -6,27 +6,29 @@
 
 namespace persistence
 {
+    template<typename C>
     struct JsonObjectSerializer : JsonContextAwareSerializer
     {
-        JsonObjectSerializer(SerializerContext& context, rapidjson::Value& object)
+        JsonObjectSerializer(SerializerContext& context, const C& object, rapidjson::Value& json_object)
             : JsonContextAwareSerializer(context)
             , object(object)
+            , json_object(json_object)
         {}
 
         template<typename T>
-        JsonObjectSerializer& operator&(const member_variable<std::optional<T>>& member)
+        JsonObjectSerializer& operator&(const member_variable<std::optional<T>, C>& member)
         {
-            if (member.ref.has_value()) {
-                return write(member.name, member.ref.value());
+            if (member.ref(object).has_value()) {
+                return write(member.name, member.ref(object).value());
             } else {
                 return *this;
             }
         }
 
         template<typename T>
-        JsonObjectSerializer& operator&(const member_variable<T>& member)
+        JsonObjectSerializer& operator&(const member_variable<T, C>& member)
         {
-            return write(member.name, member.ref);
+            return write(member.name, member.ref(object));
         }
 
         operator bool() const
@@ -52,13 +54,17 @@ namespace persistence
             result = result && serialize(ref, member_json, member_context);
             if (result) {
                 rapidjson::Value::StringRefType str(name.data(), name.size());
-                object.AddMember(str, member_json, context.global().allocator());
+                json_object.AddMember(str, member_json, context.global().allocator());
             }
             return *this;
         }
 
+    private:
+        /** The C++ object from which data is read. */
+        const C& object;
+
         /** The JSON object into which data is written. */
-        rapidjson::Value& object;
+        rapidjson::Value& json_object;
 
         /** The result of serializing the entire object. */
         bool result = true;
@@ -70,7 +76,7 @@ namespace persistence
     template<typename T>
     struct has_custom_serializer<T, std::void_t<
         decltype(
-            std::declval<T&>().persist(std::declval<JsonObjectSerializer&>())
+            std::declval<T&>().persist(std::declval<JsonObjectSerializer<T>&>())
         )
     >> : std::true_type {};
 
@@ -86,7 +92,7 @@ namespace persistence
         {
             static_assert(has_custom_serializer<T>::value, "expected a type that can be serialized to JSON");
 
-            JsonObjectSerializer serializer(context, json);
+            JsonObjectSerializer<T> serializer(context, value, json);
 
             json.SetObject();
             const_cast<T&>(value).persist(serializer);

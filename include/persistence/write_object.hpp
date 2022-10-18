@@ -6,27 +6,29 @@
 
 namespace persistence
 {
+    template<typename C>
     struct JsonObjectWriter : JsonContextAwareWriter
     {
-        JsonObjectWriter(WriterContext& context, StringWriter& writer)
+        JsonObjectWriter(WriterContext& context, const C& object, StringWriter& writer)
             : JsonContextAwareWriter(context)
+            , object(object)
             , writer(writer)
         {}
 
         template<typename T>
-        JsonObjectWriter& operator&(const member_variable<std::optional<T>>& member)
+        JsonObjectWriter& operator&(const member_variable<std::optional<T>, C>& member)
         {
-            if (member.ref.has_value()) {
-                return write(member.name, member.ref.value());
+            if (member.ref(object).has_value()) {
+                return write(member.name, member.ref(object).value());
             } else {
                 return *this;
             }
         }
 
         template<typename T>
-        JsonObjectWriter& operator&(const member_variable<T>& member)
+        JsonObjectWriter& operator&(const member_variable<T, C>& member)
         {
-            return write(member.name, member.ref);
+            return write(member.name, member.ref(object));
         }
 
         operator bool() const
@@ -54,6 +56,10 @@ namespace persistence
             return *this;
         }
 
+    private:
+        /** The C++ object from which data is read. */
+        const C& object;
+
         /** The JSON string buffer into which data is written. */
         StringWriter& writer;
 
@@ -67,7 +73,7 @@ namespace persistence
     template<typename T>
     struct has_custom_writer<T, std::void_t<
         decltype(
-            std::declval<T&>().persist(std::declval<JsonObjectWriter&>())
+            std::declval<T&>().persist(std::declval<JsonObjectWriter<T>&>())
         )
     >> : std::true_type {};
 
@@ -83,7 +89,7 @@ namespace persistence
         {
             static_assert(has_custom_writer<T>::value, "expected a type that can be serialized to JSON");
 
-            JsonObjectWriter serializer(context, writer);
+            JsonObjectWriter serializer(context, value, writer);
 
             writer.StartObject();
             const_cast<T&>(value).persist(serializer);

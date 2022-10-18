@@ -3,5 +3,5 @@ set -e
 
 mkdir -p build
 pushd build > /dev/null
-cmake ..
+cmake -D CMAKE_BUILD_TYPE=Release ..
 make

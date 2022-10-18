@@ -26,9 +26,9 @@ struct TestValue
     TestValue(const std::string& value) : value(value) {}
 
     template <typename Archive>
-    void persist(Archive& ar)
+    auto persist(Archive& ar)
     {
-        ar
+        return ar
             & MEMBER_VARIABLE(value)
             ;
     }

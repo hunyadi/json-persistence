@@ -30,6 +30,9 @@ namespace persistence
         return deserializer(json, obj);
     }
 
+    /**
+     * Parses the JSON DOM representation of an object.
+     */
     template<typename T>
     bool deserialize(rapidjson::Document& doc, T& obj)
     {
@@ -50,7 +53,8 @@ namespace persistence
     {
         rapidjson::Document doc;
         doc.Parse(str.data());
-        return deserialize(doc, obj);
+        auto&& error = doc.GetParseError();
+        return !error && deserialize(doc, obj);
     }
 
     template<typename T>
@@ -58,19 +62,48 @@ namespace persistence
     {
         rapidjson::Document doc;
         doc.ParseInsitu(str.data());
-        return deserialize(doc, obj);
+        auto&& error = doc.GetParseError();
+        return !error && deserialize(doc, obj);
     }
 
     struct JsonDeserializationError : std::runtime_error
     {
-        JsonDeserializationError() : std::runtime_error("deserialization failed") {}
+        JsonDeserializationError()
+            : std::runtime_error("deserialization failed")
+        {}
+
+        JsonDeserializationError(std::size_t offset)
+            : std::runtime_error("deserialization failed at offset " + std::to_string(offset))
+        {}
     };
 
-    template<typename T, typename S>
-    T deserialize(S&& str)
+    template<typename T>
+    T deserialize(const std::string& str)
     {
         T obj;
-        if (!deserialize(std::forward<S>(str), obj)) {
+        rapidjson::Document doc;
+        doc.Parse(str.data());
+        auto&& error = doc.GetParseError();
+        if (error) {
+            throw JsonDeserializationError(doc.GetErrorOffset());
+        }
+        if (!deserialize(doc, obj)) {
+            throw JsonDeserializationError();
+        }
+        return obj;
+    }
+
+    template<typename T>
+    T deserialize(std::string&& str)
+    {
+        T obj;
+        rapidjson::Document doc;
+        doc.ParseInsitu(str.data());
+        auto&& error = doc.GetParseError();
+        if (error) {
+            throw JsonDeserializationError(doc.GetErrorOffset());
+        }
+        if (!deserialize(doc, obj)) {
             throw JsonDeserializationError();
         }
         return obj;
