@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "persistence/persistence.hpp"
+#include "persistence/utility.hpp"
 #include "definitions.hpp"
 #include "measure.hpp"
 #include "random.hpp"
@@ -7,53 +8,68 @@
 using namespace persistence;
 using namespace test;
 
-std::string document_to_string(const rapidjson::Document& doc)
-{
-    rapidjson::StringBuffer buffer;
-    StringWriter writer(buffer);
-    doc.Accept(writer);
-    return std::string(buffer.GetString(), buffer.GetSize());
-}
-
 template<typename T>
-std::string test_serialize(const T& obj)
+void test_serialize(const T& obj, const std::string& ref_json)
 {
     auto&& str_json = serialize_to_string(obj);
+    EXPECT_EQ(str_json, ref_json);
 
     rapidjson::Document doc;
     EXPECT_TRUE(serialize_to_document(obj, doc));
     auto&& doc_json = document_to_string(doc);
+    EXPECT_EQ(doc_json, ref_json);
+}
 
-    EXPECT_EQ(str_json, doc_json);
-    return str_json;
+template<typename T>
+void test_deserialize(const std::string& str, const T& ref_obj)
+{
+    rapidjson::Document doc = string_to_document(str);
+    EXPECT_FALSE(doc.GetParseError());
+
+    T doc_obj = deserialize<T>(doc);
+    EXPECT_EQ(doc_obj, ref_obj);
+
+    T str_obj = parse<T>(str);
+    EXPECT_EQ(str_obj, ref_obj);
+}
+
+template<typename T>
+void test_no_deserialize(const std::string& str)
+{
+    rapidjson::Document doc = string_to_document(str);
+    EXPECT_FALSE(doc.GetParseError());
+
+    T obj;
+    EXPECT_FALSE(deserialize<T>(doc, obj));
+    EXPECT_FALSE(parse<T>(str, obj));
 }
 
 template<typename T>
 void test_integer_type()
 {
-    EXPECT_EQ(test_serialize(T(0)), "0");
-    EXPECT_EQ(test_serialize(T(1)), "1");
-    EXPECT_EQ(test_serialize(std::numeric_limits<T>::min()), std::to_string(std::numeric_limits<T>::min()));
-    EXPECT_EQ(test_serialize(std::numeric_limits<T>::max()), std::to_string(std::numeric_limits<T>::max()));
+    test_serialize(T(0), "0");
+    test_serialize(T(1), "1");
+    test_serialize(std::numeric_limits<T>::min(), std::to_string(std::numeric_limits<T>::min()));
+    test_serialize(std::numeric_limits<T>::max(), std::to_string(std::numeric_limits<T>::max()));
 }
 
 template<typename T>
 void test_float_type()
 {
-    EXPECT_EQ(test_serialize(T(0)), "0.0");
-    EXPECT_EQ(test_serialize(T(1)), "1.0");
-    EXPECT_EQ(test_serialize(T(4.5)), "4.5");
+    test_serialize(T(0), "0.0");
+    test_serialize(T(1), "1.0");
+    test_serialize(T(4.5), "4.5");
 }
 
 TEST(Serialization, SpecialTypes)
 {
-    EXPECT_EQ(test_serialize(nullptr), "null");
+    test_serialize(nullptr, "null");
 }
 
 TEST(Serialization, BooleanTypes)
 {
-    EXPECT_EQ(test_serialize(true), "true");
-    EXPECT_EQ(test_serialize(false), "false");
+    test_serialize(true, "true");
+    test_serialize(false, "false");
 }
 
 TEST(Serialization, NumericTypes)
@@ -84,35 +100,35 @@ TEST(Serialization, NumericTypes)
 
 TEST(Serialization, EnumTypes)
 {
-    EXPECT_EQ(test_serialize(Side::Left), "1");
-    EXPECT_EQ(test_serialize(Side::Right), "2");
+    test_serialize(Side::Left, "1");
+    test_serialize(Side::Right, "2");
 
-    EXPECT_EQ(test_serialize(Suit::Diamonds), "0");
-    EXPECT_EQ(test_serialize(Suit::Hearts), "1");
-    EXPECT_EQ(test_serialize(Suit::Clubs), "2");
-    EXPECT_EQ(test_serialize(Suit::Spades), "3");
+    test_serialize(Suit::Diamonds, "0");
+    test_serialize(Suit::Hearts, "1");
+    test_serialize(Suit::Clubs, "2");
+    test_serialize(Suit::Spades, "3");
 }
 
 TEST(Serialization, StringTypes)
 {
-    EXPECT_EQ(test_serialize(""), "\"\"");
-    EXPECT_EQ(test_serialize("test string"), "\"test string\"");
+    test_serialize("", "\"\"");
+    test_serialize("test string", "\"test string\"");
 
-    EXPECT_EQ(test_serialize(std::string_view()), "\"\"");
-    EXPECT_EQ(test_serialize(std::string_view("test string")), "\"test string\"");
+    test_serialize(std::string_view(), "\"\"");
+    test_serialize(std::string_view("test string"), "\"test string\"");
 
-    EXPECT_EQ(test_serialize(std::string()), "\"\"");
-    EXPECT_EQ(test_serialize(std::string("test string")), "\"test string\"");
+    test_serialize(std::string(), "\"\"");
+    test_serialize(std::string("test string"), "\"test string\"");
 }
 
 TEST(Serialization, DateTimeTypes)
 {
-    EXPECT_EQ(
-        test_serialize(make_datetime(1982, 10, 23, 1, 20, 40)),
+    test_serialize(
+        make_datetime(1982, 10, 23, 1, 20, 40),
         "\"1982-10-23T01:20:40Z\""
     );
-    EXPECT_EQ(
-        test_serialize(make_datetime(2022, 2, 1, 23, 2, 1)),
+    test_serialize(
+        make_datetime(2022, 2, 1, 23, 2, 1),
         "\"2022-02-01T23:02:01Z\""
     );
 }
@@ -120,29 +136,29 @@ TEST(Serialization, DateTimeTypes)
 TEST(Serialization, Pointer)
 {
     auto unique_pointer = std::make_unique<TestValue>("string");
-    EXPECT_EQ(test_serialize(unique_pointer), "{\"value\":\"string\"}");
+    test_serialize(unique_pointer, "{\"value\":\"string\"}");
 
     auto shared_pointer = std::make_shared<TestValue>("string");
-    EXPECT_EQ(test_serialize(shared_pointer), "{\"value\":\"string\"}");
+    test_serialize(shared_pointer, "{\"value\":\"string\"}");
 }
 
 TEST(Serialization, Pair)
 {
-    EXPECT_EQ(
-        test_serialize(std::make_pair(19, std::string("eighty-two"))),
+    test_serialize(
+        std::make_pair(19, std::string("eighty-two")),
         "[19,\"eighty-two\"]"
     );
 }
 
 TEST(Serialization, Tuple)
 {
-    EXPECT_EQ(test_serialize(std::tuple<>()), "[]");
-    EXPECT_EQ(
-        test_serialize(std::make_tuple(std::string("value"))),
+    test_serialize(std::tuple<>(), "[]");
+    test_serialize(
+        std::make_tuple(std::string("value")),
         "[\"value\"]"
     );
-    EXPECT_EQ(
-        test_serialize(std::make_tuple(19, std::string("eighty-two"))),
+    test_serialize(
+        std::make_tuple(19, std::string("eighty-two")),
         "[19,\"eighty-two\"]"
     );
 }
@@ -150,61 +166,62 @@ TEST(Serialization, Tuple)
 TEST(Serialization, Variant)
 {
     using variant_type = std::variant<int, std::string>;
-    EXPECT_EQ(test_serialize(variant_type("value")), "\"value\"");
-    EXPECT_EQ(test_serialize(variant_type(23)), "23");
+    test_serialize(variant_type("value"), "\"value\"");
+    test_serialize(variant_type(23), "23");
 }
 
 TEST(Serialization, Vector)
 {
-    EXPECT_EQ(test_serialize(std::vector<int>()), "[]");
-    EXPECT_EQ(test_serialize(std::vector<int>{1, 2, 3}), "[1,2,3]");
+    test_serialize(std::vector<int>(), "[]");
+    test_serialize(std::vector<int>{1, 2, 3}, "[1,2,3]");
+    test_serialize(std::vector<std::vector<int>>{ { 1 }, { 1,2 }, { 1,2,3 } }, "[[1],[1,2],[1,2,3]]");
 
     std::vector<std::string> val = { "one", "two" };
-    EXPECT_EQ(test_serialize(val), "[\"one\",\"two\"]");
+    test_serialize(val, "[\"one\",\"two\"]");
 }
 
 TEST(Serialization, Array)
 {
-    EXPECT_EQ(test_serialize(std::array<int, 0>()), "[]");
-    EXPECT_EQ(test_serialize(std::array<int, 3>{1, 2, 3}), "[1,2,3]");
+    test_serialize(std::array<int, 0>(), "[]");
+    test_serialize(std::array<int, 3>{1, 2, 3}, "[1,2,3]");
 
     std::array<std::string, 2> val = { "one", "two" };
-    EXPECT_EQ(test_serialize(val), "[\"one\",\"two\"]");
+    test_serialize(val, "[\"one\",\"two\"]");
 }
 
 TEST(Serialization, Set)
 {
-    EXPECT_EQ(test_serialize(std::set<int>()), "[]");
-    EXPECT_EQ(test_serialize(std::set<int>{1, 2, 3}), "[1,2,3]");
+    test_serialize(std::set<int>(), "[]");
+    test_serialize(std::set<int>{1, 2, 3}, "[1,2,3]");
 
     std::set<std::string> val = { "one", "two" };
-    EXPECT_EQ(test_serialize(val), "[\"one\",\"two\"]");
+    test_serialize(val, "[\"one\",\"two\"]");
 }
 
 TEST(Serialization, Map)
 {
-    EXPECT_EQ(test_serialize(std::map<std::string, int>()), "{}");
+    test_serialize(std::map<std::string, int>(), "{}");
 
     std::map<std::string, int> val = {
         { "key1", 1 }, { "key2", 2 }, { "key3", 3 }
     };
-    EXPECT_EQ(test_serialize(val), "{\"key1\":1,\"key2\":2,\"key3\":3}");
+    test_serialize(val, "{\"key1\":1,\"key2\":2,\"key3\":3}");
 }
 
 TEST(Serialization, UnorderedMap)
 {
-    EXPECT_EQ(test_serialize(std::unordered_map<std::string, int>()), "{}");
+    test_serialize(std::unordered_map<std::string, int>(), "{}");
 
     std::unordered_map<std::string, int> val = {
         { "key", 1 }
     };
-    EXPECT_EQ(test_serialize(val), "{\"key\":1}");
+    test_serialize(val, "{\"key\":1}");
 }
 
 TEST(Serialization, Object)
 {
     TestValue value_object("test string");
-    EXPECT_EQ(test_serialize(value_object), "{\"value\":\"test string\"}");
+    test_serialize(value_object, "{\"value\":\"test string\"}");
 
     TestDataTransferObject dto;
     dto.bool_value = true;
@@ -217,7 +234,7 @@ TEST(Serialization, Object)
     o.member_value = "value";
     dto.object_value = o;
     dto.object_list = { o, o };
-    EXPECT_EQ(test_serialize(dto),
+    test_serialize(dto,
         "{\"bool_value\":true,"
         "\"bool_list\":[false,false,true],"
         "\"int_value\":42,"
@@ -232,11 +249,11 @@ TEST(Serialization, Object)
 TEST(Serialization, Optional)
 {
     TestOptionalObjectMember opt1;
-    EXPECT_EQ(test_serialize(opt1), "{}");
+    test_serialize(opt1, "{}");
 
     TestOptionalObjectMember opt2;
     opt2.optional_value = 42;
-    EXPECT_EQ(test_serialize(opt2), "{\"optional_value\":42}");
+    test_serialize(opt2, "{\"optional_value\":42}");
 }
 
 TEST(Serialization, BackReferenceArray)
@@ -248,7 +265,7 @@ TEST(Serialization, BackReferenceArray)
     obj.values.push_back(rep);
     obj.values.push_back(rep);
     obj.values.push_back(rep);
-    EXPECT_EQ(test_serialize(obj), "{\"values\":[{\"value\":\"one\"},{\"value\":\"two\"},{\"$ref\":\"/values/1\"},{\"$ref\":\"/values/1\"}]}");
+    test_serialize(obj, "{\"values\":[{\"value\":\"one\"},{\"value\":\"two\"},{\"$ref\":\"/values/1\"},{\"$ref\":\"/values/1\"}]}");
 }
 
 TEST(Serialization, BackReferenceObject)
@@ -257,94 +274,94 @@ TEST(Serialization, BackReferenceObject)
     obj.outer = std::make_shared<TestValue>("string");
     obj.inner.push_back(obj.outer);
     obj.inner.push_back(obj.outer);
-    EXPECT_EQ(test_serialize(obj), "{\"outer\":{\"value\":\"string\"},\"inner\":[{\"$ref\":\"/outer\"},{\"$ref\":\"/outer\"}]}");
+    test_serialize(obj, "{\"outer\":{\"value\":\"string\"},\"inner\":[{\"$ref\":\"/outer\"},{\"$ref\":\"/outer\"}]}");
 }
 
 TEST(Deserialization, SpecialTypes)
 {
-    EXPECT_EQ(deserialize<nullptr_t>("null"), nullptr);
+    test_deserialize("null", nullptr);
 }
 
 TEST(Deserialization, BooleanTypes)
 {
-    EXPECT_EQ(deserialize<bool>("true"), true);
-    EXPECT_EQ(deserialize<bool>("false"), false);
+    test_deserialize("true", true);
+    test_deserialize("false", false);
 
-    bool result;
-    EXPECT_FALSE(deserialize<bool>("", result));
-    EXPECT_FALSE(deserialize<bool>("0", result));
-    EXPECT_FALSE(deserialize<bool>("1", result));
+    test_no_deserialize<bool>("0");
+    test_no_deserialize<bool>("1");
 }
 
 TEST(Deserialization, NumericTypes)
 {
-    EXPECT_EQ(deserialize<char>("1"), static_cast<char>(1));
-    EXPECT_EQ(deserialize<unsigned char>("2"), static_cast<unsigned char>(2));
-    EXPECT_EQ(deserialize<int>("3"), 3);
-    EXPECT_EQ(deserialize<unsigned int>("4"), 4u);
-    EXPECT_EQ(deserialize<long>("5"), 5l);
-    EXPECT_EQ(deserialize<unsigned long>("6"), 6ul);
-    EXPECT_EQ(deserialize<long long>("7"), 7ll);
-    EXPECT_EQ(deserialize<unsigned long long>("8"), 8ull);
+    test_deserialize("127", static_cast<char>(127));
+    test_deserialize("127", static_cast<unsigned char>(127));
 
-    EXPECT_EQ(deserialize<float>("9.5"), 9.5f);
-    EXPECT_EQ(deserialize<double>("1.25"), 1.25);
+    test_deserialize("1024", 1024);
+    test_deserialize("-1024", -1024);
+    test_deserialize("1024", 1024u);
 
-    int result;
-    EXPECT_FALSE(deserialize<int>("", result));
-    EXPECT_FALSE(deserialize<int>("1.0", result));
+    test_deserialize("2048", 2048l);
+    test_deserialize("-2048", -2048l);
+    test_deserialize("2048", 2048ul);
+
+    test_deserialize("4096", 4096ll);
+    test_deserialize("-4096", -4096ll);
+    test_deserialize("4096", 4096ull);
+
+    test_deserialize("9.5", 9.5f);
+    test_deserialize("1.25", 1.25);
+
+    test_no_deserialize<int>("1.0");
 }
 
 TEST(Deserialization, EnumTypes)
 {
-    EXPECT_EQ(deserialize<Side>("1"), Side::Left);
-    EXPECT_EQ(deserialize<Side>("2"), Side::Right);
+    test_deserialize("1", Side::Left);
+    test_deserialize("2", Side::Right);
 
-    EXPECT_EQ(deserialize<Suit>("0"), Suit::Diamonds);
-    EXPECT_EQ(deserialize<Suit>("1"), Suit::Hearts);
-    EXPECT_EQ(deserialize<Suit>("2"), Suit::Clubs);
-    EXPECT_EQ(deserialize<Suit>("3"), Suit::Spades);
+    test_deserialize("0", Suit::Diamonds);
+    test_deserialize("1", Suit::Hearts);
+    test_deserialize("2", Suit::Clubs);
+    test_deserialize("3", Suit::Spades);
 }
 
 TEST(Deserialization, StringTypes)
 {
-    EXPECT_EQ(deserialize<std::string>("\"\""), std::string());
-    EXPECT_EQ(deserialize<std::string>("\"test string\""), std::string("test string"));
-
-    std::string result;
-    EXPECT_FALSE(deserialize<std::string>("", result));
+    test_deserialize<std::string>("\"\"", std::string());
+    test_deserialize<std::string>("\"test string\"", std::string("test string"));
 }
 
 TEST(Deserialization, DateTimeTypes)
 {
-    EXPECT_EQ(
-        deserialize<timestamp>("\"1982-10-23T01:20:40Z\""),
+    test_deserialize(
+        "\"1982-10-23T01:20:40Z\"",
         make_datetime(1982, 10, 23, 1, 20, 40)
     );
-    EXPECT_EQ(
-        deserialize<timestamp>("\"2022-02-01T23:02:01Z\""),
+    test_deserialize(
+        "\"2022-02-01T23:02:01Z\"",
         make_datetime(2022, 2, 1, 23, 2, 1)
     );
 
-    timestamp result;
-
     // space instead of 'T'
-    EXPECT_TRUE(deserialize<timestamp>("\"2022-02-01 23:02:01Z\"", result));
+    test_deserialize(
+        "\"2022-02-01 23:02:01Z\"",
+        make_datetime(2022, 2, 1, 23, 2, 1)
+    );
 
     // two-digit year
-    EXPECT_FALSE(deserialize<timestamp>("\"22-02-01T23:02:01Z\"", result));
+    test_no_deserialize<timestamp>("\"22-02-01T23:02:01Z\"");
 
     // missing or wrong time zone
-    EXPECT_FALSE(deserialize<timestamp>("\"2022-02-01T23:02:01\"", result));
-    EXPECT_FALSE(deserialize<timestamp>("\"2022-02-01T23:02:01A\"", result));
+    test_no_deserialize<timestamp>("\"2022-02-01T23:02:01\"");
+    test_no_deserialize<timestamp>("\"2022-02-01T23:02:01A\"");
 
     // invalid year, month, day, hour, minute or second
-    EXPECT_FALSE(deserialize<timestamp>("\"YYYY-02-01T23:02:01Z\"", result));
-    EXPECT_FALSE(deserialize<timestamp>("\"2022-MM-01T23:02:01Z\"", result));
-    EXPECT_FALSE(deserialize<timestamp>("\"2022-02-DDT23:02:01Z\"", result));
-    EXPECT_FALSE(deserialize<timestamp>("\"2022-02-01THH:02:01Z\"", result));
-    EXPECT_FALSE(deserialize<timestamp>("\"2022-02-01T23:MM:01Z\"", result));
-    EXPECT_FALSE(deserialize<timestamp>("\"2022-02-01T23:02:SSZ\"", result));
+    test_no_deserialize<timestamp>("\"YYYY-02-01T23:02:01Z\"");
+    test_no_deserialize<timestamp>("\"2022-MM-01T23:02:01Z\"");
+    test_no_deserialize<timestamp>("\"2022-02-DDT23:02:01Z\"");
+    test_no_deserialize<timestamp>("\"2022-02-01THH:02:01Z\"");
+    test_no_deserialize<timestamp>("\"2022-02-01T23:MM:01Z\"");
+    test_no_deserialize<timestamp>("\"2022-02-01T23:02:SSZ\"");
 }
 
 TEST(Deserialization, Pointer)
@@ -391,15 +408,16 @@ TEST(Deserialization, Variant)
 
 TEST(Deserialization, Vector)
 {
-    EXPECT_EQ(deserialize<std::vector<int>>("[]"), std::vector<int>());
+    test_deserialize("[]", std::vector<int>());
 
     std::vector<int> ref_int = { 1, 2, 3 };
-    auto val_int = deserialize<std::vector<int>>("[1, 2, 3]");
-    EXPECT_EQ(val_int, ref_int);
+    test_deserialize("[1, 2, 3]", ref_int);
 
     std::vector<std::string> ref_str = { "one", "two" };
-    auto val_str = deserialize<std::vector<std::string>>("[\"one\", \"two\"]");
-    EXPECT_EQ(val_str, ref_str);
+    test_deserialize("[\"one\", \"two\"]", ref_str);
+
+    std::vector<std::vector<int>> ref_nested = { { 1 }, { 1,2 }, { 1,2,3 } };
+    test_deserialize("[[1], [1, 2], [1, 2, 3]]", ref_nested);
 }
 
 TEST(Deserialization, Array)
@@ -415,31 +433,55 @@ TEST(Deserialization, Array)
 
 TEST(Deserialization, Set)
 {
-    EXPECT_EQ(deserialize<std::set<int>>("[]"), std::set<int>());
+    test_deserialize("[]", std::set<int>());
+    test_deserialize("[]", std::set<std::string>());
 
-    std::set<int> ref = { 1,2,3 };
-    auto val = deserialize<std::set<int>>("[1, 2, 3]");
-    EXPECT_EQ(val, ref);
+    test_deserialize(
+        "[1, 2, 3]",
+        std::set<int> { 1, 2, 3 }
+    );
+    test_deserialize(
+        "[\"one\", \"two\"]",
+        std::set<std::string> { "one", "two" }
+    );
 }
 
 TEST(Deserialization, Map)
 {
-    using ordered_map_type = std::map<std::string, int>;
-    ordered_map_type ref = {
-        { "key1", 1 }, { "key2", 2 }, { "key3", 3 }
-    };
-    auto val = deserialize<ordered_map_type>("{\"key1\":1, \"key2\":2, \"key3\":3}");
-    EXPECT_EQ(val, ref);
+    test_deserialize("{}", std::map<std::string, int>());
+    test_deserialize("{}", std::map<std::string, std::string>());
+
+    test_deserialize(
+        "{\"key1\": 1, \"key2\": 2, \"key3\": 3}",
+        std::map<std::string, int> {
+            { "key1", 1 }, { "key2", 2 }, { "key3", 3 }
+        }
+    );
+    test_deserialize(
+        "{\"key1\": \"value1\", \"key2\": \"value2\"}",
+        std::map<std::string, std::string> {
+            { "key1", "value1" }, { "key2", "value2" }
+        }
+    );
 }
 
 TEST(Deserialization, UnorderedMap)
 {
-    using unordered_map_type = std::unordered_map<std::string, int>;
-    unordered_map_type ref = {
-        { "key1", 1 }, { "key2", 2 }, { "key3", 3 }
-    };
-    auto val = deserialize<unordered_map_type>("{\"key1\": 1, \"key2\": 2, \"key3\": 3}");
-    EXPECT_EQ(val, ref);
+    test_deserialize("{}", std::unordered_map<std::string, int>());
+    test_deserialize("{}", std::unordered_map<std::string, std::string>());
+
+    test_deserialize(
+        "{\"key1\": 1, \"key2\": 2, \"key3\": 3}",
+        std::unordered_map<std::string, int> {
+            { "key1", 1 }, { "key2", 2 }, { "key3", 3 }
+        }
+    );
+    test_deserialize(
+        "{\"key1\": \"value1\", \"key2\": \"value2\"}",
+        std::unordered_map<std::string, std::string> {
+            { "key1", "value1" }, { "key2", "value2" }
+        }
+    );
 }
 
 TEST(Deserialization, Object)
@@ -483,8 +525,8 @@ TEST(Deserialization, Object)
 
 TEST(Deserialization, Optional)
 {
-    EXPECT_EQ(deserialize<TestOptionalObjectMember>("{}"), TestOptionalObjectMember());
-    EXPECT_EQ(deserialize<TestOptionalObjectMember>("{\"optional_value\": 42}"), TestOptionalObjectMember(42));
+    test_deserialize("{}", TestOptionalObjectMember());
+    test_deserialize("{\"optional_value\": 42}", TestOptionalObjectMember(42));
 }
 
 TEST(Deserialization, BackReferenceArray)
@@ -548,8 +590,11 @@ TEST(Performance, Object)
         rapidjson::Document doc;
         doc.Parse(json.data());
     });
+    measure("deserialize from string to object via DOM", [&]() {
+        deserialize<std::vector<TestDataTransferObject>>(json);
+    });
     auto&& values = measure("deserialize from string to object", [&]() {
-        return deserialize<std::vector<TestDataTransferObject>>(json);
+        return parse<std::vector<TestDataTransferObject>>(json);
     });
     EXPECT_GT(values.size(), 0);
 }

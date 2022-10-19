@@ -2,7 +2,7 @@
 #include "deserialize_base.hpp"
 #include "detail/deserialize_aware.hpp"
 #include "detail/traits.hpp"
-#include <stdexcept>
+#include "exception.hpp"
 #include <string>
 
 namespace persistence
@@ -46,7 +46,24 @@ namespace persistence
     }
 
     /**
-     * Parses the JSON representation of an object.
+     * Parses the JSON DOM representation of an object.
+     */
+    template<typename T>
+    T deserialize(rapidjson::Document& doc)
+    {
+        if (doc.HasParseError()) {
+            throw JsonDeserializationError();
+        }
+
+        T obj;
+        if (!deserialize(doc, obj)) {
+            throw JsonDeserializationError();
+        }
+        return obj;
+    }
+
+    /**
+     * Parses the JSON string representation of an object.
      */
     template<typename T>
     bool deserialize(const std::string& str, T& obj)
@@ -65,17 +82,6 @@ namespace persistence
         auto&& error = doc.GetParseError();
         return !error && deserialize(doc, obj);
     }
-
-    struct JsonDeserializationError : std::runtime_error
-    {
-        JsonDeserializationError()
-            : std::runtime_error("deserialization failed")
-        {}
-
-        JsonDeserializationError(std::size_t offset)
-            : std::runtime_error("deserialization failed at offset " + std::to_string(offset))
-        {}
-    };
 
     template<typename T>
     T deserialize(const std::string& str)

@@ -150,6 +150,8 @@ namespace persistence
     template<typename T>
     struct JsonFloatDeserializer
     {
+        static_assert(std::is_floating_point<T>::value, "T must be a floating-point type");
+
         bool operator()(const rapidjson::Value& json, T& value) const
         {
             if (json.IsNumber()) {

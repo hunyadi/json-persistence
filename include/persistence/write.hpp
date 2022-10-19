@@ -2,7 +2,7 @@
 #include "write_base.hpp"
 #include "detail/write_aware.hpp"
 #include "detail/traits.hpp"
-#include <stdexcept>
+#include "exception.hpp"
 
 namespace persistence
 {
@@ -53,11 +53,6 @@ namespace persistence
             return false;
         }
     }
-
-    struct JsonSerializationError : std::runtime_error
-    {
-        JsonSerializationError() : std::runtime_error("serialization failed") {}
-    };
 
     template<typename T>
     std::string serialize_to_string(const T& obj)

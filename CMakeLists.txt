@@ -11,6 +11,7 @@ project(json-persistence VERSION 0.1)
 # compiler configuration
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 
 if (MSVC)
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)

@@ -1,0 +1,9 @@
+#pragma once
+#include "read.hpp"
+#include "read_fundamental.hpp"
+#include "read_datetime.hpp"
+#include "read_enum.hpp"
+#include "read_map.hpp"
+#include "read_object.hpp"
+#include "read_set.hpp"
+#include "read_vector.hpp"
