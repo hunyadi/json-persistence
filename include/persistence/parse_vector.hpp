@@ -1,5 +1,5 @@
 #pragma once
-#include "read_base.hpp"
+#include "parse_base.hpp"
 
 namespace persistence
 {
@@ -23,8 +23,8 @@ namespace persistence
         bool parse(typename JsonParser<T>::json_type json_item) override
         {
             container.emplace_back();
-            context.push(std::make_unique<JsonParser<T>>(context, container.back()));
-            return context.handler().parse(json_item);
+            auto&& handler = context.push(std::make_unique<JsonParser<T>>(context, container.back()));
+            return handler.parse(json_item);
         }
 
     private:
@@ -62,7 +62,7 @@ namespace persistence
 
     /**
      * Parses a JSON array of numbers into a C++ `vector<T>` efficiently.
-     * 
+     *
      * @tparam Integer or floating-point type.
      */
     template<typename T>
@@ -181,7 +181,7 @@ namespace persistence
         ReaderContext& context;
         std::vector<std::string>& container;
     };
-    
+
     template<typename T>
     struct JsonParser<std::vector<T>> : EventHandler
     {

@@ -56,8 +56,9 @@ void test_integer_type()
 template<typename T>
 void test_float_type()
 {
-    test_serialize(T(0), "0.0");
-    test_serialize(T(1), "1.0");
+    test_serialize(T(0.0), "0.0");
+    test_serialize(T(1.0), "1.0");
+    test_serialize(T(-1.0), "-1.0");
     test_serialize(T(4.5), "4.5");
 }
 
@@ -135,6 +136,10 @@ TEST(Serialization, DateTimeTypes)
 
 TEST(Serialization, Pointer)
 {
+    auto raw_pointer = new TestValue("string");
+    test_serialize(raw_pointer, "{\"value\":\"string\"}");
+    delete raw_pointer;
+
     auto unique_pointer = std::make_unique<TestValue>("string");
     test_serialize(unique_pointer, "{\"value\":\"string\"}");
 
@@ -265,7 +270,14 @@ TEST(Serialization, BackReferenceArray)
     obj.values.push_back(rep);
     obj.values.push_back(rep);
     obj.values.push_back(rep);
-    test_serialize(obj, "{\"values\":[{\"value\":\"one\"},{\"value\":\"two\"},{\"$ref\":\"/values/1\"},{\"$ref\":\"/values/1\"}]}");
+    test_serialize(obj, "{"
+        "\"values\":["
+            "{\"value\":\"one\"},"
+            "{\"value\":\"two\"},"
+            "{\"$ref\":\"/values/1\"},"
+            "{\"$ref\":\"/values/1\"}"
+        "]"
+    "}");
 }
 
 TEST(Serialization, BackReferenceObject)
@@ -274,7 +286,10 @@ TEST(Serialization, BackReferenceObject)
     obj.outer = std::make_shared<TestValue>("string");
     obj.inner.push_back(obj.outer);
     obj.inner.push_back(obj.outer);
-    test_serialize(obj, "{\"outer\":{\"value\":\"string\"},\"inner\":[{\"$ref\":\"/outer\"},{\"$ref\":\"/outer\"}]}");
+    test_serialize(obj, "{"
+        "\"outer\":{\"value\":\"string\"},"
+        "\"inner\":[{\"$ref\":\"/outer\"},{\"$ref\":\"/outer\"}]"
+    "}");
 }
 
 TEST(Deserialization, SpecialTypes)
@@ -312,6 +327,7 @@ TEST(Deserialization, NumericTypes)
     test_deserialize("1.25", 1.25);
 
     test_no_deserialize<int>("1.0");
+    test_no_deserialize<int>("-1.0");
 }
 
 TEST(Deserialization, EnumTypes)
@@ -372,22 +388,20 @@ TEST(Deserialization, Pointer)
 
 TEST(Deserialization, Pair)
 {
-    auto ref = std::make_pair(19, std::string("eighty-two"));
-    auto val = deserialize<std::pair<int, std::string>>("[19, \"eighty-two\"]");
-    EXPECT_EQ(val, ref);
+    test_deserialize(
+        "[19, \"eighty-two\"]",
+        std::make_pair(19, std::string("eighty-two"))
+    );
 }
 
 TEST(Deserialization, Tuple)
 {
-    EXPECT_EQ(deserialize<std::tuple<>>("[]"), std::tuple<>());
-
-    auto ref_str = std::make_tuple(std::string("value"));
-    auto val_str = deserialize<std::tuple<std::string>>("[\"value\"]");
-    EXPECT_EQ(val_str, ref_str);
-
-    auto ref_tup = std::make_tuple(19, std::string("eighty-two"));
-    auto val_tup = deserialize<std::tuple<int, std::string>>("[19, \"eighty-two\"]");
-    EXPECT_EQ(val_tup, ref_tup);
+    test_deserialize("[]", std::tuple<>());
+    test_deserialize("[\"value\"]", std::make_tuple(std::string("value")));
+    test_deserialize(
+        "[19, \"eighty-two\"]",
+        std::make_tuple(19, std::string("eighty-two"))
+    );
 }
 
 TEST(Deserialization, Variant)
@@ -409,12 +423,8 @@ TEST(Deserialization, Variant)
 TEST(Deserialization, Vector)
 {
     test_deserialize("[]", std::vector<int>());
-
-    std::vector<int> ref_int = { 1, 2, 3 };
-    test_deserialize("[1, 2, 3]", ref_int);
-
-    std::vector<std::string> ref_str = { "one", "two" };
-    test_deserialize("[\"one\", \"two\"]", ref_str);
+    test_deserialize("[1, 2, 3]", std::vector<int> { 1, 2, 3 });
+    test_deserialize("[\"one\", \"two\"]", std::vector<std::string> { "one", "two" });
 
     std::vector<std::vector<int>> ref_nested = { { 1 }, { 1,2 }, { 1,2,3 } };
     test_deserialize("[[1], [1, 2], [1, 2, 3]]", ref_nested);
@@ -422,13 +432,9 @@ TEST(Deserialization, Vector)
 
 TEST(Deserialization, Array)
 {
-    std::array<int, 0> ref_empty;
-    auto val_empty = deserialize<std::array<int, 0>>("[]");
-    EXPECT_EQ(val_empty, ref_empty);
-
-    std::array<int, 3> ref_int = { 1,2,3 };
-    auto val_int = deserialize<std::array<int, 3>>("[1, 2, 3]");
-    EXPECT_EQ(val_int, ref_int);
+    test_deserialize("[]", std::array<int, 0> {});
+    test_deserialize("[1, 2, 3]", std::array<int, 3> { 1, 2, 3 });
+    test_deserialize("[\"one\", \"two\"]", std::array<std::string, 2> { "one", "two" });
 }
 
 TEST(Deserialization, Set)
@@ -487,14 +493,16 @@ TEST(Deserialization, UnorderedMap)
 TEST(Deserialization, Object)
 {
     const char* json =
-        "{\"bool_value\":true,"
+        "{"
+        "\"bool_value\":true,"
         "\"bool_list\":[false,false,true],"
         "\"int_value\":42,"
         "\"int_list\":[82,10,23],"
         "\"string_value\":\"test string\","
         "\"string_list\":[\"one\",\"two\",\"three\"],"
         "\"object_value\":{\"member_value\":\"value\"},"
-        "\"object_list\":[{\"member_value\":\"value\"},{\"member_value\":\"value\"}]}"
+        "\"object_list\":[{\"member_value\":\"value\"},{\"member_value\":\"value\"}]"
+        "}"
     ;
 
     TestDataTransferObject ref;
@@ -508,19 +516,9 @@ TEST(Deserialization, Object)
     o.member_value = "value";
     ref.object_value = o;
     ref.object_list = { o, o };
+    test_deserialize(json, ref);
 
-    auto val = deserialize<TestDataTransferObject>(json);
-
-    EXPECT_EQ(val.bool_value, ref.bool_value);
-    EXPECT_EQ(val.bool_list, ref.bool_list);
-    EXPECT_EQ(val.int_value, ref.int_value);
-    EXPECT_EQ(val.int_list, ref.int_list);
-    EXPECT_EQ(val.string_value, ref.string_value);
-    EXPECT_EQ(val.string_list, ref.string_list);
-    EXPECT_EQ(val.object_value, ref.object_value);
-    EXPECT_EQ(val.object_list, ref.object_list);
-
-    EXPECT_EQ(deserialize<TestNonCopyable>("{\"member\":{\"value\": \"string\"}}"), TestNonCopyable("string"));
+    test_deserialize("{\"member\":{\"value\": \"string\"}}", TestNonCopyable("string"));
 }
 
 TEST(Deserialization, Optional)

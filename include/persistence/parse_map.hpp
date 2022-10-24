@@ -1,4 +1,5 @@
 #pragma once
+#include "parse_base.hpp"
 #include <map>
 #include <unordered_map>
 

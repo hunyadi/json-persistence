@@ -1,6 +1,6 @@
 #pragma once
 #include "object.hpp"
-#include "read_base.hpp"
+#include "parse_base.hpp"
 #include <optional>
 
 namespace persistence
@@ -72,7 +72,7 @@ namespace persistence
     template<typename C>
     struct JsonObjectParser : EventHandler
     {
-        static_assert(std::is_class<C>::value, "expected a type that can be deserialized from JSON");
+        static_assert(std::is_class<C>::value, "expected a class type");
 
     private:
         static field_factory_map<C> initialize()
@@ -114,8 +114,18 @@ namespace persistence
         C& ref;
     };
 
-    template<typename T, typename Enable>
-    struct JsonParser : EventHandler
+    template<typename, typename = void>
+    struct has_custom_parse : std::false_type {};
+
+    template<typename T>
+    struct has_custom_parse<T, std::void_t<
+        decltype(
+            std::declval<T&>().persist(std::declval<ObjectMemberVisitor<T>&>())
+        )
+    >> : std::true_type {};
+
+    template<typename T>
+    struct JsonParser<T, typename std::enable_if<has_custom_parse<T>::value>::type> : EventHandler
     {
         using json_type = JsonObjectStart;
 

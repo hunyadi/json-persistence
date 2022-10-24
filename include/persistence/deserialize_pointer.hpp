@@ -6,6 +6,15 @@
 namespace persistence
 {
     template<typename T>
+    struct JsonDeserializer<T*>
+    {
+        static_assert(
+            detail::defer<T>::value,
+            "deserialization for raw pointers is not supported, use smart pointers instead"
+        );
+    };
+
+    template<typename T>
     struct JsonDeserializer<std::unique_ptr<T>> : JsonContextAwareDeserializer
     {
         using JsonContextAwareDeserializer::JsonContextAwareDeserializer;

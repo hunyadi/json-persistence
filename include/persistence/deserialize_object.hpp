@@ -15,6 +15,8 @@ namespace persistence
             , object(object)
         {}
 
+        JsonObjectDeserializer(const JsonObjectDeserializer&) = delete;
+
         template<typename T>
         JsonObjectDeserializer& operator&(const member_variable<std::optional<T>, C>& member)
         {
@@ -83,14 +85,13 @@ namespace persistence
     /**
     * Writes a value with a specific type to JSON.
     */
-    template<typename T, typename Enable>
-    struct JsonDeserializer : JsonContextAwareDeserializer {
+    template<typename T>
+    struct JsonDeserializer<T, typename std::enable_if<has_custom_deserializer<T>::value>::type> : JsonContextAwareDeserializer
+    {
         using JsonContextAwareDeserializer::JsonContextAwareDeserializer;
 
         bool operator()(const rapidjson::Value& json, T& value) const
         {
-            static_assert(has_custom_deserializer<T>::value, "expected a type that can be deserialized from JSON");
-
             if (!json.IsObject()) {
                 return false;
             }

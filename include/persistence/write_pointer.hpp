@@ -5,15 +5,27 @@
 
 namespace persistence
 {
-    template<typename T>
-    struct JsonWriter<std::unique_ptr<T>> : JsonContextAwareWriter
+    template<typename P>
+    struct JsonPointerWriter : JsonContextAwareWriter
     {
         using JsonContextAwareWriter::JsonContextAwareWriter;
 
-        bool operator()(const std::unique_ptr<T>& pointer, StringWriter& writer) const
+        bool operator()(const P& pointer, StringWriter& writer) const
         {
             return serialize(*pointer, writer, context);
         }
+    };
+
+    template<typename T>
+    struct JsonWriter<T*> : JsonPointerWriter<T*>
+    {
+        using JsonPointerWriter<T*>::JsonPointerWriter;
+    };
+
+    template<typename T>
+    struct JsonWriter<std::unique_ptr<T>> : JsonPointerWriter<std::unique_ptr<T>>
+    {
+        using JsonPointerWriter<std::unique_ptr<T>>::JsonPointerWriter;
     };
 
     template<typename T>

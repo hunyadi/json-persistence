@@ -5,15 +5,27 @@
 
 namespace persistence
 {
-    template<typename T>
-    struct JsonSerializer<std::unique_ptr<T>> : JsonContextAwareSerializer
+    template<typename P>
+    struct JsonPointerSerializer : JsonContextAwareSerializer
     {
         using JsonContextAwareSerializer::JsonContextAwareSerializer;
 
-        bool operator()(const std::unique_ptr<T>& pointer, rapidjson::Value& json) const
+        bool operator()(const P& pointer, rapidjson::Value& json) const
         {
             return serialize(*pointer, json, context);
         }
+    };
+
+    template<typename T>
+    struct JsonSerializer<T*> : JsonPointerSerializer<T*>
+    {
+        using JsonPointerSerializer<T*>::JsonPointerSerializer;
+    };
+
+    template<typename T>
+    struct JsonSerializer<std::unique_ptr<T>> : JsonPointerSerializer<std::unique_ptr<T>>
+    {
+        using JsonPointerSerializer<std::unique_ptr<T>>::JsonPointerSerializer;
     };
 
     template<typename T>

@@ -15,6 +15,8 @@ namespace persistence
             , json_object(json_object)
         {}
 
+        JsonObjectSerializer(const JsonObjectSerializer&) = delete;
+
         template<typename T>
         JsonObjectSerializer& operator&(const member_variable<std::optional<T>, C>& member)
         {
@@ -83,15 +85,13 @@ namespace persistence
     /**
     * Writes a value with a specific type to JSON.
     */
-    template<typename T, typename Enable>
-    struct JsonSerializer : JsonContextAwareSerializer
+    template<typename T>
+    struct JsonSerializer<T, typename std::enable_if<has_custom_serializer<T>::value>::type> : JsonContextAwareSerializer
     {
         using JsonContextAwareSerializer::JsonContextAwareSerializer;
 
         bool operator()(const T& value, rapidjson::Value& json) const
         {
-            static_assert(has_custom_serializer<T>::value, "expected a type that can be serialized to JSON");
-
             JsonObjectSerializer<T> serializer(context, value, json);
 
             json.SetObject();

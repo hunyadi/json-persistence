@@ -26,7 +26,7 @@ struct TestValue
     TestValue(const std::string& value) : value(value) {}
 
     template <typename Archive>
-    auto persist(Archive& ar)
+    Archive& persist(Archive& ar)
     {
         return ar
             & MEMBER_VARIABLE(value)
@@ -107,6 +107,19 @@ public:
             & MEMBER_VARIABLE(object_value)
             & MEMBER_VARIABLE(object_list)
             ;
+    }
+
+    bool operator==(const TestDataTransferObject& op) const
+    {
+        return bool_value == op.bool_value
+            && bool_list == op.bool_list
+            && int_value == op.int_value
+            && int_list == op.int_list
+            && string_value == op.string_value
+            && string_list == op.string_list
+            && object_value == op.object_value
+            && object_list == op.object_list
+        ;
     }
 };
 

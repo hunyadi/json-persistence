@@ -1,4 +1,5 @@
 #pragma once
+#include "detail/defer.hpp"
 #include <memory>
 #include <string_view>
 #include <vector>
@@ -122,10 +123,11 @@ namespace persistence
 
         ReaderContext(const ReaderContext&) = delete;
 
-        void push(std::unique_ptr<EventHandler>&& handler)
+        EventHandler& push(std::unique_ptr<EventHandler>&& handler)
         {
             stack.push_back(std::move(dispatcher.handler));
             dispatcher.handler = std::move(handler);
+            return *dispatcher.handler;
         }
 
         void pop()
@@ -139,16 +141,16 @@ namespace persistence
             dispatcher.handler = std::move(handler);
         }
 
-        EventHandler& handler()
-        {
-            return *dispatcher.handler;
-        }
-
     private:
         EventDispatcher& dispatcher;
         std::vector<std::unique_ptr<EventHandler>> stack;
     };
 
     template<typename T, typename Enable = void>
-    struct JsonParser;
+    struct JsonParser
+    {
+        // if you are getting a compile-time error pointing at this location, make sure the appropriate
+        // headers are included, and (de-)serialization is supported for the type
+        static_assert(detail::defer<T>::value, "expected a type that can be deserialized from JSON");
+    };
 }
