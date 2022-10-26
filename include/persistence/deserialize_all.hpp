@@ -1,4 +1,8 @@
 #pragma once
+/**
+* Deserialization functions instantiate a C++ object based on values in a JSON DOM object.
+*/
+
 #include "deserialize.hpp"
 #include "deserialize_fundamental.hpp"
 #include "deserialize_object.hpp"

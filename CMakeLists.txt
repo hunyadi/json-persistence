@@ -11,7 +11,6 @@ project(json-persistence VERSION 0.1)
 # compiler configuration
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 
 if (MSVC)
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
@@ -43,6 +42,12 @@ enable_testing()
 add_executable(json-persistence-tests ${CMAKE_SOURCE_DIR}/test/main.cpp)
 target_include_directories(json-persistence-tests PRIVATE ${CMAKE_SOURCE_DIR}/include ${RAPIDJSON_INCLUDE_DIRS})
 target_link_libraries(json-persistence-tests GTest::gtest_main)
+
+include(CheckIPOSupported)
+check_ipo_supported(RESULT ipo_result)
+if(ipo_result)
+    set_property(TARGET json-persistence-tests PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
 
 include(GoogleTest)
 gtest_discover_tests(json-persistence-tests)

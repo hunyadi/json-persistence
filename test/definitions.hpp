@@ -196,9 +196,9 @@ struct Example
     UserDefinedType custom_value;
 
     template <typename Archive>
-    void persist(Archive& ar)
+    constexpr auto persist(Archive& ar)
     {
-        ar
+        return ar
             & MEMBER_VARIABLE(bool_value)
             & MEMBER_VARIABLE(string_value)
             & MEMBER_VARIABLE(string_list)

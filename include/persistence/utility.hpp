@@ -1,5 +1,6 @@
 #pragma once
 #include "detail/config.hpp"
+#include "detail/pointer_traits.hpp"
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>

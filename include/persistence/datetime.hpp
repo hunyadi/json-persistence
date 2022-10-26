@@ -7,6 +7,9 @@ namespace persistence
 {
     namespace detail
     {
+        /**
+        * Converts a Gregorian calendar UTC timestamp into a POSIX timestamp (seconds since epoch).
+        */
         inline std::time_t utc_to_posix(std::tm* cal) {
             return _mkgmtime(cal);
         }
@@ -17,6 +20,9 @@ namespace persistence
 {
     namespace detail
     {
+        /**
+        * Converts a Gregorian calendar UTC timestamp into a POSIX timestamp (seconds since epoch).
+        */
         inline std::time_t utc_to_posix(std::tm* cal) {
             return timegm(cal);
         }
@@ -28,6 +34,9 @@ namespace persistence
 {
     using timestamp = std::chrono::time_point<std::chrono::system_clock>;
 
+    /**
+    * Creates a chrono time point from a Gregorian calendar date and UTC time.
+    */
     inline timestamp make_datetime(int year, int month, int day, int hour, int minute, int second)
     {
         std::tm tm{};
@@ -50,6 +59,9 @@ namespace persistence
         }
     }
 
+    /**
+    * Parses a chrono time point from an ISO 8601 date string.
+    */
     inline bool parse_datetime(const char* text, std::size_t len, timestamp& value)
     {
         if (len != 20) {
@@ -122,6 +134,9 @@ namespace persistence
         }
     }
 
+    /**
+    * Represents an ISO 8601 date string.
+    */
     struct iso_datetime
     {
         char text[21] = "0000-00-00T00:00:00Z";
@@ -132,9 +147,13 @@ namespace persistence
         char* hour() { return text + 11; }
         char* minute() { return text + 14; }
         char* second() { return text + 17; }
+
         constexpr static std::size_t length() { return 20; }
     };
 
+    /**
+    * Converts a chrono time point to an ISO 8601 date string.
+    */
     inline iso_datetime to_iso_datetime(timestamp value) {
         // get number of seconds since the UNIX epoch: Thu, January 1, 1970, 00:00:00 UTC
         std::time_t posix_time = std::chrono::system_clock::to_time_t(value);

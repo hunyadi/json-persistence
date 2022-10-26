@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "persistence/persistence.hpp"
+#include "persistence/object_members.hpp"
 #include "persistence/utility.hpp"
 #include "definitions.hpp"
 #include "measure.hpp"
@@ -8,6 +9,12 @@
 using namespace persistence;
 using namespace test;
 
+/**
+* Serializes an object using various methods, and compares the result to a reference value.
+*
+* @param obj The C++ object to serialize.
+* @param ref_json The reference JSON string to compare against.
+*/
 template<typename T>
 void test_serialize(const T& obj, const std::string& ref_json)
 {
@@ -20,6 +27,12 @@ void test_serialize(const T& obj, const std::string& ref_json)
     EXPECT_EQ(doc_json, ref_json);
 }
 
+/**
+* De-serializes an object using various methods, and compares the result to a reference value.
+*
+* @param obj The JSON string to de-serialize.
+* @param ref_json The reference C++ object to compare against.
+*/
 template<typename T>
 void test_deserialize(const std::string& str, const T& ref_obj)
 {
@@ -31,6 +44,27 @@ void test_deserialize(const std::string& str, const T& ref_obj)
 
     T str_obj = parse<T>(str);
     EXPECT_EQ(str_obj, ref_obj);
+}
+
+/**
+* De-serializes an object using various methods, and compares the pointees.
+*
+* @param obj The JSON string to de-serialize.
+* @param ref_json The reference C++ object to compare against.
+*/
+template<typename T>
+void test_pointer_deserialize(const std::string& str, const T& ref_obj)
+{
+    static_assert(is_pointer_like<T>::value, "only applicable to pointer-like types");
+
+    rapidjson::Document doc = string_to_document(str);
+    EXPECT_FALSE(doc.GetParseError());
+
+    T doc_obj = deserialize<T>(doc);
+    EXPECT_EQ(*doc_obj, *ref_obj);
+
+    T str_obj = parse<T>(str);
+    EXPECT_EQ(*str_obj, *ref_obj);
 }
 
 template<typename T>
@@ -382,8 +416,8 @@ TEST(Deserialization, DateTimeTypes)
 
 TEST(Deserialization, Pointer)
 {
-    EXPECT_EQ(*deserialize<std::unique_ptr<TestValue>>("{\"value\": \"string\"}"), TestValue("string"));
-    EXPECT_EQ(*deserialize<std::shared_ptr<TestValue>>("{\"value\": \"string\"}"), TestValue("string"));
+    test_pointer_deserialize("{\"value\": \"string\"}", std::make_unique<TestValue>("string"));
+    test_pointer_deserialize("{\"value\": \"string\"}", std::make_shared<TestValue>("string"));
 }
 
 TEST(Deserialization, Pair)
@@ -488,6 +522,17 @@ TEST(Deserialization, UnorderedMap)
             { "key1", "value1" }, { "key2", "value2" }
         }
     );
+}
+
+TEST(Deserialization, Members)
+{
+    Example cls;
+    constexpr auto members = member_variables(cls);
+    EXPECT_EQ(std::get<0>(members).name, "bool_value");
+    EXPECT_EQ(std::get<1>(members).name, "string_value");
+    EXPECT_EQ(std::get<2>(members).name, "string_list");
+    EXPECT_EQ(std::get<3>(members).name, "optional_value");
+    EXPECT_EQ(std::get<4>(members).name, "custom_value");
 }
 
 TEST(Deserialization, Object)

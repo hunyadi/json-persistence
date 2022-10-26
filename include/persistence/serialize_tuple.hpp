@@ -6,46 +6,21 @@
 
 namespace persistence
 {
-    template<typename T1, typename T2>
-    struct JsonSerializer<std::pair<T1, T2>> : JsonContextAwareSerializer
+    template<typename C, std::size_t S>
+    struct JsonTupleSerializer : JsonContextAwareSerializer
     {
         using JsonContextAwareSerializer::JsonContextAwareSerializer;
 
-        bool operator()(const std::pair<T1, T2>& container, rapidjson::Value& json) const
+        bool operator()(const C& container, rapidjson::Value& json) const
         {
             json.SetArray();
-            json.Reserve(2, context.global().allocator());
-            rapidjson::Value json_first;
-            SerializerContext context_first(context, Segment(0));
-            if (!serialize(container.first, json_first, context_first)) {
-                return false;
-            }
-            rapidjson::Value json_second;
-            SerializerContext context_second(context, Segment(1));
-            if (!serialize(container.second, json_second, context_second)) {
-                return false;
-            }
-            json.PushBack(json_first, context.global().allocator());
-            json.PushBack(json_second, context.global().allocator());
-            return true;
-        }
-    };
-
-    template<typename... Ts>
-    struct JsonSerializer<std::tuple<Ts...>> : JsonContextAwareSerializer
-    {
-        using JsonContextAwareSerializer::JsonContextAwareSerializer;
-
-        bool operator()(const std::tuple<Ts...>& container, rapidjson::Value& json) const
-        {
-            json.SetArray();
-            json.Reserve(sizeof...(Ts), context.global().allocator());
-            return serialize_elements(container, json, std::make_index_sequence<sizeof...(Ts)>());
+            json.Reserve(S, context.global().allocator());
+            return serialize_elements(container, json, std::make_index_sequence<S>());
         }
 
     private:
         template<std::size_t... I>
-        bool serialize_elements(const std::tuple<Ts...>& container, rapidjson::Value& json, std::index_sequence<I...>) const
+        bool serialize_elements(const C& container, rapidjson::Value& json, std::index_sequence<I...>) const
         {
             return (serialize_element(
                 I,
@@ -63,8 +38,20 @@ namespace persistence
                 return false;
             }
 
-            json.PushBack(item_json, context.global().allocator());  // ownership of value is transferred
+            json.PushBack(item_json, context.global().allocator());
             return true;
         }
+    };
+
+    template<typename T1, typename T2>
+    struct JsonSerializer<std::pair<T1, T2>> : JsonTupleSerializer<std::pair<T1, T2>, 2>
+    {
+        using JsonTupleSerializer<std::pair<T1, T2>, 2>::JsonTupleSerializer;
+    };
+
+    template<typename... Ts>
+    struct JsonSerializer<std::tuple<Ts...>> : JsonTupleSerializer<std::tuple<Ts...>, sizeof...(Ts)>
+    {
+        using JsonTupleSerializer<std::tuple<Ts...>, sizeof...(Ts)>::JsonTupleSerializer;
     };
 }
