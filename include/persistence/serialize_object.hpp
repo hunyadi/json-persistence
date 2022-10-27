@@ -15,8 +15,6 @@ namespace persistence
             , json_object(json_object)
         {}
 
-        JsonObjectSerializer(const JsonObjectSerializer&) = delete;
-
         template<typename T>
         JsonObjectSerializer& operator&(const member_variable<std::optional<T>, C>& member)
         {

@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 #include "persistence/persistence.hpp"
-#include "persistence/object_members.hpp"
 #include "persistence/utility.hpp"
 #include "definitions.hpp"
 #include "measure.hpp"
@@ -524,17 +523,6 @@ TEST(Deserialization, UnorderedMap)
     );
 }
 
-TEST(Deserialization, Members)
-{
-    Example cls;
-    constexpr auto members = member_variables(cls);
-    EXPECT_EQ(std::get<0>(members).name, "bool_value");
-    EXPECT_EQ(std::get<1>(members).name, "string_value");
-    EXPECT_EQ(std::get<2>(members).name, "string_list");
-    EXPECT_EQ(std::get<3>(members).name, "optional_value");
-    EXPECT_EQ(std::get<4>(members).name, "custom_value");
-}
-
 TEST(Deserialization, Object)
 {
     const char* json =
@@ -642,3 +630,10 @@ TEST(Performance, Object)
     EXPECT_GT(values.size(), 0);
 }
 #endif
+
+TEST(Documentation, Example)
+{
+    Example obj = { true, "string", {"a","b","c"}, std::nullopt, {"xyz"} };
+    auto json = serialize_to_string(obj);
+    Example res = parse<Example>(json);
+}

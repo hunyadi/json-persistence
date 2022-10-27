@@ -11,12 +11,21 @@ project(json-persistence VERSION 0.1)
 # compiler configuration
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
 
 if (MSVC)
+    # disable RTTI
+    string(REGEX REPLACE "/GR" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /GR-")
+
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
     # warning level 4 and all warnings as errors
     add_compile_options(/W4 /WX)
 else()
+    # disable RTTI
+    string(REGEX REPLACE "-frtti" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
+
     # lots of warnings and all warnings as errors
     add_compile_options(-Wall -Wextra -pedantic -Werror -Wno-deprecated-declarations)
 endif()
@@ -39,7 +48,7 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 
 # project configuration
-add_executable(json-persistence-tests ${CMAKE_SOURCE_DIR}/test/main.cpp)
+add_executable(json-persistence-tests ${CMAKE_SOURCE_DIR}/test/main.cpp ${CMAKE_SOURCE_DIR}/test/detail.cpp)
 target_include_directories(json-persistence-tests PRIVATE ${CMAKE_SOURCE_DIR}/include ${RAPIDJSON_INCLUDE_DIRS})
 target_link_libraries(json-persistence-tests GTest::gtest_main)
 

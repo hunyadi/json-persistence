@@ -23,7 +23,7 @@ namespace persistence
         bool parse(typename JsonParser<T>::json_type json_item) override
         {
             container.emplace_back();
-            auto&& handler = context.push(std::make_unique<JsonParser<T>>(context, container.back()));
+            auto&& handler = context.emplace<JsonParser<T>>(context, container.back());
             return handler.parse(json_item);
         }
 
@@ -194,7 +194,7 @@ namespace persistence
 
         bool parse(JsonArrayStart) override
         {
-            context.replace(std::make_unique<JsonArrayParser<T>>(context, ref));
+            context.replace<JsonArrayParser<T>>(context, ref);
             return true;
         }
 

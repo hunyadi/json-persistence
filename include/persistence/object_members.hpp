@@ -4,6 +4,9 @@
 
 namespace persistence
 {
+    /**
+    * Enumerates member variables of a class at compile-time.
+    */
     template<typename Class, typename MemberList>
     struct ObjectMemberBuilder
     {

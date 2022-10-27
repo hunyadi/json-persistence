@@ -15,8 +15,6 @@ namespace persistence
             , writer(writer)
         {}
 
-        JsonObjectWriter(const JsonObjectWriter&) = delete;
-
         template<typename T>
         JsonObjectWriter& operator&(const member_variable<std::optional<T>, C>& member)
         {

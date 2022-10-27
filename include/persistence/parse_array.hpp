@@ -24,20 +24,14 @@ namespace persistence
 
         bool parse(typename element_parser_type::json_type json_item) override
         {
-            auto element_parser = std::make_unique<element_parser_type>(context, std::get<I - 1>(container));
-            auto next_parser = std::make_unique<next_parser_type>(context, container);
-            return stateless_parse(context, json_item, std::move(element_parser), std::move(next_parser));
+            return stateless_parse(context, container, json_item);
         }
 
     private:
-        bool stateless_parse(
-                ReaderContext& ctx,
-                typename element_parser_type::json_type json_item,
-                std::unique_ptr<element_parser_type>&& element_parser,
-                std::unique_ptr<next_parser_type>&& next_parser)
+        static bool stateless_parse(ReaderContext& context, C& container, typename element_parser_type::json_type json_item)
         {
-            ctx.replace(std::move(next_parser));
-            auto&& handler = ctx.push(std::move(element_parser));
+            context.replace<next_parser_type>(context, container);
+            auto&& handler = context.emplace<element_parser_type>(context, std::get<I - 1>(container));
             return handler.parse(json_item);
         }
 
@@ -57,7 +51,7 @@ namespace persistence
 
         bool parse(JsonArrayStart) override
         {
-            context.replace(std::make_unique<JsonFixedArrayParser<C, 1, N - 1>>(context, container));
+            context.replace<JsonFixedArrayParser<C, 1, N - 1>>(context, container);
             return true;
         }
 

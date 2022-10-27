@@ -23,44 +23,75 @@ This header-only C++17 library provides type-safe serialization of C++ objects i
 
 ### Intuitive syntax
 
-Define JSON serialization and de-serialization within class definition:
+1. Define member variables for JSON serialization and de-serialization within the class definition:
 
-```cpp
-struct Example
-{
-    bool bool_value = false;
-    std::string string_value;
-    std::vector<std::string> string_list;
-    std::optional<int> optional_value;
-    UserDefinedType custom_value;
-
-    template <typename Archive>
-    void persist(Archive& ar)
+    ```cpp
+    struct Example
     {
-        ar
-            & MEMBER_VARIABLE(bool_value)
-            & MEMBER_VARIABLE(string_value)
-            & MEMBER_VARIABLE(string_list)
-            & MEMBER_VARIABLE(optional_value)
-            & MEMBER_VARIABLE(custom_value)
-            ;
+        bool bool_value = false;
+        std::string string_value;
+        std::vector<std::string> string_list;
+        std::optional<int> optional_value;
+        UserDefinedType custom_value;
+
+        template <typename Archive>
+        constexpr auto persist(Archive& ar)
+        {
+            return ar
+                & MEMBER_VARIABLE(bool_value)
+                & MEMBER_VARIABLE(string_value)
+                & MEMBER_VARIABLE(string_list)
+                & MEMBER_VARIABLE(optional_value)
+                & MEMBER_VARIABLE(custom_value)
+                ;
+        }
+    };
+    ```
+
+2. Serialize an object to a JSON string:
+
+    ```cpp
+    Example obj = { true, "string", {"a","b","c"}, std::nullopt, {"xyz"} };
+    auto json = serialize_to_string(obj);
+    ```
+
+    in which the variable `json` holds:
+
+    ```json
+    {
+        "bool_value": true,
+        "string_value": "string",
+        "string_list": ["a", "b", "c"],
+        "custom_value": {"value": "xyz"}
     }
-};
-```
+    ```
+
+3. Parse a JSON string into an object of the given type:
+
+    ```cpp
+    Example res = parse<Example>(json);
+    ```
 
 ### Ease of use
 
-* Get started by including `<persistence/persistence.hpp>`, which includes all features.
+* Copy the `include` folder to your project's header include path, no build or installation required.
+* Get started by including `<persistence/persistence.hpp>`, which enables all features.
 * Selectively include headers such as `<persistence/write_object.hpp>` to tackle a specific use case:
     * Use `<persistence/write_*.hpp>` for writing a C++ object to a string.
+    * Use `<persistence/parse_*.hpp>` for parsing a string into a C++ object.
     * Use `<persistence/serialize_*.hpp>` for serializing a C++ object to a JSON DOM document.
-    * Use `<persistence/deserialize_*.hpp>` for parsing a string into a C++ object.
+    * Use `<persistence/deserialize_*.hpp>` for parsing a JSON DOM document into a C++ object.
+* Use `<persistence/*_all.hpp>` to import all supported data types for an operation type.
 * Use `<persistence/object.hpp>` to import helper macro `MEMBER_VARIABLE` only.
+* Use `<persistence/utility.hpp>` to import helper functions to convert between JSON DOM document and JSON string.
 
 ### Speed and efficiency
 
-Built on top of [RapidJSON](https://rapidjson.org/).
+* Built on top of [RapidJSON](https://rapidjson.org/).
+* Uses RapidJSON [SAX interface](https://rapidjson.org/md_doc_sax.html) for writing and parsing JSON strings directly, bypassing the JSON DOM.
+* Uses a polymorphic stack to reduce dynamic memory allocations on heap.
 
 ### Platform-neutral
 
-Uses standard C++17 features only (with the exception of RapidJSON engine). Compiles on Linux, MacOS and Windows.
+* Uses standard C++17 features only (with the exception of RapidJSON engine).
+* Compiles on Linux, MacOS and Windows.

@@ -145,7 +145,7 @@ namespace persistence
 
         bool parse(JsonArrayStart) override
         {
-            context.replace(std::make_unique<JsonSetParser<T>>(context, ref));
+            context.replace<JsonSetParser<T>>(context, ref);
             return true;
         }
 

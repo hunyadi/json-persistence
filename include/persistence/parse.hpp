@@ -10,7 +10,7 @@ namespace persistence
     {
         EventDispatcher dispatcher;
         ReaderContext context(dispatcher);
-        context.push(std::make_unique<JsonParser<T>>(context, value));
+        context.emplace<JsonParser<T>>(context, value);
 
         rapidjson::Reader reader;
         rapidjson::StringStream stream(str.data());

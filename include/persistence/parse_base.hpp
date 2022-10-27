@@ -1,5 +1,6 @@
 #pragma once
 #include "detail/defer.hpp"
+#include "detail/polymorphic_stack.hpp"
 #include <memory>
 #include <string_view>
 #include <vector>
@@ -68,7 +69,7 @@ namespace persistence
 
     struct EventDispatcher
     {
-        std::unique_ptr<EventHandler> handler = std::make_unique<EventHandler>();
+        EventHandler* handler = nullptr;
 
         bool Null() { return handler->parse(JsonValueNull()); }
         bool Bool(bool b) { return handler->parse(JsonValueBoolean(b)); }
@@ -123,27 +124,29 @@ namespace persistence
 
         ReaderContext(const ReaderContext&) = delete;
 
-        EventHandler& push(std::unique_ptr<EventHandler>&& handler)
+        template<typename C, typename... T>
+        EventHandler& emplace(T&&... args)
         {
-            stack.push_back(std::move(dispatcher.handler));
-            dispatcher.handler = std::move(handler);
+            dispatcher.handler = &stack.emplace<C>(std::forward<T>(args)...);
             return *dispatcher.handler;
         }
 
         void pop()
         {
-            dispatcher.handler = std::move(stack.back());
-            stack.pop_back();
+            stack.pop();
+            dispatcher.handler = &stack.back();
         }
 
-        void replace(std::unique_ptr<EventHandler>&& handler)
+        template<typename C, typename... T>
+        EventHandler& replace(T&&... args)
         {
-            dispatcher.handler = std::move(handler);
+            stack.pop();
+            return emplace<C>(std::forward<T>(args)...);
         }
 
     private:
         EventDispatcher& dispatcher;
-        std::vector<std::unique_ptr<EventHandler>> stack;
+        detail::PolymorphicStack<EventHandler> stack;
     };
 
     template<typename T, typename Enable = void>

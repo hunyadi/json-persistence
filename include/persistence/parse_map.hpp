@@ -25,7 +25,7 @@ namespace persistence
             std::string_view key = json_key.identifier;
             auto&& [iter, ins] = container.try_emplace(std::string(key));
             value_type& item = iter->second;
-            context.push(std::make_unique<JsonParser<value_type>>(context, item));
+            context.emplace<JsonParser<value_type>>(context, item);
             return true;
         }
 
@@ -46,7 +46,7 @@ namespace persistence
 
         bool parse(JsonObjectStart) override
         {
-            context.replace(std::make_unique<JsonMapParser<C>>(context, container));
+            context.replace<JsonMapParser<C>>(context, container);
             return true;
         }
 

@@ -42,7 +42,7 @@ namespace persistence
 
         virtual void create(ReaderContext& context, C& ref)
         {
-            context.push(std::make_unique<JsonParser<T>>(context, member.ref(ref)));
+            context.emplace<JsonParser<T>>(context, member.ref(ref));
         }
 
     private:
@@ -55,8 +55,9 @@ namespace persistence
     template<typename C>
     struct ObjectMemberVisitor
     {
-        ObjectMemberVisitor() = default;
-        ObjectMemberVisitor(const ObjectMemberVisitor&) = delete;
+        ObjectMemberVisitor(field_factory_map<C>& items)
+            : items(items)
+        {}
 
         template<typename T>
         ObjectMemberVisitor& operator&(const member_variable<T, C>& member)
@@ -66,7 +67,8 @@ namespace persistence
             return *this;
         }
 
-        field_factory_map<C> items;
+    private:
+        field_factory_map<C>& items;
     };
 
     template<typename C>
@@ -77,9 +79,9 @@ namespace persistence
     private:
         static field_factory_map<C> initialize()
         {
-            ObjectMemberVisitor<C> visitor;
+            field_factory_map<C> items;
+            ObjectMemberVisitor<C> visitor(items);
             C().persist(visitor);
-            auto items = std::move(visitor.items);
             return items;
         }
 
@@ -136,7 +138,7 @@ namespace persistence
 
         bool parse(JsonObjectStart) override
         {
-            context.replace(std::make_unique<JsonObjectParser<T>>(context, ref));
+            context.replace<JsonObjectParser<T>>(context, ref);
             return true;
         }
 
