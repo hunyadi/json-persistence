@@ -155,6 +155,17 @@ TEST(Serialization, StringTypes)
     test_serialize(std::string("test string"), "\"test string\"");
 }
 
+TEST(Serialization, Bytes)
+{
+    test_serialize(make_byte_vector(), "\"\"");
+    test_serialize(make_byte_vector( 'f' ), "\"Zg==\"");
+    test_serialize(make_byte_vector( 'f', 'o' ), "\"Zm8=\"");
+    test_serialize(make_byte_vector( 'f', 'o', 'o' ), "\"Zm9v\"");
+    test_serialize(make_byte_vector( 'f', 'o', 'o', 'b' ), "\"Zm9vYg==\"");
+    test_serialize(make_byte_vector( 'f', 'o', 'o', 'b', 'a' ), "\"Zm9vYmE=\"");
+    test_serialize(make_byte_vector( 'f', 'o', 'o', 'b', 'a', 'r' ), "\"Zm9vYmFy\"");
+}
+
 TEST(Serialization, DateTimeTypes)
 {
     test_serialize(
@@ -376,8 +387,19 @@ TEST(Deserialization, EnumTypes)
 
 TEST(Deserialization, StringTypes)
 {
-    test_deserialize<std::string>("\"\"", std::string());
-    test_deserialize<std::string>("\"test string\"", std::string("test string"));
+    test_deserialize("\"\"", std::string());
+    test_deserialize("\"test string\"", std::string("test string"));
+}
+
+TEST(Deserialization, Bytes)
+{
+    test_deserialize("\"\"", make_byte_vector());
+    test_deserialize("\"Zg==\"", make_byte_vector('f'));
+    test_deserialize("\"Zm8=\"", make_byte_vector('f', 'o'));
+    test_deserialize("\"Zm9v\"", make_byte_vector('f', 'o', 'o'));
+    test_deserialize("\"Zm9vYg==\"", make_byte_vector('f', 'o', 'o', 'b'));
+    test_deserialize("\"Zm9vYmE=\"", make_byte_vector('f', 'o', 'o', 'b', 'a'));
+    test_deserialize("\"Zm9vYmFy\"", make_byte_vector('f', 'o', 'o', 'b', 'a', 'r'));
 }
 
 TEST(Deserialization, DateTimeTypes)

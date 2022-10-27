@@ -1,4 +1,5 @@
 #pragma once
+#include "detail/version.hpp"
 #include "detail/write_context.hpp"
 #include "detail/config.hpp"
 #include <rapidjson/writer.h>

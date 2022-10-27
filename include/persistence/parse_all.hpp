@@ -8,6 +8,7 @@
 #include "parse_object.hpp"
 #include "parse_pointer.hpp"
 #include "parse_array.hpp"
+#include "parse_bytes.hpp"
 #include "parse_datetime.hpp"
 #include "parse_enum.hpp"
 #include "parse_map.hpp"

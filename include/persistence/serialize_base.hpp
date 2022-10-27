@@ -1,4 +1,5 @@
 #pragma once
+#include "detail/version.hpp"
 #include "detail/defer.hpp"
 #include "detail/serialize_context.hpp"
 

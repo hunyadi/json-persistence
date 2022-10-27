@@ -8,6 +8,7 @@
 #include "write_object.hpp"
 #include "write_pointer.hpp"
 #include "write_array.hpp"
+#include "write_bytes.hpp"
 #include "write_datetime.hpp"
 #include "write_enum.hpp"
 #include "write_map.hpp"

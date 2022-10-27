@@ -1,4 +1,5 @@
 #pragma once
+#include "detail/version.hpp"
 #include "detail/config.hpp"
 #include "detail/defer.hpp"
 #include <rapidjson/document.h>

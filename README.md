@@ -7,8 +7,9 @@ This header-only C++17 library provides type-safe serialization of C++ objects i
 * Header-only.
 * Compile-time correctness.
 * (De-)serialize fundamental types `bool`, `short`, `int`, `long`, `float`, `double`, etc. to/from their respective JSON type.
-* (De-)serialize `time_point<system_clock>` type as ISO 8601 date-time string in time zone UTC.
+* (De-)serialize `time_point<system_clock>` type to/from an ISO 8601 date-time string in time zone UTC.
 * (De-)serialize enumeration types as their underlying integer type.
+* (De-)serialize `vector<std::byte>` type to/from a Base64-encoded string.
 * (De-)serialize heterogeneous `pair<T1,T2>` and `tuple<T...>` to/from a JSON array.
 * (De-)serialize container types `vector<T>`, `array<T, N>`, `set<T>`, etc. to/from a JSON array.
 * (De-)serialize dictionary types `map<string, T>` and `unordered_map<string, T>` to/from a JSON object.

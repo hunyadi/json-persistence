@@ -8,6 +8,7 @@
 #include "serialize_object.hpp"
 #include "serialize_pointer.hpp"
 #include "serialize_array.hpp"
+#include "serialize_bytes.hpp"
 #include "serialize_datetime.hpp"
 #include "serialize_enum.hpp"
 #include "serialize_map.hpp"

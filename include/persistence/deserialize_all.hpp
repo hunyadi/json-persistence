@@ -8,6 +8,7 @@
 #include "deserialize_object.hpp"
 #include "deserialize_pointer.hpp"
 #include "deserialize_array.hpp"
+#include "deserialize_bytes.hpp"
 #include "deserialize_datetime.hpp"
 #include "deserialize_enum.hpp"
 #include "deserialize_map.hpp"
