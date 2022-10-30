@@ -26,7 +26,7 @@ struct TestValue
     TestValue(const std::string& value) : value(value) {}
 
     template <typename Archive>
-    Archive& persist(Archive& ar)
+    constexpr auto persist(Archive& ar)
     {
         return ar
             & MEMBER_VARIABLE(value)
@@ -50,9 +50,9 @@ struct TestNonCopyable
     TestValue member;
 
     template <typename Archive>
-    void persist(Archive& ar)
+    constexpr auto persist(Archive& ar)
     {
-        ar
+        return ar
             & MEMBER_VARIABLE(member)
             ;
     }
@@ -69,9 +69,9 @@ public:
     std::string member_value;
 
     template <typename Archive>
-    void persist(Archive& ar)
+    constexpr auto persist(Archive& ar)
     {
-        ar
+        return ar
             & MEMBER_VARIABLE(member_value)
             ;
     }
@@ -95,9 +95,9 @@ public:
     std::vector<TestDataTransferSubObject> object_list;
 
     template <typename Archive>
-    void persist(Archive& ar)
+    constexpr auto persist(Archive& ar)
     {
-        ar
+        return ar
             & MEMBER_VARIABLE(bool_value)
             & MEMBER_VARIABLE(bool_list)
             & MEMBER_VARIABLE(int_value)
@@ -131,9 +131,9 @@ struct TestOptionalObjectMember
     std::optional<int> optional_value;
 
     template <typename Archive>
-    void persist(Archive& ar)
+    constexpr auto persist(Archive& ar)
     {
-        ar
+        return ar
             & MEMBER_VARIABLE(optional_value)
             ;
     }
@@ -149,9 +149,9 @@ struct TestBackReferenceArray
     std::vector<std::shared_ptr<TestValue>> values;
 
     template <typename Archive>
-    void persist(Archive& ar)
+    constexpr auto persist(Archive& ar)
     {
-        ar
+        return ar
             & MEMBER_VARIABLE(values)
             ;
     }
@@ -163,9 +163,9 @@ struct TestBackReferenceObject
     std::vector<std::shared_ptr<TestValue>> inner;
 
     template <typename Archive>
-    void persist(Archive& ar)
+    constexpr auto persist(Archive& ar)
     {
-        ar
+        return ar
             & MEMBER_VARIABLE(outer)
             & MEMBER_VARIABLE(inner)
             ;
@@ -178,9 +178,9 @@ struct UserDefinedType
     std::string value;
 
     template <typename Archive>
-    void persist(Archive& ar)
+    constexpr auto persist(Archive& ar)
     {
-        ar
+        return ar
             & MEMBER_VARIABLE(value)
             ;
     }

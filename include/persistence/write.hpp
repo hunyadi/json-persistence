@@ -30,7 +30,7 @@ namespace persistence
     }
 
     template<typename T>
-    bool serialize_to_string(const T& obj, StringWriter& writer)
+    bool write_to_string(const T& obj, StringWriter& writer)
     {
         GlobalWriterContext global;
         WriterContext local(global);
@@ -41,11 +41,11 @@ namespace persistence
     * Generates the JSON string representation of an object.
     */
     template<typename T>
-    bool serialize_to_string(const T& obj, std::string& str)
+    bool write_to_string(const T& obj, std::string& str)
     {
         rapidjson::StringBuffer buffer;
         StringWriter writer(buffer);
-        bool result = serialize_to_string(obj, writer);
+        bool result = write_to_string(obj, writer);
         if (result) {
             str.assign(buffer.GetString(), buffer.GetString() + buffer.GetSize());
             return true;
@@ -55,10 +55,10 @@ namespace persistence
     }
 
     template<typename T>
-    std::string serialize_to_string(const T& obj)
+    std::string write_to_string(const T& obj)
     {
         std::string str;
-        if (!serialize_to_string(obj, str)) {
+        if (!write_to_string(obj, str)) {
             throw JsonSerializationError();
         }
         return str;

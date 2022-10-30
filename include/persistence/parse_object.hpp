@@ -1,5 +1,6 @@
 #pragma once
 #include "object.hpp"
+#include "object_members.hpp"
 #include "parse_base.hpp"
 #include <optional>
 
@@ -27,67 +28,11 @@ namespace persistence
     };
 
     template<typename C>
-    struct JsonFieldFactory
-    {
-        virtual ~JsonFieldFactory() {}
-        virtual void create(ReaderContext& context, C& ref) = 0;
-    };
-
-    template<typename T, typename C>
-    struct JsonTypedFieldFactory : JsonFieldFactory<C>
-    {
-        JsonTypedFieldFactory(const member_variable<T, C>& member)
-            : member(member)
-        {}
-
-        virtual void create(ReaderContext& context, C& ref)
-        {
-            context.emplace<JsonParser<T>>(context, member.ref(ref));
-        }
-
-    private:
-        member_variable<T, C> member;
-    };
-
-    template<typename C>
-    using field_factory_map = std::vector<std::pair<std::string_view, std::unique_ptr<JsonFieldFactory<C>>>>;
-
-    template<typename C>
-    struct ObjectMemberVisitor
-    {
-        ObjectMemberVisitor(field_factory_map<C>& items)
-            : items(items)
-        {}
-
-        template<typename T>
-        ObjectMemberVisitor& operator&(const member_variable<T, C>& member)
-        {
-            std::unique_ptr<JsonFieldFactory<C>> factory = std::make_unique<JsonTypedFieldFactory<T, C>>(member);
-            items.push_back(std::make_pair(member.name, std::move(factory)));
-            return *this;
-        }
-
-    private:
-        field_factory_map<C>& items;
-    };
-
-    template<typename C>
     struct JsonObjectParser : EventHandler
     {
         static_assert(std::is_class<C>::value, "expected a class type");
 
-    private:
-        static field_factory_map<C> initialize()
-        {
-            field_factory_map<C> items;
-            ObjectMemberVisitor<C> visitor(items);
-            C().persist(visitor);
-            return items;
-        }
-
     public:
-        static inline field_factory_map<C> parsers = initialize();
-
         JsonObjectParser(ReaderContext& context, C& ref)
             : context(context)
             , ref(ref)
@@ -102,33 +47,53 @@ namespace persistence
         bool parse(JsonObjectKey json_key) override
         {
             std::string_view key = json_key.identifier;
-            for (auto&& p : parsers) {
-                if (p.first == key) {
-                    p.second->create(context, ref);
-                    return true;
-                }
-            }
-            return false;
+            return std::apply([=](const auto&... members) {
+                return (parse_member(key, members) || ...);
+            }, members);
         }
 
     private:
+        static auto initialize()
+        {
+            C cls;
+            return member_variables(cls);
+        }
+
+        template<typename T>
+        bool parse_member(const std::string_view& key, const member_variable<T, C>& member)
+        {
+            if (member.name == key) {
+                context.emplace<JsonParser<T>>(context, member.ref(ref));
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+    private:
+        inline static auto members = initialize();
         ReaderContext& context;
         C& ref;
     };
 
-    template<typename, typename = void>
-    struct has_custom_parse : std::false_type {};
+    template<typename T>
+    using parser_function = decltype(std::declval<T&>().persist(std::declval<ObjectMemberCounter<T>&>()));
+
+    template<typename T, typename Enable = void>
+    struct has_custom_parser : std::false_type
+    {};
 
     template<typename T>
-    struct has_custom_parse<T, std::void_t<
-        decltype(
-            std::declval<T&>().persist(std::declval<ObjectMemberVisitor<T>&>())
-        )
-    >> : std::true_type {};
-
-    template<typename T>
-    struct JsonParser<T, typename std::enable_if<has_custom_parse<T>::value>::type> : EventHandler
+    struct has_custom_parser<T, typename std::enable_if<std::is_class<T>::value>::type>
     {
+        constexpr static bool value = detect<T, parser_function>::value;
+    };
+
+    template<typename T>
+    struct JsonParser<T, typename std::enable_if<has_custom_parser<T>::value>::type> : EventHandler
+    {
+        static_assert(!std::is_same<parser_function<T>, void>::value, "`persist` function cannot have a return type of `void`, use `auto` instead");
+
         using json_type = JsonObjectStart;
 
         JsonParser(ReaderContext& context, T& ref)

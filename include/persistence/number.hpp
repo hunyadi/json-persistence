@@ -1,25 +1,47 @@
 #pragma once
+#include "detail/defer.hpp"
 #include <charconv>
 #include <cstdlib>
 #include <string_view>
 
 namespace persistence
 {
+    namespace detail
+    {
+        template<typename T>
+        bool parse_from_chars(const std::string_view& str, T& value)
+        {
+            const char* last = str.data() + str.size();
+            auto result = std::from_chars(str.data(), last, value);
+            return result.ec == std::errc() && result.ptr == last;
+        }
+    }
+
     template<typename T, typename Enable = void>
     struct NumberParser
-    {};
+    {
+        static_assert(detail::defer<T>::value, "unrecognized number type");
+    };
 
     template<typename T>
     struct NumberParser<T, typename std::enable_if<std::is_integral<T>::value>::type>
     {
         bool parse(const std::string_view& str, T& value)
         {
-            const char* last = str.data() + str.size();
-            auto result = std::from_chars(str.data(), last, value);
-            return result.ec == std::errc() && result.ptr == last;
+            return detail::parse_from_chars(str, value);
         }
     };
 
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+    template<typename T>
+    struct NumberParser<T, typename std::enable_if<std::is_floating_point<T>::value>::type>
+    {
+        bool parse(const std::string_view& str, T& value)
+        {
+            return detail::parse_from_chars(str, value);
+        }
+    };
+#else
     template<>
     struct NumberParser<float>
     {
@@ -41,6 +63,18 @@ namespace persistence
             return last == str.data() + str.size();
         }
     };
+
+    template<>
+    struct NumberParser<long double>
+    {
+        bool parse(const std::string_view& str, long double& value)
+        {
+            char* last;
+            value = std::strtold(str.data(), &last);
+            return last == str.data() + str.size();
+        }
+    };
+#endif
 
     template<typename T>
     bool parse_number(std::string_view str, T& value)

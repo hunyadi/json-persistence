@@ -70,15 +70,18 @@ namespace persistence
         bool result = true;
     };
 
-    template<typename, typename = void>
-    struct has_custom_deserializer : std::false_type {};
+    template<typename T>
+    using deserializer_function = decltype(std::declval<T&>().persist(std::declval<JsonObjectDeserializer<T>&>()));
+
+    template<typename T, typename Enable = void>
+    struct has_custom_deserializer : std::false_type
+    {};
 
     template<typename T>
-    struct has_custom_deserializer<T, std::void_t<
-        decltype(
-            std::declval<T&>().persist(std::declval<JsonObjectDeserializer<T>&>())
-        )
-        >> : std::true_type {};
+    struct has_custom_deserializer<T, typename std::enable_if<std::is_class<T>::value>::type>
+    {
+        constexpr static bool value = detect<T, deserializer_function>::value;
+    };
 
     /**
     * Writes a value with a specific type to JSON.

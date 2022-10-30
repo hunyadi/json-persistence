@@ -53,7 +53,7 @@ This header-only C++17 library provides type-safe serialization of C++ objects i
 
     ```cpp
     Example obj = { true, "string", {"a","b","c"}, std::nullopt, {"xyz"} };
-    auto json = serialize_to_string(obj);
+    auto json = write_to_string(obj);
     ```
 
     in which the variable `json` holds:

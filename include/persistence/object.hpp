@@ -6,7 +6,7 @@
 * Helps enumerate member variables in a persistence template function.
 */
 #define NAMED_MEMBER_VARIABLE(name, variable) \
-    ::persistence::member_variable<decltype(variable), std::remove_pointer_t<decltype(this)>>(name, &std::remove_reference_t<decltype(*this)>::variable)
+    ::persistence::member_variable<decltype(variable), std::remove_cv_t<std::remove_pointer_t<decltype(this)>>>(name, &std::remove_reference_t<decltype(*this)>::variable)
 
 #define MEMBER_VARIABLE(variable) \
     NAMED_MEMBER_VARIABLE(#variable, variable)
@@ -21,6 +21,9 @@ namespace persistence
     template<typename Type, typename Class>
     struct member_variable
     {
+        using member_type = Type;
+        using class_type = Class;
+
         constexpr member_variable(const std::string_view& name, Type Class::* member_pointer)
             : name(name)
             , member_pointer(member_pointer)

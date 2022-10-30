@@ -27,7 +27,7 @@ else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
 
     # lots of warnings and all warnings as errors
-    add_compile_options(-Wall -Wextra -pedantic -Werror -Wno-deprecated-declarations)
+    add_compile_options(-Wall -Wextra -pedantic -Werror -Wfatal-errors -Wno-deprecated-declarations)
 endif()
 
 # locate RapidJSON

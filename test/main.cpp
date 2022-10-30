@@ -17,7 +17,7 @@ using namespace test;
 template<typename T>
 void test_serialize(const T& obj, const std::string& ref_json)
 {
-    auto&& str_json = serialize_to_string(obj);
+    auto&& str_json = write_to_string(obj);
     EXPECT_EQ(str_json, ref_json);
 
     rapidjson::Document doc;
@@ -632,7 +632,7 @@ TEST(Performance, Object)
     }
 
     auto&& json = measure("serialize from object to string", [&]() {
-        return serialize_to_string(items);
+        return write_to_string(items);
     });
     std::cout << "JSON string has size of " << json.size() << " B" << std::endl;
     measure("serialize from object to DOM", [&]() {
@@ -656,6 +656,6 @@ TEST(Performance, Object)
 TEST(Documentation, Example)
 {
     Example obj = { true, "string", {"a","b","c"}, std::nullopt, {"xyz"} };
-    auto json = serialize_to_string(obj);
+    auto json = write_to_string(obj);
     Example res = parse<Example>(json);
 }
