@@ -22,7 +22,7 @@ namespace persistence
     {
         T obj;
         if (!parse(str, obj)) {
-            throw JsonDeserializationError();
+            throw JsonParseError();
         }
         return obj;
     }

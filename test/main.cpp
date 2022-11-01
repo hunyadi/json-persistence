@@ -71,10 +71,11 @@ template<typename T>
 void test_no_deserialize(const std::string& str)
 {
     rapidjson::Document doc = string_to_document(str);
-    EXPECT_FALSE(doc.GetParseError());
+    EXPECT_FALSE(doc.HasParseError());
 
     T obj;
     EXPECT_FALSE(deserialize<T>(doc, obj));
+    EXPECT_THROW(deserialize<T>(doc), JsonDeserializationError);
     EXPECT_FALSE(parse<T>(str, obj));
 }
 
@@ -356,11 +357,15 @@ TEST(Deserialization, BooleanTypes)
 
     test_no_deserialize<bool>("0");
     test_no_deserialize<bool>("1");
+    test_no_deserialize<bool>("\"string\"");
+    test_no_deserialize<bool>("[]");
+    test_no_deserialize<bool>("{}");
 }
 
 TEST(Deserialization, NumericTypes)
 {
     test_deserialize("127", static_cast<char>(127));
+    test_deserialize("127", static_cast<signed char>(127));
     test_deserialize("127", static_cast<unsigned char>(127));
 
     test_deserialize("1024", 1024);
@@ -380,6 +385,10 @@ TEST(Deserialization, NumericTypes)
 
     test_no_deserialize<int>("1.0");
     test_no_deserialize<int>("-1.0");
+    test_no_deserialize<int>("true");
+    test_no_deserialize<int>("\"string\"");
+    test_no_deserialize<int>("[]");
+    test_no_deserialize<int>("{}");
 }
 
 TEST(Deserialization, EnumTypes)
@@ -388,6 +397,10 @@ TEST(Deserialization, EnumTypes)
     test_deserialize("2", Side::Right);
     test_no_deserialize<Side>("\"Left\"");
     test_no_deserialize<Side>("\"Right\"");
+    test_no_deserialize<Side>("true");
+    test_no_deserialize<Side>("\"string\"");
+    test_no_deserialize<Side>("[]");
+    test_no_deserialize<Side>("{}");
 
     test_deserialize("0", Suit::Diamonds);
     test_deserialize("1", Suit::Hearts);
@@ -411,6 +424,11 @@ TEST(Deserialization, StringTypes)
     test_deserialize("\"\"", std::string());
     test_deserialize("\"test string\"", std::string("test string"));
     test_deserialize("\"test\\u0000string\"", std::string(view_from_chars("test\0string")));
+
+    test_no_deserialize<std::string>("true");
+    test_no_deserialize<std::string>("23");
+    test_no_deserialize<std::string>("[]");
+    test_no_deserialize<std::string>("{}");
 }
 
 TEST(Deserialization, Bytes)
@@ -422,6 +440,15 @@ TEST(Deserialization, Bytes)
     test_deserialize("\"Zm9vYg==\"", make_byte_vector('f', 'o', 'o', 'b'));
     test_deserialize("\"Zm9vYmE=\"", make_byte_vector('f', 'o', 'o', 'b', 'a'));
     test_deserialize("\"Zm9vYmFy\"", make_byte_vector('f', 'o', 'o', 'b', 'a', 'r'));
+
+    test_no_deserialize<byte_vector>("\"A\"");
+    test_no_deserialize<byte_vector>("\"AA\"");
+    test_no_deserialize<byte_vector>("\"AAA\"");
+    test_no_deserialize<byte_vector>("true");
+    test_no_deserialize<byte_vector>("23");
+    test_no_deserialize<byte_vector>("[]");
+    test_no_deserialize<byte_vector>("[\"Z\",\"m\",\"9\",\"v\"]");
+    test_no_deserialize<byte_vector>("{}");
 }
 
 TEST(Deserialization, DateTimeTypes)
@@ -455,6 +482,12 @@ TEST(Deserialization, DateTimeTypes)
     test_no_deserialize<timestamp>("\"2022-02-01THH:02:01Z\"");
     test_no_deserialize<timestamp>("\"2022-02-01T23:MM:01Z\"");
     test_no_deserialize<timestamp>("\"2022-02-01T23:02:SSZ\"");
+
+    // invalid type
+    test_no_deserialize<timestamp>("true");
+    test_no_deserialize<timestamp>("23");
+    test_no_deserialize<timestamp>("[]");
+    test_no_deserialize<timestamp>("{}");
 }
 
 TEST(Deserialization, Pointer)
@@ -469,6 +502,13 @@ TEST(Deserialization, Pair)
         "[19, \"eighty-two\"]",
         std::make_pair(19, std::string("eighty-two"))
     );
+
+    test_no_deserialize<std::pair<int, std::string>>("[1]");
+    test_no_deserialize<std::pair<int, std::string>>("[1,\"string1\",23,\"string2\"]");
+    test_no_deserialize<std::pair<int, std::string>>("true");
+    test_no_deserialize<std::pair<int, std::string>>("23");
+    test_no_deserialize<std::pair<int, std::string>>("\"string\"");
+    test_no_deserialize<std::pair<int, std::string>>("{}");
 }
 
 TEST(Deserialization, Tuple)
@@ -479,6 +519,13 @@ TEST(Deserialization, Tuple)
         "[19, \"eighty-two\"]",
         std::make_tuple(19, std::string("eighty-two"))
     );
+
+    test_no_deserialize<std::tuple<int, std::string>>("[1]");
+    test_no_deserialize<std::tuple<int, std::string>>("[1,\"string1\",23,\"string2\"]");
+    test_no_deserialize<std::tuple<int, std::string>>("true");
+    test_no_deserialize<std::tuple<int, std::string>>("23");
+    test_no_deserialize<std::tuple<int, std::string>>("\"string\"");
+    test_no_deserialize<std::tuple<int, std::string>>("{}");
 }
 
 TEST(Deserialization, Variant)
@@ -505,6 +552,13 @@ TEST(Deserialization, Vector)
 
     std::vector<std::vector<int>> ref_nested = { { 1 }, { 1,2 }, { 1,2,3 } };
     test_deserialize("[[1], [1, 2], [1, 2, 3]]", ref_nested);
+
+    test_no_deserialize<std::vector<int>>("[\"one\"]");
+    test_no_deserialize<std::vector<std::string>>("[2,3]");
+    test_no_deserialize<std::vector<int>>("true");
+    test_no_deserialize<std::vector<int>>("23");
+    test_no_deserialize<std::vector<int>>("\"string\"");
+    test_no_deserialize<std::vector<int>>("{}");
 }
 
 TEST(Deserialization, Array)
@@ -512,6 +566,16 @@ TEST(Deserialization, Array)
     test_deserialize("[]", std::array<int, 0> {});
     test_deserialize("[1, 2, 3]", std::array<int, 3> { 1, 2, 3 });
     test_deserialize("[\"one\", \"two\"]", std::array<std::string, 2> { "one", "two" });
+
+    test_no_deserialize<std::array<int, 2>>("[]");
+    test_no_deserialize<std::array<int, 2>>("[1]");
+    test_no_deserialize<std::array<int, 2>>("[1,2,3]");
+    test_no_deserialize<std::array<std::string, 2>>("[1,2]");
+    test_no_deserialize<std::array<int, 2>>("[\"one\",\"two\"]");
+    test_no_deserialize<std::array<int, 2>>("true");
+    test_no_deserialize<std::array<int, 2>>("23");
+    test_no_deserialize<std::array<int, 2>>("\"string\"");
+    test_no_deserialize<std::array<int, 2>>("{}");
 }
 
 TEST(Deserialization, Set)
@@ -527,6 +591,13 @@ TEST(Deserialization, Set)
         "[\"one\", \"two\"]",
         std::set<std::string> { "one", "two" }
     );
+
+    test_no_deserialize<std::set<int>>("[\"one\"]");
+    test_no_deserialize<std::set<std::string>>("[2,3]");
+    test_no_deserialize<std::set<int>>("true");
+    test_no_deserialize<std::set<int>>("23");
+    test_no_deserialize<std::set<int>>("\"string\"");
+    test_no_deserialize<std::set<int>>("{}");
 }
 
 TEST(Deserialization, Map)
@@ -546,6 +617,12 @@ TEST(Deserialization, Map)
             { "key1", "value1" }, { "key2", "value2" }
         }
     );
+
+    test_no_deserialize<std::map<std::string, int>>("true");
+    test_no_deserialize<std::map<std::string, int>>("23");
+    test_no_deserialize<std::map<std::string, int>>("\"string\"");
+    test_no_deserialize<std::map<std::string, int>>("[]");
+    test_no_deserialize<std::map<std::string, int>>("[1]");
 }
 
 TEST(Deserialization, UnorderedMap)
@@ -565,6 +642,12 @@ TEST(Deserialization, UnorderedMap)
             { "key1", "value1" }, { "key2", "value2" }
         }
     );
+
+    test_no_deserialize<std::unordered_map<std::string, int>>("true");
+    test_no_deserialize<std::unordered_map<std::string, int>>("23");
+    test_no_deserialize<std::unordered_map<std::string, int>>("\"string\"");
+    test_no_deserialize<std::unordered_map<std::string, int>>("[]");
+    test_no_deserialize<std::unordered_map<std::string, int>>("[1]");
 }
 
 TEST(Deserialization, Object)
@@ -595,7 +678,8 @@ TEST(Deserialization, Object)
     ref.object_list = { o, o };
     test_deserialize(json, ref);
 
-    test_deserialize("{\"member\":{\"value\": \"string\"}}", TestNonCopyable("string"));
+    test_deserialize("{\"member\": {\"value\": \"string\"}}", TestNonCopyable("string"));
+    test_no_deserialize< TestNonCopyable>("{\"member\": {\"value\": 23}}");
 }
 
 TEST(Deserialization, Optional)
@@ -653,22 +737,26 @@ TEST(Performance, Object)
         items.push_back(item);
     }
 
-    auto&& json = measure("serialize from object to string", [&]() {
+    auto&& json = measure("write object to string", [&]() {
         return write_to_string(items);
     });
     std::cout << "JSON string has size of " << json.size() << " B" << std::endl;
-    measure("serialize from object to DOM", [&]() {
+    measure("serialize object to DOM", [&]() {
         rapidjson::Document doc;
         serialize_to_document(items, doc);
     });
-    measure("deserialize from string to DOM", [&]() {
+    measure("deserialize DOM from string", [&]() {
         rapidjson::Document doc;
         doc.Parse(json.data());
     });
-    measure("deserialize from string to object via DOM", [&]() {
+    measure("deserialize object from string via DOM with exceptions enabled", [&]() {
         deserialize<std::vector<TestDataTransferObject>>(json);
     });
-    auto&& values = measure("deserialize from string to object", [&]() {
+    measure("deserialize object from string via DOM with exceptions disabled", [&]() {
+        std::vector<TestDataTransferObject> obj;
+        deserialize(json, obj);
+    });
+    auto&& values = measure("parse object from string", [&]() {
         return parse<std::vector<TestDataTransferObject>>(json);
     });
     EXPECT_GT(values.size(), 0);

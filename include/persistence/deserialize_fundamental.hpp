@@ -1,171 +1,307 @@
 #pragma once
 #include "deserialize_base.hpp"
+#include "detail/deserialize_aware.hpp"
 
 namespace persistence
 {
-    template<typename T>
-    struct JsonSignedIntegerDeserializer
+    namespace detail
     {
+        template<bool Exception, typename NarrowType, typename WideType>
+        bool check_range(WideType integer_value, DeserializerContext& context)
+        {
+            if constexpr (std::is_signed<NarrowType>::value) {
+                if (integer_value < std::numeric_limits<NarrowType>::min() || integer_value > std::numeric_limits<NarrowType>::max()) {
+                    if constexpr (Exception) {
+                        throw JsonDeserializationError(
+                            "signed integer out of range",
+                            Path(context.segments()).str()
+                        );
+                    } else {
+                        return false;
+                    }
+                }
+            } else {
+                if (integer_value > std::numeric_limits<NarrowType>::max()) {
+                    if constexpr (Exception) {
+                        throw JsonDeserializationError(
+                            "unsigned integer out of range",
+                            Path(context.segments()).str()
+                        );
+                    } else {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+    }
+
+    template<bool Exception, typename T>
+    struct JsonSignedIntegerDeserializer : JsonContextAwareDeserializer
+    {
+        using JsonContextAwareDeserializer::JsonContextAwareDeserializer;
+
         static_assert(std::is_integral<T>::value && std::is_signed<T>::value, "T must be a signed integer");
 
         bool operator()(const rapidjson::Value& json, T& value) const
         {
-            if (json.IsInt()) {
-                auto integer_value = json.GetInt();
-                if (integer_value >= std::numeric_limits<T>::min() && integer_value <= std::numeric_limits<T>::max()) {
-                    value = static_cast<T>(integer_value);
-                    return true;
+            if (!json.IsInt()) {
+                if constexpr (Exception) {
+                    throw JsonDeserializationError(
+                        "wrong JSON data type; expected: integer",
+                        Path(context.segments()).str()
+                    );
+                } else {
+                    return false;
                 }
             }
-            return false;
+
+            auto integer_value = json.GetInt();
+            if (!detail::check_range<Exception, T>(integer_value, context)) {
+                return false;
+            }
+
+            value = static_cast<T>(integer_value);
+            return true;
         }
     };
 
-    template<typename T>
-    struct JsonUnsignedIntegerDeserializer
+    template<bool Exception, typename T>
+    struct JsonUnsignedIntegerDeserializer : JsonContextAwareDeserializer
     {
+        using JsonContextAwareDeserializer::JsonContextAwareDeserializer;
+
         static_assert(std::is_integral<T>::value && std::is_unsigned<T>::value, "T must be an unsigned integer");
 
         bool operator()(const rapidjson::Value& json, T& value) const
         {
-            if (json.IsUint()) {
-                auto integer_value = json.GetUint();
-                if (integer_value <= std::numeric_limits<T>::max()) {
-                    value = static_cast<T>(integer_value);
-                    return true;
+            if (!json.IsUint()) {
+                if constexpr (Exception) {
+                    throw JsonDeserializationError(
+                        "wrong JSON data type; expected: unsigned integer",
+                        Path(context.segments()).str()
+                    );
+                } else {
+                    return false;
                 }
             }
-            return false;
+
+            auto integer_value = json.GetUint();
+            if (!detail::check_range<Exception, T>(integer_value, context)) {
+                return false;
+            }
+
+            value = static_cast<T>(integer_value);
+            return true;
         }
     };
 
-    template<typename T>
-    struct JsonSignedLongIntegerDeserializer
+    template<bool Exception, typename T>
+    struct JsonSignedLongIntegerDeserializer : JsonContextAwareDeserializer
     {
+        using JsonContextAwareDeserializer::JsonContextAwareDeserializer;
+
         static_assert(std::is_integral<T>::value && std::is_signed<T>::value, "T must be a signed integer");
 
         bool operator()(const rapidjson::Value& json, T& value) const
         {
-            if (json.IsInt64()) {
-                auto integer_value = json.GetInt64();
-                if (integer_value >= std::numeric_limits<T>::min() && integer_value <= std::numeric_limits<T>::max()) {
-                    value = static_cast<T>(integer_value);
-                    return true;
+            if (!json.IsInt64()) {
+                if constexpr (Exception) {
+                    throw JsonDeserializationError(
+                        "wrong JSON data type; expected: 64-bit integer",
+                        Path(context.segments()).str()
+                    );
+                } else {
+                    return false;
                 }
             }
-            return false;
+
+            auto integer_value = json.GetInt64();
+            if (!detail::check_range<Exception, T>(integer_value, context)) {
+                return false;
+            }
+
+            value = static_cast<T>(integer_value);
+            return true;
         }
     };
 
-    template<typename T>
-    struct JsonUnsignedLongIntegerDeserializer
+    template<bool Exception, typename T>
+    struct JsonUnsignedLongIntegerDeserializer : JsonContextAwareDeserializer
     {
+        using JsonContextAwareDeserializer::JsonContextAwareDeserializer;
+
         static_assert(std::is_integral<T>::value && std::is_unsigned<T>::value, "T must be an unsigned integer");
 
         bool operator()(const rapidjson::Value& json, T& value) const
         {
-            if (json.IsUint64()) {
-                auto integer_value = json.GetUint64();
-                if (integer_value <= std::numeric_limits<T>::max()) {
-                    value = static_cast<T>(integer_value);
-                    return true;
+            if (!json.IsUint64()) {
+                if constexpr (Exception) {
+                    throw JsonDeserializationError(
+                        "wrong JSON data type; expected: unsigned 64-bit integer",
+                        Path(context.segments()).str()
+                    );
+                } else {
+                    return false;
                 }
             }
-            return false;
+
+            auto integer_value = json.GetUint64();
+            if (!detail::check_range<Exception, T>(integer_value, context)) {
+                return false;
+            }
+
+            value = static_cast<T>(integer_value);
+            return true;
         }
     };
 
-    template<>
-    struct JsonDeserializer<std::nullptr_t>
+    template<bool Exception>
+    struct JsonDeserializer<Exception, std::nullptr_t> : JsonContextAwareDeserializer
     {
+        using JsonContextAwareDeserializer::JsonContextAwareDeserializer;
+
         bool operator()(const rapidjson::Value& json, std::nullptr_t& value) const
         {
-            if (json.IsNull()) {
-                value = nullptr;
-                return true;
-            } else {
-                return false;
+            if (!json.IsNull()) {
+                if constexpr (Exception) {
+                    throw JsonDeserializationError(
+                        "wrong JSON data type; expected: null",
+                        Path(context.segments()).str()
+                    );
+                } else {
+                    return false;
+                }
             }
+
+            value = nullptr;
+            return true;
         }
     };
 
-    template<>
-    struct JsonDeserializer<bool>
+    template<bool Exception>
+    struct JsonDeserializer<Exception, bool> : JsonContextAwareDeserializer
     {
+        using JsonContextAwareDeserializer::JsonContextAwareDeserializer;
+
         bool operator()(const rapidjson::Value& json, bool& value) const
         {
-            if (json.IsBool()) {
-                value = json.GetBool();
-                return true;
-            } else {
-                return false;
+            if (!json.IsBool()) {
+                if constexpr (Exception) {
+                    throw JsonDeserializationError(
+                        "wrong JSON data type; expected: boolean",
+                        Path(context.segments()).str()
+                    );
+                } else {
+                    return false;
+                }
             }
+
+            value = json.GetBool();
+            return true;
         }
     };
 
-    template<>
-    struct JsonDeserializer<char> : std::conditional< std::is_signed<char>::value, JsonSignedIntegerDeserializer<char>, JsonUnsignedIntegerDeserializer<char> >::type
-    {};
-
-    template<>
-    struct JsonDeserializer<signed char> : JsonSignedIntegerDeserializer<signed char>
-    {};
-
-    template<>
-    struct JsonDeserializer<unsigned char> : JsonUnsignedIntegerDeserializer<unsigned char>
-    {};
-
-    template<>
-    struct JsonDeserializer<short> : JsonSignedIntegerDeserializer<short>
-    {};
-
-    template<>
-    struct JsonDeserializer<unsigned short> : JsonUnsignedIntegerDeserializer<unsigned short>
-    {};
-
-    template<>
-    struct JsonDeserializer<int> : JsonSignedIntegerDeserializer<int>
-    {};
-
-    template<>
-    struct JsonDeserializer<unsigned int> : JsonUnsignedIntegerDeserializer<unsigned int>
-    {};
-
-    template<>
-    struct JsonDeserializer<long> : JsonSignedLongIntegerDeserializer<long>
-    {};
-
-    template<>
-    struct JsonDeserializer<unsigned long> : JsonUnsignedLongIntegerDeserializer<unsigned long>
-    {};
-
-    template<>
-    struct JsonDeserializer<long long> : JsonSignedLongIntegerDeserializer<long long>
-    {};
-
-    template<>
-    struct JsonDeserializer<unsigned long long> : JsonUnsignedLongIntegerDeserializer<unsigned long long>
-    {};
-
-    template<typename T>
-    struct JsonFloatDeserializer
+    template<bool Exception>
+    struct JsonDeserializer<Exception, signed char> : JsonSignedIntegerDeserializer<Exception, signed char>
     {
+        using JsonSignedIntegerDeserializer<Exception, signed char>::JsonSignedIntegerDeserializer;
+    };
+
+    template<bool Exception>
+    struct JsonDeserializer<Exception, unsigned char> : JsonUnsignedIntegerDeserializer<Exception, unsigned char>
+    {
+        using JsonUnsignedIntegerDeserializer<Exception, unsigned char>::JsonUnsignedIntegerDeserializer;
+    };
+
+    template<bool Exception>
+    struct JsonDeserializer<Exception, char> : JsonSignedIntegerDeserializer<Exception, char>
+    {
+        using JsonSignedIntegerDeserializer<Exception, char>::JsonSignedIntegerDeserializer;
+    };
+
+    template<bool Exception>
+    struct JsonDeserializer<Exception, short> : JsonSignedIntegerDeserializer<Exception, short>
+    {
+        using JsonSignedIntegerDeserializer<Exception, short>::JsonSignedIntegerDeserializer;
+    };
+
+    template<bool Exception>
+    struct JsonDeserializer<Exception, unsigned short> : JsonUnsignedIntegerDeserializer<Exception, unsigned short>
+    {
+        using JsonUnsignedIntegerDeserializer<Exception, unsigned short>::JsonUnsignedIntegerDeserializer;
+    };
+
+    template<bool Exception>
+    struct JsonDeserializer<Exception, int> : JsonSignedIntegerDeserializer<Exception, int>
+    {
+        using JsonSignedIntegerDeserializer<Exception, int>::JsonSignedIntegerDeserializer;
+    };
+
+    template<bool Exception>
+    struct JsonDeserializer<Exception, unsigned int> : JsonUnsignedIntegerDeserializer<Exception, unsigned int>
+    {
+        using JsonUnsignedIntegerDeserializer<Exception, unsigned int>::JsonUnsignedIntegerDeserializer;
+    };
+
+    template<bool Exception>
+    struct JsonDeserializer<Exception, long> : JsonSignedLongIntegerDeserializer<Exception, long>
+    {
+        using JsonSignedLongIntegerDeserializer<Exception, long>::JsonSignedLongIntegerDeserializer;
+    };
+
+    template<bool Exception>
+    struct JsonDeserializer<Exception, unsigned long> : JsonUnsignedLongIntegerDeserializer<Exception, unsigned long>
+    {
+        using JsonUnsignedLongIntegerDeserializer<Exception, unsigned long>::JsonUnsignedLongIntegerDeserializer;
+    };
+
+    template<bool Exception>
+    struct JsonDeserializer<Exception, long long> : JsonSignedLongIntegerDeserializer<Exception, long long>
+    {
+        using JsonSignedLongIntegerDeserializer<Exception, long long>::JsonSignedLongIntegerDeserializer;
+    };
+
+    template<bool Exception>
+    struct JsonDeserializer<Exception, unsigned long long> : JsonUnsignedLongIntegerDeserializer<Exception, unsigned long long>
+    {
+        using JsonUnsignedLongIntegerDeserializer<Exception, unsigned long long>::JsonUnsignedLongIntegerDeserializer;
+    };
+
+    template<bool Exception, typename T>
+    struct JsonFloatDeserializer : JsonContextAwareDeserializer
+    {
+        using JsonContextAwareDeserializer::JsonContextAwareDeserializer;
+
         static_assert(std::is_floating_point<T>::value, "T must be a floating-point type");
 
         bool operator()(const rapidjson::Value& json, T& value) const
         {
-            if (json.IsNumber()) {
-                value = static_cast<T>(json.GetDouble());
-                return true;
-            } else {
-                return false;
+            if (!json.IsNumber()) {
+                if constexpr (Exception) {
+                    throw JsonDeserializationError(
+                        "wrong JSON data type; expected: number",
+                        Path(context.segments()).str()
+                    );
+                } else {
+                    return false;
+                }
             }
+
+            value = static_cast<T>(json.GetDouble());
+            return true;
         }
     };
 
-    template<>
-    struct JsonDeserializer<float> : JsonFloatDeserializer<float> {};
+    template<bool Exception>
+    struct JsonDeserializer<Exception, float> : JsonFloatDeserializer<Exception, float>
+    {
+        using JsonFloatDeserializer<Exception, float>::JsonFloatDeserializer;
+    };
 
-    template<>
-    struct JsonDeserializer<double> : JsonFloatDeserializer<double> {};
+    template<bool Exception>
+    struct JsonDeserializer<Exception, double> : JsonFloatDeserializer<Exception, double>
+    {
+        using JsonFloatDeserializer<Exception, double>::JsonFloatDeserializer;
+    };
 }

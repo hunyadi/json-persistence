@@ -1,12 +1,13 @@
 #pragma once
 #include "deserialize_base.hpp"
+#include "deserialize_check.hpp"
 #include "detail/deserialize_aware.hpp"
 #include <map>
 #include <unordered_map>
 
 namespace persistence
 {
-    template<typename C>
+    template<bool Exception, typename C>
     struct JsonDictionaryDeserializer : JsonContextAwareDeserializer
     {
         using JsonContextAwareDeserializer::JsonContextAwareDeserializer;
@@ -15,7 +16,7 @@ namespace persistence
         {
             using item_type = typename C::mapped_type;
 
-            if (!json.IsObject()) {
+            if (!detail::check_object<Exception>(json, context)) {
                 return false;
             }
 
@@ -23,10 +24,7 @@ namespace persistence
             for (auto&& it = json.MemberBegin(); it != json.MemberEnd(); ++it) {
                 item_type item;
                 DeserializerContext item_context(context, Segment(it->name.GetString()));
-                if (!deserialize(it->value, item, item_context)) {
-                    return false;
-                }
-                if (!it->name.IsString()) {
+                if (!deserialize<Exception>(it->value, item, item_context)) {
                     return false;
                 }
                 value[it->name.GetString()] = std::move(item);
@@ -35,15 +33,15 @@ namespace persistence
         }
     };
 
-    template<typename T>
-    struct JsonDeserializer<std::map<std::string, T>> : JsonDictionaryDeserializer<std::map<std::string, T>>
+    template<bool Exception, typename T>
+    struct JsonDeserializer<Exception, std::map<std::string, T>> : JsonDictionaryDeserializer<Exception, std::map<std::string, T>>
     {
-        using JsonDictionaryDeserializer<std::map<std::string, T>>::JsonDictionaryDeserializer;
+        using JsonDictionaryDeserializer<Exception, std::map<std::string, T>>::JsonDictionaryDeserializer;
     };
 
-    template<typename T>
-    struct JsonDeserializer<std::unordered_map<std::string, T>> : JsonDictionaryDeserializer<std::unordered_map<std::string, T>>
+    template<bool Exception, typename T>
+    struct JsonDeserializer<Exception, std::unordered_map<std::string, T>> : JsonDictionaryDeserializer<Exception, std::unordered_map<std::string, T>>
     {
-        using JsonDictionaryDeserializer<std::unordered_map<std::string, T>>::JsonDictionaryDeserializer;
+        using JsonDictionaryDeserializer<Exception, std::unordered_map<std::string, T>>::JsonDictionaryDeserializer;
     };
 }

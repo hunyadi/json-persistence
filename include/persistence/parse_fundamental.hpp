@@ -80,6 +80,12 @@ namespace persistence
     };
 
     template<>
+    struct JsonParser<signed char> : JsonNumberParser<signed char>
+    {
+        using JsonNumberParser<signed char>::JsonNumberParser;
+    };
+
+    template<>
     struct JsonParser<unsigned char> : JsonNumberParser<unsigned char>
     {
         using JsonNumberParser<unsigned char>::JsonNumberParser;

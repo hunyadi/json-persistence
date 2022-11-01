@@ -5,8 +5,8 @@
 
 namespace persistence
 {
-    template<typename T>
-    struct JsonDeserializer<T*>
+    template<bool Exception, typename T>
+    struct JsonDeserializer<Exception, T*>
     {
         static_assert(
             detail::defer<T>::value,
@@ -14,15 +14,15 @@ namespace persistence
         );
     };
 
-    template<typename T>
-    struct JsonDeserializer<std::unique_ptr<T>> : JsonContextAwareDeserializer
+    template<bool Exception, typename T>
+    struct JsonDeserializer<Exception, std::unique_ptr<T>> : JsonContextAwareDeserializer
     {
         using JsonContextAwareDeserializer::JsonContextAwareDeserializer;
 
         bool operator()(const rapidjson::Value& json, std::unique_ptr<T>& pointer) const
         {
             auto p = std::make_unique<T>();
-            if (!deserialize(json, *p, context)) {
+            if (!deserialize<Exception>(json, *p, context)) {
                 return false;
             }
 
@@ -31,8 +31,8 @@ namespace persistence
         }
     };
 
-    template<typename T>
-    struct JsonDeserializer<std::shared_ptr<T>> : JsonContextAwareDeserializer
+    template<bool Exception, typename T>
+    struct JsonDeserializer<Exception, std::shared_ptr<T>> : JsonContextAwareDeserializer
     {
         using JsonContextAwareDeserializer::JsonContextAwareDeserializer;
 
@@ -57,7 +57,7 @@ namespace persistence
             }
 
             auto p = std::make_shared<T>();
-            if (!deserialize(json, *p, context)) {
+            if (!deserialize<Exception>(json, *p, context)) {
                 return false;
             }
 

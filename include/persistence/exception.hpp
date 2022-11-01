@@ -4,19 +4,35 @@
 
 namespace persistence
 {
+    /** Raised when a C++ object cannot be serialized to JSON DOM or JSON string. */
     struct JsonSerializationError : std::runtime_error
     {
-        JsonSerializationError() : std::runtime_error("serialization failed") {}
+        JsonSerializationError()
+            : std::runtime_error("serialization failed")
+        {}
     };
 
-    struct JsonDeserializationError : std::runtime_error
+    /** Raised when invalid syntax is encountered in the JSON string. */
+    struct JsonParseError : std::runtime_error
     {
-        JsonDeserializationError()
-            : std::runtime_error("deserialization failed")
+        JsonParseError()
+            : std::runtime_error("parse error")
         {}
 
-        JsonDeserializationError(std::size_t offset)
-            : std::runtime_error("deserialization failed at offset " + std::to_string(offset))
+        JsonParseError(const std::string& reason, std::size_t offset)
+            : std::runtime_error("parse error at offset " + std::to_string(offset) + ": " + reason)
+        {}
+    };
+
+    /** Raised when a C++ object cannot be reconstructed from JSON DOM or JSON string. */
+    struct JsonDeserializationError : std::runtime_error
+    {
+        JsonDeserializationError(const std::string& reason, const std::string& path)
+            : std::runtime_error(reason + " at " + path)
+        {}
+
+        JsonDeserializationError(const std::string& reason, std::size_t offset)
+            : std::runtime_error(reason + " at offset " + std::to_string(offset))
         {}
     };
 }

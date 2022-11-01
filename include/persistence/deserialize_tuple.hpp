@@ -1,22 +1,23 @@
 #pragma once
 #include "deserialize_base.hpp"
+#include "deserialize_check.hpp"
 #include "detail/deserialize_aware.hpp"
 #include <tuple>
 #include <utility>
 
 namespace persistence
 {
-    template<typename C, std::size_t S>
+    template<bool Exception, typename C, std::size_t S>
     struct JsonTupleDeserializer : JsonContextAwareDeserializer
     {
         using JsonContextAwareDeserializer::JsonContextAwareDeserializer;
 
         bool operator()(const rapidjson::Value& json, C& container) const
         {
-            if (!json.IsArray()) {
+            if (!detail::check_array<Exception>(json, context)) {
                 return false;
             }
-            if (json.Size() != S) {
+            if (!detail::check_size<Exception, S>(json, context)) {
                 return false;
             }
 
@@ -37,19 +38,19 @@ namespace persistence
         bool deserialize_item(const rapidjson::Value& json, T& item) const
         {
             DeserializerContext item_context(context, Segment(Index));
-            return deserialize(json, item, item_context);
+            return deserialize<Exception>(json, item, item_context);
         }
     };
 
-    template<typename T1, typename T2>
-    struct JsonDeserializer<std::pair<T1, T2>> : JsonTupleDeserializer<std::pair<T1, T2>, 2>
+    template<bool Exception, typename T1, typename T2>
+    struct JsonDeserializer<Exception, std::pair<T1, T2>> : JsonTupleDeserializer<Exception, std::pair<T1, T2>, 2>
     {
-        using JsonTupleDeserializer<std::pair<T1, T2>, 2>::JsonTupleDeserializer;
+        using JsonTupleDeserializer<Exception, std::pair<T1, T2>, 2>::JsonTupleDeserializer;
     };
 
-    template<typename... Ts>
-    struct JsonDeserializer<std::tuple<Ts...>> : JsonTupleDeserializer<std::tuple<Ts...>, sizeof...(Ts)>
+    template<bool Exception, typename... Ts>
+    struct JsonDeserializer<Exception, std::tuple<Ts...>> : JsonTupleDeserializer<Exception, std::tuple<Ts...>, sizeof...(Ts)>
     {
-        using JsonTupleDeserializer<std::tuple<Ts...>, sizeof...(Ts)>::JsonTupleDeserializer;
+        using JsonTupleDeserializer<Exception, std::tuple<Ts...>, sizeof...(Ts)>::JsonTupleDeserializer;
     };
 }

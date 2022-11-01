@@ -2,68 +2,72 @@
 #include "deserialize_base.hpp"
 #include "detail/deserialize_aware.hpp"
 #include "detail/traits.hpp"
-#include "exception.hpp"
+#include <rapidjson/error/en.h>
 #include <string>
 
 namespace persistence
 {
-    template<typename T>
+    template<bool Exception, typename T>
     auto make_deserializer(DeserializerContext& context)
     {
         using value_type = typename unqualified<T>::type;
-        using deserializer_type = JsonDeserializer<value_type>;
-
-        if constexpr (std::is_base_of<JsonContextAwareDeserializer, deserializer_type>::value) {
-            return deserializer_type(context);
-        } else {
-            return deserializer_type();
-        }
+        using deserializer_type = JsonDeserializer<Exception, value_type>;
+        return deserializer_type(context);
     }
 
     /**
-    * Parses the JSON representation of an object.
-    */
-    template<typename T>
+     * Deserializes a C++ object from a JSON DOM representation.
+     *
+     * @tparam Exception True if exceptions may be thrown to signal deserialization failures.
+     * @tparam T Type to be deserialized.
+     */
+    template<bool Exception, typename T>
     bool deserialize(const rapidjson::Value& json, T& obj, DeserializerContext& context)
     {
-        auto deserializer = make_deserializer<typename unqualified<T>::type>(context);
+        auto deserializer = make_deserializer<Exception, typename unqualified<T>::type>(context);
         return deserializer(json, obj);
     }
 
     /**
-     * Parses the JSON DOM representation of an object.
+     * Deserializes a C++ object from a JSON DOM document.
      */
     template<typename T>
     bool deserialize(rapidjson::Document& doc, T& obj)
     {
         if (doc.HasParseError()) {
             return false;
-        } else {
-            GlobalDeserializerContext global(doc);
-            DeserializerContext local(global);
-            return deserialize(doc, obj, local);
         }
+
+        GlobalDeserializerContext global(doc);
+        DeserializerContext local(global);
+        return deserialize<false>(doc, obj, local);
     }
 
     /**
-     * Parses the JSON DOM representation of an object.
+     * Deserializes a C++ object from a JSON DOM document.
      */
     template<typename T>
     T deserialize(rapidjson::Document& doc)
     {
-        if (doc.HasParseError()) {
-            throw JsonDeserializationError();
+        auto&& error = doc.GetParseError();
+        if (error) {
+            throw JsonParseError(rapidjson::GetParseError_En(error), doc.GetErrorOffset());
         }
 
         T obj;
-        if (!deserialize(doc, obj)) {
-            throw JsonDeserializationError();
-        }
+        GlobalDeserializerContext global(doc);
+        DeserializerContext local(global);
+        deserialize<true>(doc, obj, local);
         return obj;
     }
 
     /**
-     * Parses the JSON string representation of an object.
+     * Deserializes a C++ object from a JSON string via JSON DOM.
+     *
+     * Does not throw parse exceptions.
+     *
+     * @param str The source string.
+     * @param obj A reference to an empty C++ object to populate.
      */
     template<typename T>
     bool deserialize(const std::string& str, T& obj)
@@ -74,6 +78,14 @@ namespace persistence
         return !error && deserialize(doc, obj);
     }
 
+    /**
+     * Deserializes a C++ object from a JSON string via JSON DOM.
+     *
+     * Does not throw parse exceptions.
+     *
+     * @param str The source string.
+     * @param obj A reference to an empty C++ object to populate.
+     */
     template<typename T>
     bool deserialize(std::string&& str, T& obj)
     {
@@ -83,35 +95,25 @@ namespace persistence
         return !error && deserialize(doc, obj);
     }
 
+    /**
+     * Deserializes a C++ object from a JSON string via JSON DOM.
+     */
     template<typename T>
     T deserialize(const std::string& str)
     {
-        T obj;
         rapidjson::Document doc;
         doc.Parse(str.data());
-        auto&& error = doc.GetParseError();
-        if (error) {
-            throw JsonDeserializationError(doc.GetErrorOffset());
-        }
-        if (!deserialize(doc, obj)) {
-            throw JsonDeserializationError();
-        }
-        return obj;
+        return deserialize<T>(doc);
     }
 
+    /**
+     * Deserializes a C++ object from a JSON string via JSON DOM.
+     */
     template<typename T>
     T deserialize(std::string&& str)
     {
-        T obj;
         rapidjson::Document doc;
         doc.ParseInsitu(str.data());
-        auto&& error = doc.GetParseError();
-        if (error) {
-            throw JsonDeserializationError(doc.GetErrorOffset());
-        }
-        if (!deserialize(doc, obj)) {
-            throw JsonDeserializationError();
-        }
-        return obj;
+        return deserialize<T>(doc);
     }
 }

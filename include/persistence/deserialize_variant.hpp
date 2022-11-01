@@ -1,18 +1,29 @@
 #pragma once
 #include "deserialize_base.hpp"
+#include "exception.hpp"
 #include "detail/deserialize_aware.hpp"
 #include <variant>
 
 namespace persistence
 {
-    template<typename... Ts>
-    struct JsonDeserializer<std::variant<Ts...>> : JsonContextAwareDeserializer
+    template<bool Exception, typename... Ts>
+    struct JsonDeserializer<Exception, std::variant<Ts...>> : JsonContextAwareDeserializer
     {
         using JsonContextAwareDeserializer::JsonContextAwareDeserializer;
 
         bool operator()(const rapidjson::Value& json, std::variant<Ts...>& value) const
         {
-            return (deserialize_variant<Ts>(json, value) || ...);
+            if (!(deserialize_variant<Ts>(json, value) || ...)) {
+                if constexpr (Exception) {
+                    throw JsonDeserializationError(
+                        "unable to match either of the variant types",
+                        Path(context.segments()).str()
+                    );
+                } else {
+                    return false;
+                }
+            }
+            return true;
         }
 
     private:
@@ -20,12 +31,12 @@ namespace persistence
         bool deserialize_variant(const rapidjson::Value& json, std::variant<Ts...>& value) const
         {
             T var;
-            if (deserialize(json, var, context)) {
-                value = std::move(var);
-                return true;
-            } else {
+            if (!deserialize<false>(json, var, context)) {
                 return false;
             }
+
+            value = std::move(var);
+            return true;
         }
     };
 }

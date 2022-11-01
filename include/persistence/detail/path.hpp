@@ -61,6 +61,10 @@ namespace persistence
 
         std::string str() const
         {
+            if (segments.empty()) {
+                return "/";
+            }
+
             std::string path;
             for (auto&& it = segments.rbegin(); it != segments.rend(); ++it) {
                 path.push_back('/');

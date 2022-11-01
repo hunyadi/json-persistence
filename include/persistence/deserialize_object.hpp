@@ -1,12 +1,13 @@
 #pragma once
 #include "object.hpp"
 #include "deserialize_base.hpp"
+#include "deserialize_check.hpp"
 #include "detail/deserialize_aware.hpp"
 #include <optional>
 
 namespace persistence
 {
-    template<typename C>
+    template<bool Exception, typename C>
     struct JsonObjectDeserializer : JsonContextAwareDeserializer
     {
         JsonObjectDeserializer(DeserializerContext& context, const rapidjson::Value& json_object, C& object)
@@ -26,8 +27,10 @@ namespace persistence
             if (it != json_object.MemberEnd()) {
                 T value;
                 DeserializerContext value_context(context, Segment(it->name.GetString()));
-                result = deserialize(it->value, value, value_context);
+                result = deserialize<Exception>(it->value, value, value_context);
                 member.ref(object) = std::move(value);
+            } else {
+                member.ref(object) = std::nullopt;
             }
             return *this;
         }
@@ -42,9 +45,16 @@ namespace persistence
             auto it = json_object.FindMember(member.name.data());
             if (it != json_object.MemberEnd()) {
                 DeserializerContext value_context(context, Segment(it->name.GetString()));
-                result = deserialize(it->value, member.ref(object), value_context);
+                result = deserialize<Exception>(it->value, member.ref(object), value_context);
             } else {
-                result = false;
+                if constexpr (Exception) {
+                    throw JsonDeserializationError(
+                        "missing required property: " + std::string(member.name),
+                        Path(context.segments()).str()
+                    );
+                } else {
+                    result = false;
+                }
             }
             return *this;
         }
@@ -71,7 +81,7 @@ namespace persistence
     };
 
     template<typename T>
-    using deserializer_function = decltype(std::declval<T&>().persist(std::declval<JsonObjectDeserializer<T>&>()));
+    using deserializer_function = decltype(std::declval<T&>().persist(std::declval<JsonObjectDeserializer<false, T>&>()));
 
     template<typename T, typename Enable = void>
     struct has_custom_deserializer : std::false_type
@@ -86,18 +96,18 @@ namespace persistence
     /**
     * Writes a value with a specific type to JSON.
     */
-    template<typename T>
-    struct JsonDeserializer<T, typename std::enable_if<has_custom_deserializer<T>::value>::type> : JsonContextAwareDeserializer
+    template<bool Exception, typename T>
+    struct JsonDeserializer<Exception, T, typename std::enable_if<has_custom_deserializer<T>::value>::type> : JsonContextAwareDeserializer
     {
         using JsonContextAwareDeserializer::JsonContextAwareDeserializer;
 
         bool operator()(const rapidjson::Value& json, T& value) const
         {
-            if (!json.IsObject()) {
+            if (!detail::check_object<Exception>(json, context)) {
                 return false;
             }
 
-            JsonObjectDeserializer<T> deserializer(context, json, value);
+            JsonObjectDeserializer<Exception, T> deserializer(context, json, value);
             value.persist(deserializer);
             return static_cast<bool>(deserializer);
         }
