@@ -5,6 +5,7 @@
 
 namespace persistence
 {
+    /** Context for de-serializing an object from a JSON DOM document. */
     struct GlobalDeserializerContext : DocumentContext
     {
         using DocumentContext::DocumentContext;
@@ -46,9 +47,9 @@ namespace persistence
             return global.allocator();
         }
 
-        std::vector<Segment> segments() const
+        Segments segments() const
         {
-            std::vector<Segment> segs;
+            Segments segs;
             const DeserializerContext* ctx = this;
             while (ctx->parent != nullptr) {
                 segs.push_back(ctx->segment);

@@ -43,11 +43,7 @@ namespace persistence
                     throw std::out_of_range("empty stack");
                 }
 
-                --count;
-                reinterpret_cast<Base*>(current)->~Base();
-                next = current;
-                current = items[count];
-                items[count] = nullptr;
+                pop_unsafe();
             }
 
             Base& back()
@@ -58,8 +54,18 @@ namespace persistence
             ~PolymorphicStack()
             {
                 while (count > 0) {
-                    pop();
+                    pop_unsafe();
                 }
+            }
+
+        private:
+            void pop_unsafe()
+            {
+                --count;
+                reinterpret_cast<Base*>(current)->~Base();
+                next = current;
+                current = items[count];
+                items[count] = nullptr;
             }
 
         private:

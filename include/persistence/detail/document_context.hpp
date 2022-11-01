@@ -4,9 +4,9 @@
 
 namespace persistence
 {
+    /** A context that provides access to the JSON DOM document. */
     struct DocumentContext
     {
-    public:
         DocumentContext(rapidjson::Document& document)
             : document(document)
         {}

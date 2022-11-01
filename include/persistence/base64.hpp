@@ -57,6 +57,13 @@ namespace persistence
         }
     }
 
+    /**
+    * Generates the Base64-encoded representation of a raw sequence of bytes.
+    *
+    * @param input A sequence of bytes.
+    * @param output A Base64-encoded string.
+    * @return True on success.
+    */
     inline bool base64_encode(const byte_view& input, std::string& output)
     {
         using detail::encode_triplet;
@@ -100,6 +107,13 @@ namespace persistence
         return true;
     }
 
+    /**
+    * Generates the Base64-encoded representation of a raw sequence of bytes.
+    *
+    * @param input A sequence of bytes.
+    * @param output A Base64-encoded string.
+    * @return True on success.
+    */
     inline bool base64_encode(const byte_vector& input, std::string& output)
     {
         return base64_encode(
@@ -111,6 +125,13 @@ namespace persistence
         );
     }
 
+    /**
+    * Generates the Base64-encoded representation of a string.
+    *
+    * @param input An input string.
+    * @param output A Base64-encoded string.
+    * @return True on success.
+    */
     inline bool base64_encode(const std::string_view& input, std::string& output)
     {
         return base64_encode(
@@ -180,6 +201,13 @@ namespace persistence
         }
     }
 
+    /**
+    * Parses the Base64-encoded representation of a sequence of bytes.
+    *
+    * @param input A Base64-encoded string.
+    * @param output A sequence of bytes.
+    * @return True if parsing is successful, false if input is invalid.
+    */
     inline bool base64_decode(const std::string_view& input, byte_vector& output)
     {
         using detail::decode_quadruplet;

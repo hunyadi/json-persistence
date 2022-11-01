@@ -4,6 +4,11 @@
 
 namespace persistence
 {
+    /**
+    * A segment in a JSON Path expression.
+    *
+    * Segments of a path are strings for object property access and integers for array index access.
+    */
     struct Segment
     {
         Segment() = default;
@@ -13,7 +18,10 @@ namespace persistence
         std::string_view name;
         std::size_t index = 0;
 
+        /** True for object property access. */
         bool is_named() const { return name.size() > 0; }
+
+        /** True for array index access. */
         bool is_indexed() const { return name.size() == 0; }
     };
 

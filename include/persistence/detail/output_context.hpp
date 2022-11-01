@@ -39,9 +39,9 @@ namespace persistence
             return global_context;
         }
 
-        std::vector<Segment> segments() const
+        Segments segments() const
         {
-            std::vector<Segment> segs;
+            Segments segs;
             const OutputContext<GlobalContext>* ctx = this;
             while (ctx->parent_context != nullptr) {
                 segs.push_back(ctx->segment);

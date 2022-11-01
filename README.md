@@ -86,13 +86,34 @@ This header-only C++17 library provides type-safe serialization of C++ objects i
 * Use `<persistence/object.hpp>` to import helper macro `MEMBER_VARIABLE` only.
 * Use `<persistence/utility.hpp>` to import helper functions to convert between JSON DOM document and JSON string.
 
+### Extensible
+
+Add new template specializations to support (de-)serializing new types:
+
+* Specialize `JsonWriter<T>` to support writing new C++ types to JSON string.
+* Specialize `JsonParser<T>` to support parsing new C++ types from JSON string.
+* Specialize `JsonSerializer<T>` to serialize new C++ types to JSON DOM.
+* Specialize `JsonDeserializer<T>` to deserialize new C++ types from JSON DOM.
+
 ### Speed and efficiency
 
 * Built on top of [RapidJSON](https://rapidjson.org/).
 * Uses RapidJSON [SAX interface](https://rapidjson.org/md_doc_sax.html) for writing and parsing JSON strings directly, bypassing the JSON DOM.
 * Uses a polymorphic stack to reduce dynamic memory allocations on heap.
+* Unrolls loops at compile-time for bounded-length data structures such as pairs, tuples and object properties.
 
 ### Platform-neutral
 
 * Uses standard C++17 features only (with the exception of RapidJSON engine).
 * Compiles on Linux, MacOS and Windows.
+
+## Limitations
+
+JSON writer and parser does not support back-references (`{"$ref": "/path/to/previous/occurrence"}`). Pointer-like types always create a new instance. Circular references will lead to an infinite loop. When using back-references,
+
+* serialize the data to JSON DOM, and then use the utility function `document_to_string` to write the JSON DOM as a JSON string;
+* read the JSON string into a JSON DOM with the utility function `string_to_document`, and then de-serialize the data from JSON DOM.
+
+Parsing and de-serializing raw pointers is not permitted due to lack of clarity around ownership. Use `unique_ptr` and `smart_ptr` instead. Writing and serializing raw pointers is allowed.
+
+JSON parser does not support variant types. Instead, read the JSON string into a JSON DOM with the utility function `string_to_document`, and then de-serialize the data from JSON DOM. JSON writer, serializer and de-serializer support variant types.

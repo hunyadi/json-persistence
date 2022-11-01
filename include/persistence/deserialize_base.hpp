@@ -7,7 +7,7 @@
 namespace persistence
 {
     /**
-    * Reads a value with a specific type from JSON.
+    * Reads a value with a specific type from JSON DOM.
     */
     template<typename T, typename Enable = void>
     struct JsonDeserializer

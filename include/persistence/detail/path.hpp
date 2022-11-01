@@ -49,10 +49,15 @@ namespace persistence
         }
     }
 
+    /**
+    * A JSON Path expression.
+    *
+    * Segments of a path are strings for object property access and integers for array index access.
+    */
     struct Path
     {
         Path() = default;
-        Path(std::vector<Segment> segments) : segments(segments) {}
+        Path(Segments segments) : segments(segments) {}
 
         std::string str() const
         {
@@ -72,6 +77,6 @@ namespace persistence
         }
 
     private:
-        std::vector<Segment> segments;
+        Segments segments;
     };
 }

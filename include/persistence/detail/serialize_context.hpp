@@ -4,7 +4,7 @@
 
 namespace persistence
 {
-    /** Context for serializing an object to a JSON DOM. */
+    /** Context for serializing an object to a JSON DOM document. */
     struct GlobalSerializerContext : DocumentContext, WriterReferenceContext
     {
         using DocumentContext::DocumentContext;
