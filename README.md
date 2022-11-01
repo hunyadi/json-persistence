@@ -8,7 +8,7 @@ This header-only C++17 library provides type-safe serialization of C++ objects i
 * Compile-time correctness.
 * (De-)serialize fundamental types `bool`, `short`, `int`, `long`, `float`, `double`, etc. to/from their respective JSON type.
 * (De-)serialize `time_point<system_clock>` type to/from an ISO 8601 date-time string in time zone UTC.
-* (De-)serialize enumeration types as their underlying integer type.
+* (De-)serialize enumeration types as their underlying integer type or as string (with auxiliary helper functions `to_string` and `from_string`).
 * (De-)serialize `vector<std::byte>` type to/from a Base64-encoded string.
 * (De-)serialize heterogeneous `pair<T1,T2>` and `tuple<T...>` to/from a JSON array.
 * (De-)serialize container types `vector<T>`, `array<T, N>`, `set<T>`, etc. to/from a JSON array.
@@ -95,6 +95,32 @@ Add new template specializations to support (de-)serializing new types:
 * Specialize `JsonSerializer<T>` to serialize new C++ types to JSON DOM.
 * Specialize `JsonDeserializer<T>` to deserialize new C++ types from JSON DOM.
 
+(De-)serialize, parse and write enumeration types as strings by defining value-to-string and string-to-value conversions:
+
+```cpp
+namespace persistence
+{
+    template<>
+    struct enum_traits<MyEnum>
+    {
+        static std::string_view to_string(MyEnum value)
+        {
+            // return a distinct string literal for each enumeration value
+            return std::string_view();
+        }
+
+        static bool from_string(const std::string_view& name, MyEnum& value)
+        {
+            // assign enumeration value based on string literal
+            value = MyEnum();
+
+            // return true if value has been assigned; false on no match
+            return true;
+        }
+    };
+}
+```
+
 ### Speed and efficiency
 
 * Built on top of [RapidJSON](https://rapidjson.org/).
@@ -107,7 +133,7 @@ Add new template specializations to support (de-)serializing new types:
 * Uses standard C++17 features only (with the exception of RapidJSON engine).
 * Compiles on Linux, MacOS and Windows.
 
-## Limitations
+## Limitations and workarounds
 
 JSON writer and parser does not support back-references (`{"$ref": "/path/to/previous/occurrence"}`). Pointer-like types always create a new instance. Circular references will lead to an infinite loop. When using back-references,
 

@@ -1,5 +1,6 @@
 #pragma once
 #include "persistence/object.hpp"
+#include "persistence/enum.hpp"
 #include <optional>
 #include <string>
 #include <vector>
@@ -17,6 +18,61 @@ enum class Suit
     Clubs,
     Spades
 };
+
+enum class Esper { Unu, Du, Tri, Kvar, Kvin, Ses, Sep, Ok, Naux, Dek };
+
+template<typename Key, typename Value>
+std::map<Value, Key> flip(const std::map<Key, Value>& source)
+{
+    std::map<Value, Key> target;
+    for (auto&& item : source) {
+        target.insert(std::make_pair(item.second, item.first));
+    }
+    return target;
+}
+
+namespace persistence
+{
+    template<>
+    struct enum_traits<Esper>
+    {
+        inline static const std::map<Esper, std::string_view> value_to_name = {
+            std::make_pair(Esper::Unu, "Unu"),
+            std::make_pair(Esper::Du, "Du"),
+            std::make_pair(Esper::Tri, "Tri"),
+            std::make_pair(Esper::Kvar, "Kvar"),
+            std::make_pair(Esper::Kvin, "Kvin"),
+            std::make_pair(Esper::Ses, "Ses"),
+            std::make_pair(Esper::Sep, "Sep"),
+            std::make_pair(Esper::Ok, "Ok"),
+            std::make_pair(Esper::Naux, "Naux"),
+            std::make_pair(Esper::Dek, "Dek")
+        };
+
+        inline static const std::map<std::string_view, Esper> name_to_value = flip(value_to_name);
+
+        static std::string_view to_string(Esper value)
+        {
+            auto it = value_to_name.find(value);
+            if (it != value_to_name.end()) {
+                return it->second;
+            } else {
+                return std::string_view();
+            }
+        }
+
+        static bool from_string(const std::string_view& name, Esper& value)
+        {
+            auto it = name_to_value.find(name);
+            if (it != name_to_value.end()) {
+                value = it->second;
+                return true;
+            } else {
+                return false;
+            }
+        }
+    };
+}
 
 struct TestValue
 {

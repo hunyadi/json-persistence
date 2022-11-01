@@ -4,6 +4,7 @@
 #include "definitions.hpp"
 #include "measure.hpp"
 #include "random.hpp"
+#include "string.hpp"
 
 using namespace persistence;
 using namespace test;
@@ -141,6 +142,11 @@ TEST(Serialization, EnumTypes)
     test_serialize(Suit::Hearts, "1");
     test_serialize(Suit::Clubs, "2");
     test_serialize(Suit::Spades, "3");
+
+    test_serialize(Esper::Unu, "\"Unu\"");
+    test_serialize(Esper::Du, "\"Du\"");
+    test_serialize(Esper::Kvin, "\"Kvin\"");
+    test_serialize(Esper::Dek, "\"Dek\"");
 }
 
 TEST(Serialization, StringTypes)
@@ -150,9 +156,11 @@ TEST(Serialization, StringTypes)
 
     test_serialize(std::string_view(), "\"\"");
     test_serialize(std::string_view("test string"), "\"test string\"");
+    test_serialize(std::string_view(view_from_chars("test\0string")), "\"test\\u0000string\"");
 
     test_serialize(std::string(), "\"\"");
     test_serialize(std::string("test string"), "\"test string\"");
+    test_serialize(std::string(view_from_chars("test\0string")), "\"test\\u0000string\"");
 }
 
 TEST(Serialization, Bytes)
@@ -378,17 +386,31 @@ TEST(Deserialization, EnumTypes)
 {
     test_deserialize("1", Side::Left);
     test_deserialize("2", Side::Right);
+    test_no_deserialize<Side>("\"Left\"");
+    test_no_deserialize<Side>("\"Right\"");
 
     test_deserialize("0", Suit::Diamonds);
     test_deserialize("1", Suit::Hearts);
     test_deserialize("2", Suit::Clubs);
     test_deserialize("3", Suit::Spades);
+    test_no_deserialize<Suit>("\"Diamonds\"");
+    test_no_deserialize<Suit>("\"Spades\"");
+
+    test_deserialize("\"Unu\"", Esper::Unu);
+    test_deserialize("\"Du\"", Esper::Du);
+    test_deserialize("\"Kvin\"", Esper::Kvin);
+    test_deserialize("\"Dek\"", Esper::Dek);
+    test_no_deserialize<Esper>("0");
+    test_no_deserialize<Esper>("1");
+    test_no_deserialize<Esper>("\"\"");
+    test_no_deserialize<Esper>("\"NaN\"");
 }
 
 TEST(Deserialization, StringTypes)
 {
     test_deserialize("\"\"", std::string());
     test_deserialize("\"test string\"", std::string("test string"));
+    test_deserialize("\"test\\u0000string\"", std::string(view_from_chars("test\0string")));
 }
 
 TEST(Deserialization, Bytes)

@@ -10,7 +10,7 @@ namespace persistence
         bool operator()(const rapidjson::Value& json, std::string& value) const
         {
             if (json.IsString()) {
-                value = json.GetString();
+                value.assign(json.GetString(), json.GetStringLength());
                 return true;
             } else {
                 return false;
