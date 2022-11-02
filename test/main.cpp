@@ -77,6 +77,7 @@ void test_no_deserialize(const std::string& str)
     EXPECT_FALSE(deserialize<T>(doc, obj));
     EXPECT_THROW(deserialize<T>(doc), JsonDeserializationError);
     EXPECT_FALSE(parse<T>(str, obj));
+    EXPECT_THROW(parse<T>(str), JsonParseError);
 }
 
 template<typename T>
@@ -161,7 +162,12 @@ TEST(Serialization, StringTypes)
 
     test_serialize(std::string(), "\"\"");
     test_serialize(std::string("test string"), "\"test string\"");
+
+    // NUL byte in middle of string
     test_serialize(std::string(view_from_chars("test\0string")), "\"test\\u0000string\"");
+    
+    // UTF-8 characters
+    test_serialize(std::string("árvíztűrő tükörfúrógép"), "\"árvíztűrő tükörfúrógép\"");
 }
 
 TEST(Serialization, Bytes)
@@ -423,7 +429,12 @@ TEST(Deserialization, StringTypes)
 {
     test_deserialize("\"\"", std::string());
     test_deserialize("\"test string\"", std::string("test string"));
+
+    // NUL byte in middle of string
     test_deserialize("\"test\\u0000string\"", std::string(view_from_chars("test\0string")));
+    
+    // UTF-8 characters
+    test_deserialize("\"árvíztűrő tükörfúrógép\"", std::string("árvíztűrő tükörfúrógép"));
 
     test_no_deserialize<std::string>("true");
     test_no_deserialize<std::string>("23");
@@ -718,6 +729,36 @@ TEST(Deserialization, BackReferenceObject)
     auto val = deserialize<TestBackReferenceObject>(std::move(json));
     EXPECT_EQ(val.outer, val.inner[0]);
     EXPECT_EQ(val.outer, val.inner[1]);
+}
+
+TEST(Deserialization, ErrorReporting)
+{
+    try {
+        parse<Example>("{\"bool_value\": true, []}");
+        EXPECT_TRUE(false);
+    } catch (JsonParseError& e) {
+        EXPECT_EQ(e.offset, 21);
+    }
+
+    try {
+        parse<Example>("{\"bool_value\": true, \"string_value\": []}");
+        EXPECT_TRUE(false);
+    } catch (JsonParseError& e) {
+        EXPECT_EQ(e.offset, 38);
+    }
+
+    try {
+        deserialize<Example>(
+            "{"
+                "\"bool_value\": true,"
+                "\"string_value\": \"\","
+                "\"string_list\": [\"a\",23]"
+            "}"
+        );
+        EXPECT_TRUE(false);
+    } catch (JsonDeserializationError& e) {
+        EXPECT_EQ(e.path, "/string_list/1");
+    }
 }
 
 #ifndef _DEBUG

@@ -73,7 +73,7 @@ This header-only C++17 library provides type-safe serialization of C++ objects i
     Example res = parse<Example>(json);
     ```
 
-### Ease of use
+### Easy to use
 
 * Copy the `include` folder to your project's header include path, no build or installation required.
 * Get started by including `<persistence/persistence.hpp>`, which enables all features.
@@ -121,7 +121,7 @@ namespace persistence
 }
 ```
 
-### Speed and efficiency
+### Fast and efficient
 
 * Built on top of [RapidJSON](https://rapidjson.org/).
 * Uses RapidJSON [SAX interface](https://rapidjson.org/md_doc_sax.html) for writing and parsing JSON strings directly, bypassing the JSON DOM.
@@ -132,6 +132,58 @@ namespace persistence
 
 * Uses standard C++17 features only (with the exception of RapidJSON engine).
 * Compiles on Linux, MacOS and Windows.
+
+## Error reporting
+
+Functions that take both a source and a target object reference return a boolean result and throw no exceptions. Functions that take only a source argument and return a target object value throw exceptions on error.
+
+Consider the following C++ code that invokes the parser:
+```cpp
+try {
+    parse<Example>("{\"bool_value\": true, []}");
+} catch (JsonParseError& e) {
+    std::cout << e.what() << std::endl;
+}
+```
+
+There is a syntax error in the JSON string. Running the above code prints:
+```
+parse error at offset 21: Missing a name for object member.
+```
+
+Take another example with a mismatch for the property value type:
+```cpp
+try {
+    parse<Example>("{\"bool_value\": true, \"string_value\": []}");
+} catch (JsonParseError& e) {
+    std::cout << e.what() << std::endl;
+}
+```
+
+Even though the above JSON string is syntactically correct, a JSON array cannot be cast into a C++ string, which produces an error:
+```
+parse error at offset 38: Terminate parsing due to Handler error.
+```
+
+Similarly, the deserializer not only reports the nature of the error encountered but also its location with a [JSON Pointer](https://www.rfc-editor.org/rfc/rfc6901). Consider the following:
+```cpp
+try {
+    deserialize<Example>(
+        "{"
+            "\"bool_value\": true,"
+            "\"string_value\": \"lorem ipsum\","
+            "\"string_list\": [\"a\",23]"
+        "}"
+    );
+} catch (JsonDeserializationError& e) {
+    std::cout << e.what() << std::endl;
+}
+```
+
+Notice how the second element of `string_list` (a C++ `vector<string>`) has the wrong data type: a JSON number instead of a JSON string. The error message identifies the location: `/string_list` to select the property in the root object and `/1` to identify the second element in the array (with zero-based indexing):
+```
+wrong JSON data type; expected: string at /string_list/1
+```
 
 ## Limitations and workarounds
 

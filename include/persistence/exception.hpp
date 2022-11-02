@@ -15,13 +15,12 @@ namespace persistence
     /** Raised when invalid syntax is encountered in the JSON string. */
     struct JsonParseError : std::runtime_error
     {
-        JsonParseError()
-            : std::runtime_error("parse error")
-        {}
-
         JsonParseError(const std::string& reason, std::size_t offset)
             : std::runtime_error("parse error at offset " + std::to_string(offset) + ": " + reason)
+            , offset(offset)
         {}
+
+        std::size_t offset = 0;
     };
 
     /** Raised when a C++ object cannot be reconstructed from JSON DOM or JSON string. */
@@ -29,10 +28,9 @@ namespace persistence
     {
         JsonDeserializationError(const std::string& reason, const std::string& path)
             : std::runtime_error(reason + " at " + path)
+            , path(path)
         {}
 
-        JsonDeserializationError(const std::string& reason, std::size_t offset)
-            : std::runtime_error(reason + " at offset " + std::to_string(offset))
-        {}
+        std::string path;
     };
 }
