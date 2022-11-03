@@ -20,8 +20,8 @@ namespace persistence
     }
 
     /**
-    * Writes an object to a JSON string.
-    */
+     * Writes an object to a JSON string.
+     */
     template<typename T>
     bool serialize(const T& obj, StringWriter& writer, WriterContext& context)
     {
@@ -38,8 +38,8 @@ namespace persistence
     }
 
     /**
-    * Generates the JSON string representation of an object.
-    */
+     * Generates the JSON string representation of an object.
+     */
     template<typename T>
     bool write_to_string(const T& obj, std::string& str)
     {

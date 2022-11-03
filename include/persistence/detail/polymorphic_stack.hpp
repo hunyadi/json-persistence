@@ -1,4 +1,5 @@
 #pragma once
+#include "unlikely.hpp"
 #include <cstddef>
 #include <stdexcept>
 #include <type_traits>
@@ -8,10 +9,10 @@ namespace persistence
     namespace detail
     {
         /**
-        * A stack for storing polymorphic objects deriving from a common base class.
-        *
-        * @tparam Base Type that all polymorphic objects derive from.
-        */
+         * A stack for storing polymorphic objects deriving from a common base class.
+         *
+         * @tparam Base Type that all polymorphic objects derive from.
+         */
         template<typename Base, std::size_t Capacity = 128, std::size_t MemorySize = 4096>
         class PolymorphicStack
         {
@@ -23,7 +24,7 @@ namespace persistence
             {
                 static_assert(std::is_base_of<Base, Class>::value, "newly constructed class must derive from base class");
 
-                if (count >= Capacity || next + alignof(Class) + sizeof(Class) >= memory + MemorySize) {
+                PERSISTENCE_IF_UNLIKELY(count >= Capacity || (next - memory) >= static_cast<std::ptrdiff_t>(MemorySize - alignof(Class) - sizeof(Class))) {
                     throw std::out_of_range("stack space exhausted");
                 }
 
@@ -39,7 +40,7 @@ namespace persistence
 
             void pop()
             {
-                if (count == 0) {
+                PERSISTENCE_IF_UNLIKELY(count == 0) {
                     throw std::out_of_range("empty stack");
                 }
 

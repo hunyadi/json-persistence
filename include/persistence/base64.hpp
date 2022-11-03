@@ -1,5 +1,6 @@
 #pragma once
 #include "bytes.hpp"
+#include "detail/unlikely.hpp"
 #include <array>
 
 namespace persistence
@@ -182,7 +183,8 @@ namespace persistence
         */
         inline bool decode_quadruplet(char a, char b, char c, char d, byte_vector& out)
         {
-            if (!is_valid_base64_char(a) ||
+            PERSISTENCE_IF_UNLIKELY(
+                !is_valid_base64_char(a) ||
                 !is_valid_base64_char(b) ||
                 !is_valid_base64_char(c) ||
                 !is_valid_base64_char(d))

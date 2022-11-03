@@ -27,7 +27,7 @@ namespace persistence
     template<typename T>
     struct JsonSignedIntegerWriter
     {
-        static_assert(std::is_integral<T>::value&& std::is_signed<T>::value, "T must be a signed integer");
+        static_assert(std::is_integral<T>::value && std::is_signed<T>::value, "T must be a signed integer");
 
         bool operator()(T value, StringWriter& writer) const
         {
@@ -39,7 +39,7 @@ namespace persistence
     template<typename T>
     struct JsonUnsignedIntegerWriter
     {
-        static_assert(std::is_integral<T>::value&& std::is_unsigned<T>::value, "T must be an unsigned integer");
+        static_assert(std::is_integral<T>::value && std::is_unsigned<T>::value, "T must be an unsigned integer");
 
         bool operator()(T value, StringWriter& writer) const
         {
@@ -51,7 +51,7 @@ namespace persistence
     template<typename T>
     struct JsonSignedLongIntegerWriter
     {
-        static_assert(std::is_integral<T>::value&& std::is_signed<T>::value, "T must be a signed integer");
+        static_assert(std::is_integral<T>::value && std::is_signed<T>::value, "T must be a signed integer");
 
         bool operator()(T value, StringWriter& writer) const
         {
@@ -63,7 +63,7 @@ namespace persistence
     template<typename T>
     struct JsonUnsignedLongIntegerWriter
     {
-        static_assert(std::is_integral<T>::value&& std::is_unsigned<T>::value, "T must be an unsigned integer");
+        static_assert(std::is_integral<T>::value && std::is_unsigned<T>::value, "T must be an unsigned integer");
 
         bool operator()(T value, StringWriter& writer) const
         {

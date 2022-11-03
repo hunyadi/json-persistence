@@ -50,10 +50,10 @@ namespace persistence
     }
 
     /**
-    * A JSON Path expression.
-    *
-    * Segments of a path are strings for object property access and integers for array index access.
-    */
+     * A JSON Path expression.
+     *
+     * Segments of a path are strings for object property access and integers for array index access.
+     */
     struct Path
     {
         Path() = default;

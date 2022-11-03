@@ -2,6 +2,7 @@
 #include "object.hpp"
 #include "serialize_base.hpp"
 #include "detail/serialize_aware.hpp"
+#include "detail/unlikely.hpp"
 #include <optional>
 
 namespace persistence
@@ -45,13 +46,13 @@ namespace persistence
         template<typename T>
         JsonObjectSerializer& write(const std::string_view& name, const T& ref)
         {
-            if (!result) {
+            PERSISTENCE_IF_UNLIKELY(!result) {
                 return *this;
             }
 
             rapidjson::Value member_json;
             SerializerContext member_context(context, Segment(name));
-            result = result && serialize(ref, member_json, member_context);
+            result = serialize(ref, member_json, member_context);
             if (result) {
                 rapidjson::Value::StringRefType str(name.data(), name.size());
                 json_object.AddMember(str, member_json, context.global().allocator());

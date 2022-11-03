@@ -83,15 +83,13 @@ namespace persistence
     /**
     * Writes a value with a specific type to JSON.
     */
-    template<typename T, typename Enable>
-    struct JsonWriter : JsonContextAwareWriter
+    template<typename T>
+    struct JsonWriter<T, typename std::enable_if<has_custom_writer<T>::value>::type> : JsonContextAwareWriter
     {
         using JsonContextAwareWriter::JsonContextAwareWriter;
 
         bool operator()(const T& value, StringWriter& writer) const
         {
-            static_assert(has_custom_writer<T>::value, "expected a type that can be serialized to JSON");
-
             JsonObjectWriter serializer(context, value, writer);
 
             writer.StartObject();

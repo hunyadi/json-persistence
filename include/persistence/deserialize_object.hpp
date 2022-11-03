@@ -19,7 +19,7 @@ namespace persistence
         template<typename T>
         JsonObjectDeserializer& operator&(const member_variable<std::optional<T>, C>& member)
         {
-            if (!result) {
+            PERSISTENCE_IF_UNLIKELY(!result) {
                 return *this;
             }
 
@@ -38,15 +38,12 @@ namespace persistence
         template<typename T>
         JsonObjectDeserializer& operator&(const member_variable<T, C>& member)
         {
-            if (!result) {
+            PERSISTENCE_IF_UNLIKELY(!result) {
                 return *this;
             }
 
             auto it = json_object.FindMember(member.name.data());
-            if (it != json_object.MemberEnd()) {
-                DeserializerContext value_context(context, Segment(it->name.GetString()));
-                result = deserialize<Exception>(it->value, member.ref(object), value_context);
-            } else {
+            PERSISTENCE_IF_UNLIKELY(it == json_object.MemberEnd()) {
                 if constexpr (Exception) {
                     throw JsonDeserializationError(
                         "missing required property: " + std::string(member.name),
@@ -56,6 +53,9 @@ namespace persistence
                     result = false;
                 }
             }
+
+            DeserializerContext value_context(context, Segment(it->name.GetString()));
+            result = deserialize<Exception>(it->value, member.ref(object), value_context);
             return *this;
         }
 

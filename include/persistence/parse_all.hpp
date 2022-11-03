@@ -1,6 +1,6 @@
 #pragma once
 /**
-* Parser functions instantiate a C++ objects based on a JSON string.
+* Parser functions instantiate a C++ object based on a JSON string.
 */
 
 #include "parse.hpp"

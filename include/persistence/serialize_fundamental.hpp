@@ -27,7 +27,7 @@ namespace persistence
     template<typename T>
     struct JsonSignedIntegerSerializer
     {
-        static_assert(std::is_integral<T>::value&& std::is_signed<T>::value, "T must be a signed integer");
+        static_assert(std::is_integral<T>::value && std::is_signed<T>::value, "T must be a signed integer");
 
         bool operator()(T value, rapidjson::Value& json) const
         {
@@ -39,7 +39,7 @@ namespace persistence
     template<typename T>
     struct JsonUnsignedIntegerSerializer
     {
-        static_assert(std::is_integral<T>::value&& std::is_unsigned<T>::value, "T must be an unsigned integer");
+        static_assert(std::is_integral<T>::value && std::is_unsigned<T>::value, "T must be an unsigned integer");
 
         bool operator()(T value, rapidjson::Value& json) const
         {
@@ -51,7 +51,7 @@ namespace persistence
     template<typename T>
     struct JsonSignedLongIntegerSerializer
     {
-        static_assert(std::is_integral<T>::value&& std::is_signed<T>::value, "T must be a signed integer");
+        static_assert(std::is_integral<T>::value && std::is_signed<T>::value, "T must be a signed integer");
 
         bool operator()(T value, rapidjson::Value& json) const
         {
@@ -63,7 +63,7 @@ namespace persistence
     template<typename T>
     struct JsonUnsignedLongIntegerSerializer
     {
-        static_assert(std::is_integral<T>::value&& std::is_unsigned<T>::value, "T must be an unsigned integer");
+        static_assert(std::is_integral<T>::value && std::is_unsigned<T>::value, "T must be an unsigned integer");
 
         bool operator()(T value, rapidjson::Value& json) const
         {

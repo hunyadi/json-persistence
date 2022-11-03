@@ -1,6 +1,7 @@
 #pragma once
 #include "number.hpp"
 #include "parse_base.hpp"
+#include "detail/unlikely.hpp"
 
 namespace persistence
 {
@@ -60,7 +61,7 @@ namespace persistence
 
         bool parse(JsonValueNumber n) override
         {
-            if (!parse_number(n.literal, ref)) {
+            PERSISTENCE_IF_UNLIKELY(!parse_number(n.literal, ref)) {
                 return false;
             }
 

@@ -2,6 +2,7 @@
 #include "exception.hpp"
 #include "detail/config.hpp"
 #include "detail/deserialize_context.hpp"
+#include "detail/unlikely.hpp"
 #include <rapidjson/document.h>
 
 namespace persistence
@@ -11,7 +12,7 @@ namespace persistence
         template<bool Exception>
         bool check_string(const rapidjson::Value& json, DeserializerContext& context)
         {
-            if (!json.IsString()) {
+            PERSISTENCE_IF_UNLIKELY(!json.IsString()) {
                 if constexpr (Exception) {
                     throw JsonDeserializationError(
                         "wrong JSON data type; expected: string",
@@ -27,7 +28,7 @@ namespace persistence
         template<bool Exception>
         bool check_object(const rapidjson::Value& json, DeserializerContext& context)
         {
-            if (!json.IsObject()) {
+            PERSISTENCE_IF_UNLIKELY(!json.IsObject()) {
                 if constexpr (Exception) {
                     throw JsonDeserializationError(
                         "wrong JSON data type; expected: object",
@@ -43,7 +44,7 @@ namespace persistence
         template<bool Exception>
         bool check_array(const rapidjson::Value& json, DeserializerContext& context)
         {
-            if (!json.IsArray()) {
+            PERSISTENCE_IF_UNLIKELY(!json.IsArray()) {
                 if constexpr (Exception) {
                     throw JsonDeserializationError(
                         "wrong JSON data type; expected: array",
@@ -59,7 +60,7 @@ namespace persistence
         template<bool Exception, std::size_t N>
         bool check_size(const rapidjson::Value& json, DeserializerContext& context)
         {
-            if (json.Size() != N) {
+            PERSISTENCE_IF_UNLIKELY(json.Size() != N) {
                 if constexpr (Exception) {
                     throw JsonDeserializationError(
                         "mismatch in number of array elements; expected: " + std::to_string(N) + ", got: " + std::to_string(json.Size()),

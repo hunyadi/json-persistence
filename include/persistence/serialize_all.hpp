@@ -1,6 +1,6 @@
 #pragma once
 /**
-* Serialization functions convert a C++ object into its JSON DOM object representation.
+* Serialization functions convert a C++ object into values in a JSON DOM object.
 */
 
 #include "serialize.hpp"

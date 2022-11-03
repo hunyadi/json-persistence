@@ -21,7 +21,7 @@ namespace persistence
                 if (!serialize<T>(item, item_json, context)) {
                     return false;
                 }
-                json.PushBack(item_json, context.global().allocator());  // ownership of value is transferred
+                json.PushBack(item_json, context.global().allocator());
                 ++k;
             }
             return true;

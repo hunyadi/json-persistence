@@ -20,8 +20,8 @@ namespace persistence
     }
 
     /**
-    * Generates the JSON representation of an object.
-    */
+     * Generates the JSON representation of an object.
+     */
     template<typename T>
     bool serialize(const T& obj, rapidjson::Value& json, SerializerContext& context)
     {
@@ -30,8 +30,8 @@ namespace persistence
     }
 
     /**
-    * Generates the JSON DOM representation of an object.
-    */
+     * Generates the JSON DOM representation of an object.
+     */
     template<typename T>
     bool serialize_to_document(const T& obj, rapidjson::Document& doc)
     {

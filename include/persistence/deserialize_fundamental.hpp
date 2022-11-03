@@ -1,5 +1,6 @@
 #pragma once
 #include "deserialize_base.hpp"
+#include "detail/unlikely.hpp"
 #include "detail/deserialize_aware.hpp"
 
 namespace persistence
@@ -10,7 +11,7 @@ namespace persistence
         bool check_range(WideType integer_value, DeserializerContext& context)
         {
             if constexpr (std::is_signed<NarrowType>::value) {
-                if (integer_value < std::numeric_limits<NarrowType>::min() || integer_value > std::numeric_limits<NarrowType>::max()) {
+                PERSISTENCE_IF_UNLIKELY(integer_value < std::numeric_limits<NarrowType>::min() || integer_value > std::numeric_limits<NarrowType>::max()) {
                     if constexpr (Exception) {
                         throw JsonDeserializationError(
                             "signed integer out of range",
@@ -21,7 +22,7 @@ namespace persistence
                     }
                 }
             } else {
-                if (integer_value > std::numeric_limits<NarrowType>::max()) {
+                PERSISTENCE_IF_UNLIKELY(integer_value > std::numeric_limits<NarrowType>::max()) {
                     if constexpr (Exception) {
                         throw JsonDeserializationError(
                             "unsigned integer out of range",
@@ -45,7 +46,7 @@ namespace persistence
 
         bool operator()(const rapidjson::Value& json, T& value) const
         {
-            if (!json.IsInt()) {
+            PERSISTENCE_IF_UNLIKELY(!json.IsInt()) {
                 if constexpr (Exception) {
                     throw JsonDeserializationError(
                         "wrong JSON data type; expected: integer",
@@ -75,7 +76,7 @@ namespace persistence
 
         bool operator()(const rapidjson::Value& json, T& value) const
         {
-            if (!json.IsUint()) {
+            PERSISTENCE_IF_UNLIKELY(!json.IsUint()) {
                 if constexpr (Exception) {
                     throw JsonDeserializationError(
                         "wrong JSON data type; expected: unsigned integer",
@@ -105,7 +106,7 @@ namespace persistence
 
         bool operator()(const rapidjson::Value& json, T& value) const
         {
-            if (!json.IsInt64()) {
+            PERSISTENCE_IF_UNLIKELY(!json.IsInt64()) {
                 if constexpr (Exception) {
                     throw JsonDeserializationError(
                         "wrong JSON data type; expected: 64-bit integer",
@@ -135,7 +136,7 @@ namespace persistence
 
         bool operator()(const rapidjson::Value& json, T& value) const
         {
-            if (!json.IsUint64()) {
+            PERSISTENCE_IF_UNLIKELY(!json.IsUint64()) {
                 if constexpr (Exception) {
                     throw JsonDeserializationError(
                         "wrong JSON data type; expected: unsigned 64-bit integer",
@@ -163,7 +164,7 @@ namespace persistence
 
         bool operator()(const rapidjson::Value& json, std::nullptr_t& value) const
         {
-            if (!json.IsNull()) {
+            PERSISTENCE_IF_UNLIKELY(!json.IsNull()) {
                 if constexpr (Exception) {
                     throw JsonDeserializationError(
                         "wrong JSON data type; expected: null",
@@ -186,7 +187,7 @@ namespace persistence
 
         bool operator()(const rapidjson::Value& json, bool& value) const
         {
-            if (!json.IsBool()) {
+            PERSISTENCE_IF_UNLIKELY(!json.IsBool()) {
                 if constexpr (Exception) {
                     throw JsonDeserializationError(
                         "wrong JSON data type; expected: boolean",
@@ -277,7 +278,7 @@ namespace persistence
 
         bool operator()(const rapidjson::Value& json, T& value) const
         {
-            if (!json.IsNumber()) {
+            PERSISTENCE_IF_UNLIKELY(!json.IsNumber()) {
                 if constexpr (Exception) {
                     throw JsonDeserializationError(
                         "wrong JSON data type; expected: number",

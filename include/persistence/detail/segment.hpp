@@ -5,10 +5,10 @@
 namespace persistence
 {
     /**
-    * A segment in a JSON Path expression.
-    *
-    * Segments of a path are strings for object property access and integers for array index access.
-    */
+     * A segment in a JSON Path expression.
+     *
+     * Segments of a path are strings for object property access and integers for array index access.
+     */
     struct Segment
     {
         Segment() = default;
