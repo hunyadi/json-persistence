@@ -1,6 +1,6 @@
 #pragma once
 #include "version.hpp"
-#if __has_cpp_attribute(unlikely) >= 201803L
+#if (__cplusplus >= 202002L) && (__has_cpp_attribute(unlikely) >= 201803L)
 #define PERSISTENCE_IF_UNLIKELY(condition) if (condition) [[unlikely]]
 #elif defined __GNUC__
 #define PERSISTENCE_IF_UNLIKELY(condition) if (__builtin_expect(!!(condition), 0))
