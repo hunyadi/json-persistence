@@ -11,25 +11,16 @@ namespace persistence
             return { {a[I]...} };
         }
 
-        template<typename K, typename V, std::size_t N, std::size_t... I>
-        constexpr std::array<std::pair<V, K>, N> flip_impl(const std::array<std::pair<K, V>, N>& a, std::index_sequence<I...>)
+        /**
+         * Creates an `std::array` instance from a classic one-dimensional array.
+         *
+         * Equivalent to `std::to_array` in C++20 and later.
+         */
+        template<typename T, std::size_t N>
+        constexpr std::array<std::remove_cv_t<T>, N> to_array(T(&a)[N])
         {
-            return { std::make_pair(a[I].second, a[I].first)... };
+            return detail::to_array_impl(a, std::make_index_sequence<N>{});
         }
-    }
-
-    /** Creates an `array` instance from a classic one-dimensional array. */
-    template<typename T, std::size_t N>
-    constexpr std::array<std::remove_cv_t<T>, N> to_array(T (&a)[N])
-    {
-        return detail::to_array_impl(a, std::make_index_sequence<N>{});
-    }
-
-    /** Exchanges the keys and values in a key-value pair list. */
-    template<typename Key, typename Value, std::size_t N>
-    constexpr std::array<std::pair<Value, Key>, N> flip(const std::array<std::pair<Key, Value>, N>& a)
-    {
-        return detail::flip_impl(a, std::make_index_sequence<N>{});
     }
 
     /**
@@ -96,6 +87,6 @@ namespace persistence
     template<typename E, std::size_t N>
     constexpr auto make_enum_converter(const std::pair<E, std::string_view> (&value_to_name)[N])
     {
-        return EnumConverter<E, N>(to_array(value_to_name));
+        return EnumConverter<E, N>(detail::to_array(value_to_name));
     }
 }

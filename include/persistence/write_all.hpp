@@ -17,3 +17,6 @@
 #include "write_tuple.hpp"
 #include "write_variant.hpp"
 #include "write_vector.hpp"
+#if __cplusplus >= 202002L
+#include "write_date.hpp"
+#endif

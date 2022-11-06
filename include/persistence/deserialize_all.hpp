@@ -17,3 +17,6 @@
 #include "deserialize_tuple.hpp"
 #include "deserialize_variant.hpp"
 #include "deserialize_vector.hpp"
+#if __cplusplus >= 202002L
+#include "deserialize_date.hpp"
+#endif

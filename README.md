@@ -1,6 +1,6 @@
-# Type-safe JSON persistence for C++17
+# Type-safe JSON persistence for C++17 and later
 
-This header-only C++17 library provides type-safe serialization of C++ objects into JSON strings, and deserialization of JSON strings to C++ objects.
+This header-only library for C++17 and later provides type-safe serialization of C++ objects into JSON strings, and deserialization of JSON strings to C++ objects.
 
 ## Features
 
@@ -8,6 +8,7 @@ This header-only C++17 library provides type-safe serialization of C++ objects i
 * Compile-time correctness.
 * (De-)serialize fundamental types `bool`, `short`, `int`, `long`, `float`, `double`, etc. to/from their respective JSON type.
 * (De-)serialize `time_point<system_clock>` type to/from an ISO 8601 date-time string in time zone UTC.
+* (De-)serialize `year_month_day` type to/from an ISO 8601 date string (C++20 and later only).
 * (De-)serialize enumeration types as their underlying integer type or as string (with auxiliary helper functions `to_string` and `from_string`).
 * (De-)serialize `vector<std::byte>` type to/from a Base64-encoded string.
 * (De-)serialize heterogeneous `pair<T1,T2>` and `tuple<T...>` to/from a JSON array.

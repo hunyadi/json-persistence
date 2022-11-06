@@ -17,3 +17,6 @@
 #include "serialize_tuple.hpp"
 #include "serialize_variant.hpp"
 #include "serialize_vector.hpp"
+#if __cplusplus >= 202002L
+#include "serialize_date.hpp"
+#endif

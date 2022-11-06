@@ -1,4 +1,7 @@
 #pragma once
+#if __cplusplus < 202002L
+#error This feature requires C++20 or later.
+#endif
 #include "datetime.hpp"
 #include "deserialize_base.hpp"
 #include "deserialize_check.hpp"
@@ -7,20 +10,21 @@
 namespace persistence
 {
     template<bool Exception>
-    struct JsonDeserializer<Exception, timestamp> : JsonContextAwareDeserializer
+    struct JsonDeserializer<Exception, std::chrono::year_month_day> : JsonContextAwareDeserializer
     {
         using JsonContextAwareDeserializer::JsonContextAwareDeserializer;
 
-        bool operator()(const rapidjson::Value& json, timestamp& value) const
+        bool operator()(const rapidjson::Value& json, std::chrono::year_month_day& value) const
         {
             if (!detail::check_string<Exception>(json, context)) {
                 return false;
             }
 
-            if (!parse_datetime(json.GetString(), json.GetStringLength(), value)) {
+            timestamp ts;
+            if (!parse_date(json.GetString(), json.GetStringLength(), ts)) {
                 if constexpr (Exception) {
                     throw JsonDeserializationError(
-                        "invalid ISO-8601 date-time; expected: YYYY-MM-DDTHH:MM:SSZ, got: " + std::string(json.GetString(), json.GetStringLength()),
+                        "invalid ISO-8601 date; expected: YYYY-MM-DD, got: " + std::string(json.GetString(), json.GetStringLength()),
                         Path(context.segments()).str()
                     );
                 } else {
@@ -28,6 +32,7 @@ namespace persistence
                 }
             }
 
+            value = std::chrono::time_point_cast<std::chrono::days>(ts);
             return true;
         }
     };
