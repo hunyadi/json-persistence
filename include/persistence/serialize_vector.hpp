@@ -13,7 +13,7 @@ namespace persistence
         bool operator()(const std::vector<T>& container, rapidjson::Value& json) const
         {
             json.SetArray();
-            json.Reserve(container.size(), context.global().allocator());
+            json.Reserve(static_cast<rapidjson::SizeType>(container.size()), context.global().allocator());
             std::size_t k = 0;
             for (const auto& item : container) {
                 rapidjson::Value item_json;

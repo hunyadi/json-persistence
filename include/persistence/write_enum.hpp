@@ -6,7 +6,7 @@
 namespace persistence
 {
     template<typename T>
-    struct JsonWriter<T, typename std::enable_if<std::is_enum<T>::value>::type>
+    struct JsonWriter<T, std::enable_if_t<std::is_enum_v<T>>>
     {
         bool operator()(T value, StringWriter& writer) const
         {
@@ -18,7 +18,7 @@ namespace persistence
                 JsonWriter<std::string_view> string_writer;
                 return string_writer(enum_traits<T>::to_string(value), writer);
             } else {
-                using integer_type = typename std::underlying_type<T>::type;
+                using integer_type = std::underlying_type_t<T>;
                 JsonWriter<integer_type> integer_writer;
                 return integer_writer(static_cast<integer_type>(value), writer);
             }

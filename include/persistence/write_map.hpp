@@ -15,7 +15,7 @@ namespace persistence
         {
             writer.StartObject();
             for (auto&& [key, value] : container) {
-                writer.Key(key.data(), key.size(), true);
+                writer.Key(key.data(), static_cast<rapidjson::SizeType>(key.size()), true);
 
                 WriterContext value_context(context, Segment(key));
                 if (!serialize<typename C::mapped_type>(value, writer, value_context)) {

@@ -49,7 +49,7 @@ namespace persistence
                 return *this;
             }
 
-            writer.Key(name.data(), name.size(), false);
+            writer.Key(name.data(), static_cast<rapidjson::SizeType>(name.size()), false);
 
             WriterContext member_context(context, Segment(name));
             result = result && serialize(ref, writer, member_context);
@@ -75,7 +75,7 @@ namespace persistence
     {};
 
     template<typename T>
-    struct has_custom_writer<T, typename std::enable_if<std::is_class<T>::value>::type>
+    struct has_custom_writer<T, std::enable_if_t<std::is_class_v<T>>>
     {
         constexpr static bool value = detect<T, writer_function>::value;
     };
@@ -84,7 +84,7 @@ namespace persistence
     * Writes a value with a specific type to JSON.
     */
     template<typename T>
-    struct JsonWriter<T, typename std::enable_if<has_custom_writer<T>::value>::type> : JsonContextAwareWriter
+    struct JsonWriter<T, std::enable_if_t<has_custom_writer<T>::value>> : JsonContextAwareWriter
     {
         using JsonContextAwareWriter::JsonContextAwareWriter;
 

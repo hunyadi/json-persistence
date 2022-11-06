@@ -7,10 +7,7 @@ namespace persistence
     template<typename T>
     struct JsonParser<T*>
     {
-        static_assert(
-            detail::defer<T>::value,
-            "parsing raw pointers is not supported, use smart pointers instead"
-        );
+        static_assert(detail::fail<T>, "parsing raw pointers is not supported, use smart pointers instead");
     };
 
     template<typename T>

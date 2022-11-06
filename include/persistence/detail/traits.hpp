@@ -6,8 +6,11 @@ namespace persistence
     template<typename T>
     struct unqualified
     {
-        using type = typename std::remove_reference<typename std::remove_volatile<T>::type>::type;
+        using type = std::remove_reference_t<std::remove_volatile_t<T>>;
     };
+
+    template<typename T>
+    using unqualified_t = typename unqualified<T>::type;
 
     /** Checks if a class supports an operation. */
     template<typename, template <typename> class, typename = void>

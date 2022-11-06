@@ -88,7 +88,7 @@ namespace persistence
     {};
 
     template<typename T>
-    struct has_custom_deserializer<T, typename std::enable_if<std::is_class<T>::value>::type>
+    struct has_custom_deserializer<T, std::enable_if_t<std::is_class_v<T>>>
     {
         constexpr static bool value = detect<T, deserializer_function>::value;
     };
@@ -97,7 +97,7 @@ namespace persistence
     * Writes a value with a specific type to JSON.
     */
     template<bool Exception, typename T>
-    struct JsonDeserializer<Exception, T, typename std::enable_if<has_custom_deserializer<T>::value>::type> : JsonContextAwareDeserializer
+    struct JsonDeserializer<Exception, T, std::enable_if_t<has_custom_deserializer<T>::value>> : JsonContextAwareDeserializer
     {
         using JsonContextAwareDeserializer::JsonContextAwareDeserializer;
 

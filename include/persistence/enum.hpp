@@ -19,7 +19,7 @@ namespace persistence
     template<typename Enum, typename Enable = void>
     struct enum_traits
     {
-        static_assert(std::is_enum<Enum>::value, "expected an enumeration type");
+        static_assert(std::is_enum_v<Enum>, "expected an enumeration type");
     };
 
     template<typename T>

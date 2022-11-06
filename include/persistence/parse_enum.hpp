@@ -5,7 +5,7 @@
 namespace persistence
 {
     template<typename T>
-    struct JsonParser<T, typename std::enable_if<std::is_enum<T>::value>::type> : EventHandler
+    struct JsonParser<T, std::enable_if_t<std::is_enum_v<T>>> : EventHandler
     {
         using json_type = JsonValueNumber;
 
@@ -31,7 +31,7 @@ namespace persistence
         bool parse(JsonValueNumber n) override
         {
             if constexpr (!detect<T, enum_from_string_function>::value) {
-                typename std::underlying_type<T>::type value;
+                std::underlying_type_t<T> value;
                 const char* last = n.literal.data() + n.literal.size();
                 auto result = std::from_chars(n.literal.data(), last, value);
                 if (result.ec != std::errc() || result.ptr != last) {

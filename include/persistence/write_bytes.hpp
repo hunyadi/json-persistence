@@ -13,7 +13,7 @@ namespace persistence
             if (!base64_encode(container, str)) {
                 return false;
             }
-            writer.String(str.data(), str.size(), true);
+            writer.String(str.data(), static_cast<rapidjson::SizeType>(str.size()), true);
             return true;
         }
     };

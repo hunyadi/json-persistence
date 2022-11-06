@@ -8,10 +8,7 @@ namespace persistence
     template<bool Exception, typename T>
     struct JsonDeserializer<Exception, T*>
     {
-        static_assert(
-            detail::defer<T>::value,
-            "deserialization for raw pointers is not supported, use smart pointers instead"
-        );
+        static_assert(detail::fail<T>, "deserialization for raw pointers is not supported, use smart pointers instead");
     };
 
     template<bool Exception, typename T>

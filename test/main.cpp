@@ -2,6 +2,7 @@
 #include "persistence/persistence.hpp"
 #include "persistence/utility.hpp"
 #include "definitions.hpp"
+#include "enumerations.hpp"
 #include "measure.hpp"
 #include "random.hpp"
 #include "string.hpp"
@@ -64,9 +65,19 @@ testing::AssertionResult test_deserialize(const std::string& str, const T& ref_o
     T doc_obj;
     result = deserialize(doc, doc_obj);
     if (result) {
-        EXPECT_EQ(doc_obj, ref_obj);
-        EXPECT_EQ(deserialize<T>(doc), ref_obj);
-        result = (doc_obj == ref_obj);
+        if constexpr (is_pointer_like_v<T>) {
+            EXPECT_EQ(*doc_obj, *ref_obj);
+        } else {
+            EXPECT_EQ(doc_obj, ref_obj);
+        }
+        doc_obj = deserialize<T>(doc);
+        if constexpr (is_pointer_like_v<T>) {
+            EXPECT_EQ(*doc_obj, *ref_obj);
+            result = (*doc_obj == *ref_obj);
+        } else {
+            EXPECT_EQ(doc_obj, ref_obj);
+            result = (doc_obj == ref_obj);
+        }
     }
     if (!result) {
         return testing::AssertionFailure() << "de-serialization failed";
@@ -75,42 +86,21 @@ testing::AssertionResult test_deserialize(const std::string& str, const T& ref_o
     T str_obj;
     result = parse(str, str_obj);
     if (result) {
-        EXPECT_EQ(str_obj, ref_obj);
-        EXPECT_EQ(parse<T>(str), ref_obj);
-        result = (str_obj == ref_obj);
+        if constexpr (is_pointer_like_v<T>) {
+            EXPECT_EQ(*str_obj, *ref_obj);
+        } else {
+            EXPECT_EQ(str_obj, ref_obj);
+        }
+        str_obj = parse<T>(str);
+        if constexpr (is_pointer_like_v<T>) {
+            EXPECT_EQ(*str_obj, *ref_obj);
+            result = (*str_obj == *ref_obj);
+        } else {
+            EXPECT_EQ(str_obj, ref_obj);
+            result = (str_obj == ref_obj);
+        }
     }
     if (!result) {
-        return testing::AssertionFailure() << "parse from JSON failed";
-    }
-
-    return testing::AssertionSuccess();
-}
-
-/**
-* De-serializes an object using various methods, and compares the pointees.
-*
-* @param obj The JSON string to de-serialize.
-* @param ref_json The reference C++ object to compare against.
-*/
-template<typename T>
-testing::AssertionResult test_pointer_deserialize(const std::string& str, const T& ref_obj)
-{
-    static_assert(is_pointer_like<T>::value, "only applicable to pointer-like types");
-
-    rapidjson::Document doc = string_to_document(str);
-    if (doc.HasParseError()) {
-        return testing::AssertionFailure() << "document parse error";
-    }
-
-    T doc_obj = deserialize<T>(doc);
-    EXPECT_EQ(*doc_obj, *ref_obj);
-    if (!(*doc_obj == *ref_obj)) {
-        return testing::AssertionFailure() << "de-serialization failed";
-    }
-
-    T str_obj = parse<T>(str);
-    EXPECT_EQ(*str_obj, *ref_obj);
-    if (!(*str_obj == *ref_obj)) {
         return testing::AssertionFailure() << "parse from JSON failed";
     }
 
@@ -224,7 +214,7 @@ TEST(Serialization, StringTypes)
 
     // NUL byte in middle of string
     EXPECT_TRUE(test_serialize(std::string(view_from_chars("test\0string")), "\"test\\u0000string\""));
-    
+
     // UTF-8 characters
     EXPECT_TRUE(test_serialize(std::string("árvíztűrő tükörfúrógép"), "\"árvíztűrő tükörfúrógép\""));
 }
@@ -482,7 +472,7 @@ TEST(Deserialization, StringTypes)
 
     // NUL byte in middle of string
     EXPECT_TRUE(test_deserialize("\"test\\u0000string\"", std::string(view_from_chars("test\0string"))));
-    
+
     // UTF-8 characters
     EXPECT_TRUE(test_deserialize("\"árvíztűrő tükörfúrógép\"", std::string("árvíztűrő tükörfúrógép")));
 
@@ -544,8 +534,8 @@ TEST(Deserialization, DateTimeTypes)
 
 TEST(Deserialization, Pointer)
 {
-    EXPECT_TRUE(test_pointer_deserialize("{\"value\": \"string\"}", std::make_unique<TestValue>("string")));
-    EXPECT_TRUE(test_pointer_deserialize("{\"value\": \"string\"}", std::make_shared<TestValue>("string")));
+    EXPECT_TRUE(test_deserialize("{\"value\": \"string\"}", std::make_unique<TestValue>("string")));
+    EXPECT_TRUE(test_deserialize("{\"value\": \"string\"}", std::make_shared<TestValue>("string")));
 }
 
 TEST(Deserialization, Pair)

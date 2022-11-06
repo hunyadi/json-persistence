@@ -35,7 +35,7 @@ namespace persistence
                 }
                 return true;
             } else {
-                using integer_type = typename std::underlying_type<T>::type;
+                using integer_type = std::underlying_type_t<T>;
 
                 integer_type integer_value;
                 if (!deserialize<Exception>(json, integer_value, context)) {

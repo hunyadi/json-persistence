@@ -41,7 +41,7 @@ namespace persistence
 
                 // create a JSON string "/path/to/earlier/occurrence"
                 rapidjson::Value ref_json;
-                ref_json.SetString(ref.data(), ref.size(), context.global().allocator());
+                ref_json.SetString(ref.data(), static_cast<rapidjson::SizeType>(ref.size()), context.global().allocator());
 
                 // create a {"$ref": "/path/to/earlier/occurrence"}
                 json.SetObject();

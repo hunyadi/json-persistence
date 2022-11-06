@@ -20,7 +20,11 @@ namespace persistence
     {
         bool operator()(const std::string_view& value, StringWriter& writer) const
         {
-            writer.String(value.size() > 0 ? value.data() : "", value.size(), false);
+            writer.String(
+                value.size() > 0 ? value.data() : "",
+                static_cast<rapidjson::SizeType>(value.size()),
+                false
+            );
             return true;
         }
     };
@@ -30,7 +34,7 @@ namespace persistence
     {
         bool operator()(const std::string& value, StringWriter& writer) const
         {
-            writer.String(value.data(), value.size(), true);
+            writer.String(value.data(), static_cast<rapidjson::SizeType>(value.size()), true);
             return true;
         }
     };

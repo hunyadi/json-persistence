@@ -21,7 +21,10 @@ namespace persistence
     {
         bool operator()(const std::string_view& value, rapidjson::Value& json) const
         {
-            json.SetString(value.size() > 0 ? value.data() : "", value.size());
+            json.SetString(
+                value.size() > 0 ? value.data() : "",
+                static_cast<rapidjson::SizeType>(value.size())
+            );
             return true;
         }
     };
@@ -33,7 +36,7 @@ namespace persistence
 
         bool operator()(const std::string& value, rapidjson::Value& json) const
         {
-            json.SetString(value.data(), value.size(), context.global().allocator());
+            json.SetString(value.data(), static_cast<rapidjson::SizeType>(value.size()), context.global().allocator());
             return true;
         }
     };

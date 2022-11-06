@@ -10,9 +10,7 @@ namespace persistence
     template<bool Exception, typename T>
     auto make_deserializer(DeserializerContext& context)
     {
-        using value_type = typename unqualified<T>::type;
-        using deserializer_type = JsonDeserializer<Exception, value_type>;
-        return deserializer_type(context);
+        return JsonDeserializer<Exception, unqualified_t<T>>(context);
     }
 
     /**
@@ -24,7 +22,7 @@ namespace persistence
     template<bool Exception, typename T>
     bool deserialize(const rapidjson::Value& json, T& obj, DeserializerContext& context)
     {
-        auto deserializer = make_deserializer<Exception, typename unqualified<T>::type>(context);
+        auto deserializer = make_deserializer<Exception, unqualified_t<T>>(context);
         return deserializer(json, obj);
     }
 

@@ -54,7 +54,7 @@ namespace persistence
             SerializerContext member_context(context, Segment(name));
             result = serialize(ref, member_json, member_context);
             if (result) {
-                rapidjson::Value::StringRefType str(name.data(), name.size());
+                rapidjson::Value::StringRefType str(name.data(), static_cast<rapidjson::SizeType>(name.size()));
                 json_object.AddMember(str, member_json, context.global().allocator());
             }
             return *this;
@@ -79,7 +79,7 @@ namespace persistence
     {};
 
     template<typename T>
-    struct has_custom_serializer<T, typename std::enable_if<std::is_class<T>::value>::type>
+    struct has_custom_serializer<T, std::enable_if_t<std::is_class_v<T>>>
     {
         constexpr static bool value = detect<T, serializer_function>::value;
     };
@@ -88,7 +88,7 @@ namespace persistence
     * Writes a value with a specific type to JSON.
     */
     template<typename T>
-    struct JsonSerializer<T, typename std::enable_if<has_custom_serializer<T>::value>::type> : JsonContextAwareSerializer
+    struct JsonSerializer<T, std::enable_if_t<has_custom_serializer<T>::value>> : JsonContextAwareSerializer
     {
         using JsonContextAwareSerializer::JsonContextAwareSerializer;
 

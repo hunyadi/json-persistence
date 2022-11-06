@@ -10,7 +10,7 @@ namespace persistence
         bool operator()(timestamp value, StringWriter& writer) const
         {
             auto dt = to_iso_datetime(value);
-            writer.String(dt.text, iso_datetime::length(), true);
+            writer.String(dt.text, static_cast<rapidjson::SizeType>(iso_datetime::length()), true);
             return true;
         }
     };

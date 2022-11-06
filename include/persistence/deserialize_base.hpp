@@ -14,7 +14,7 @@ namespace persistence
     {
         // if you are getting a compile-time error pointing at this location, make sure the appropriate
         // headers are included, and (de-)serialization is supported for the type
-        static_assert(detail::defer<T>::value, "expected a type that can be deserialized from JSON");
+        static_assert(detail::fail<T>, "expected a type that can be deserialized from JSON");
     };
 
     struct DeserializerContext;

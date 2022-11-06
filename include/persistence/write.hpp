@@ -9,9 +9,7 @@ namespace persistence
     template<typename T>
     auto make_writer(WriterContext& context)
     {
-        using value_type = typename unqualified<T>::type;
-        using writer_type = JsonWriter<value_type>;
-
+        using writer_type = JsonWriter<unqualified_t<T>>;
         if constexpr (std::is_base_of<JsonContextAwareWriter, writer_type>::value) {
             return writer_type(context);
         } else {
@@ -25,7 +23,7 @@ namespace persistence
     template<typename T>
     bool serialize(const T& obj, StringWriter& writer, WriterContext& context)
     {
-        auto serializer = make_writer<typename unqualified<T>::type>(context);
+        auto serializer = make_writer<unqualified_t<T>>(context);
         return serializer(obj, writer);
     }
 

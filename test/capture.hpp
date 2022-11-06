@@ -3,6 +3,7 @@
 
 namespace test
 {
+    /** Captures the output written to the the standard output stream as a string. */
     class OutputCapture
     {
     public:

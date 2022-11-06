@@ -95,7 +95,23 @@ Add new template specializations to support (de-)serializing new types:
 * Specialize `JsonSerializer<T>` to serialize new C++ types to JSON DOM.
 * Specialize `JsonDeserializer<T>` to deserialize new C++ types from JSON DOM.
 
-(De-)serialize, parse and write enumeration types as strings by defining value-to-string and string-to-value conversions:
+(De-)serialize, parse and write enumeration types as strings by defining value-to-string and string-to-value conversions.
+
+### Fast and efficient
+
+* Built on top of [RapidJSON](https://rapidjson.org/).
+* Uses RapidJSON [SAX interface](https://rapidjson.org/md_doc_sax.html) for writing and parsing JSON strings directly, bypassing the JSON DOM.
+* Uses a polymorphic stack to reduce dynamic memory allocations on heap.
+* Unrolls loops at compile-time for bounded-length data structures such as pairs, tuples and object properties.
+
+### Platform-neutral
+
+* Uses standard C++17 features only (with the exception of RapidJSON engine).
+* Compiles on Linux, MacOS and Windows.
+
+## Enumeration to string conversion
+
+In order to (de-)serialize, parse and write enumeration types as strings, define value-to-string and string-to-value conversions with the type trait class `enum_traits`:
 
 ```cpp
 namespace persistence
@@ -121,17 +137,7 @@ namespace persistence
 }
 ```
 
-### Fast and efficient
-
-* Built on top of [RapidJSON](https://rapidjson.org/).
-* Uses RapidJSON [SAX interface](https://rapidjson.org/md_doc_sax.html) for writing and parsing JSON strings directly, bypassing the JSON DOM.
-* Uses a polymorphic stack to reduce dynamic memory allocations on heap.
-* Unrolls loops at compile-time for bounded-length data structures such as pairs, tuples and object properties.
-
-### Platform-neutral
-
-* Uses standard C++17 features only (with the exception of RapidJSON engine).
-* Compiles on Linux, MacOS and Windows.
+Use utility function `make_enum_converter` and class `EnumConverter<E, N>` to implement `to_string` and `from_string` with less boilerplate code.
 
 ## Error reporting
 

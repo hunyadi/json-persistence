@@ -19,7 +19,7 @@ namespace persistence
     template<typename T>
     struct JsonNumberSetParser : EventHandler
     {
-        static_assert(std::is_arithmetic<T>::value, "T must be an arithmetic type");
+        static_assert(std::is_arithmetic_v<T>, "T must be an arithmetic type");
 
         JsonNumberSetParser(ReaderContext& context, std::set<T>& container)
             : context(context)

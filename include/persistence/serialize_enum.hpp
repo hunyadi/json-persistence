@@ -6,7 +6,7 @@
 namespace persistence
 {
     template<typename T>
-    struct JsonSerializer<T, typename std::enable_if<std::is_enum<T>::value>::type>
+    struct JsonSerializer<T, std::enable_if_t<std::is_enum_v<T>>>
     {
         bool operator()(T value, rapidjson::Value& json) const
         {
@@ -18,7 +18,7 @@ namespace persistence
                 JsonSerializer<std::string_view> string_serializer;
                 return string_serializer(enum_traits<T>::to_string(value), json);
             } else {
-                using integer_type = typename std::underlying_type<T>::type;
+                using integer_type = std::underlying_type_t<T>;
                 JsonSerializer<integer_type> integer_serializer;
                 return integer_serializer(static_cast<integer_type>(value), json);
             }

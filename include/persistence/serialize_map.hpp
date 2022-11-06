@@ -22,7 +22,7 @@ namespace persistence
                 }
 
                 rapidjson::Value key_json;
-                key_json.SetString(key.data(), key.size(), context.global().allocator());
+                key_json.SetString(key.data(), static_cast<rapidjson::SizeType>(key.size()), context.global().allocator());
                 json.AddMember(key_json, value_json, context.global().allocator());  // ownership of key and value is transferred
             }
             return true;

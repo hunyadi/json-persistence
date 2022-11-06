@@ -10,7 +10,7 @@ namespace persistence
         template<bool Exception, typename NarrowType, typename WideType>
         bool check_range(WideType integer_value, DeserializerContext& context)
         {
-            if constexpr (std::is_signed<NarrowType>::value) {
+            if constexpr (std::is_signed_v<NarrowType>) {
                 PERSISTENCE_IF_UNLIKELY(integer_value < std::numeric_limits<NarrowType>::min() || integer_value > std::numeric_limits<NarrowType>::max()) {
                     if constexpr (Exception) {
                         throw JsonDeserializationError(
@@ -42,7 +42,7 @@ namespace persistence
     {
         using JsonContextAwareDeserializer::JsonContextAwareDeserializer;
 
-        static_assert(std::is_integral<T>::value && std::is_signed<T>::value, "T must be a signed integer");
+        static_assert(std::is_integral_v<T> && std::is_signed_v<T>, "T must be a signed integer");
 
         bool operator()(const rapidjson::Value& json, T& value) const
         {
@@ -72,7 +72,7 @@ namespace persistence
     {
         using JsonContextAwareDeserializer::JsonContextAwareDeserializer;
 
-        static_assert(std::is_integral<T>::value && std::is_unsigned<T>::value, "T must be an unsigned integer");
+        static_assert(std::is_integral_v<T> && std::is_unsigned_v<T>, "T must be an unsigned integer");
 
         bool operator()(const rapidjson::Value& json, T& value) const
         {
@@ -102,7 +102,7 @@ namespace persistence
     {
         using JsonContextAwareDeserializer::JsonContextAwareDeserializer;
 
-        static_assert(std::is_integral<T>::value && std::is_signed<T>::value, "T must be a signed integer");
+        static_assert(std::is_integral_v<T> && std::is_signed_v<T>, "T must be a signed integer");
 
         bool operator()(const rapidjson::Value& json, T& value) const
         {
@@ -132,7 +132,7 @@ namespace persistence
     {
         using JsonContextAwareDeserializer::JsonContextAwareDeserializer;
 
-        static_assert(std::is_integral<T>::value && std::is_unsigned<T>::value, "T must be an unsigned integer");
+        static_assert(std::is_integral_v<T> && std::is_unsigned_v<T>, "T must be an unsigned integer");
 
         bool operator()(const rapidjson::Value& json, T& value) const
         {
@@ -274,7 +274,7 @@ namespace persistence
     {
         using JsonContextAwareDeserializer::JsonContextAwareDeserializer;
 
-        static_assert(std::is_floating_point<T>::value, "T must be a floating-point type");
+        static_assert(std::is_floating_point_v<T>, "T must be a floating-point type");
 
         bool operator()(const rapidjson::Value& json, T& value) const
         {

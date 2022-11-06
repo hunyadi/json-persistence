@@ -9,9 +9,7 @@ namespace persistence
     template<typename T>
     auto make_serializer(SerializerContext& context)
     {
-        using value_type = typename unqualified<T>::type;
-        using serializer_type = JsonSerializer<value_type>;
-
+        using serializer_type = JsonSerializer<unqualified_t<T>>;
         if constexpr (std::is_base_of<JsonContextAwareSerializer, serializer_type>::value) {
             return serializer_type(context);
         } else {
@@ -25,7 +23,7 @@ namespace persistence
     template<typename T>
     bool serialize(const T& obj, rapidjson::Value& json, SerializerContext& context)
     {
-        auto json_serializer = make_serializer<typename unqualified<T>::type>(context);
+        auto json_serializer = make_serializer<unqualified_t<T>>(context);
         return json_serializer(obj, json);
     }
 

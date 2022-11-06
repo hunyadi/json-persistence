@@ -22,5 +22,8 @@ namespace persistence
         template<typename T>
         struct defer : public std::false_type
         {};
+
+        template<typename T>
+        inline constexpr bool fail = defer<T>::value;
     }
 }

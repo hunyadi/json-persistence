@@ -42,7 +42,7 @@ namespace persistence
                 // create a {"$ref": "/path/to/earlier/occurrence"}
                 writer.StartObject();
                 writer.Key("$ref");
-                writer.String(ref.data(), ref.size(), true);
+                writer.String(ref.data(), static_cast<rapidjson::SizeType>(ref.size()), true);
                 writer.EndObject();
 
             } else {

@@ -18,7 +18,7 @@ namespace persistence
                 return false;
             }
 
-            json.SetString(str.data(), str.size(), context.global().allocator());
+            json.SetString(str.data(), static_cast<rapidjson::SizeType>(str.size()), context.global().allocator());
             return true;
         }
     };

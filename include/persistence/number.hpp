@@ -20,11 +20,11 @@ namespace persistence
     template<typename T, typename Enable = void>
     struct NumberParser
     {
-        static_assert(detail::defer<T>::value, "unrecognized number type");
+        static_assert(detail::fail<T>, "unrecognized number type");
     };
 
     template<typename T>
-    struct NumberParser<T, typename std::enable_if<std::is_integral<T>::value>::type>
+    struct NumberParser<T, std::enable_if_t<std::is_integral_v<T>>>
     {
         bool parse(const std::string_view& str, T& value)
         {
@@ -34,7 +34,7 @@ namespace persistence
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
     template<typename T>
-    struct NumberParser<T, typename std::enable_if<std::is_floating_point<T>::value>::type>
+    struct NumberParser<T, std::enable_if_t<std::is_floating_point_v<T>>>
     {
         bool parse(const std::string_view& str, T& value)
         {
