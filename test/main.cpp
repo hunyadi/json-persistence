@@ -46,6 +46,14 @@ testing::AssertionResult test_serialize(const T& obj, const std::string& ref_jso
     return testing::AssertionSuccess();
 }
 
+template<typename T>
+testing::AssertionResult test_serialize(const T& obj, const std::string& ref_json, bool& outcome)
+{
+    auto result = test_serialize(obj, ref_json);
+    outcome = outcome && !!result;
+    return result;
+}
+
 /**
 * De-serializes an object using various methods, and compares the result to a reference value.
 *
@@ -108,6 +116,14 @@ testing::AssertionResult test_deserialize(const std::string& str, const T& ref_o
 }
 
 template<typename T>
+testing::AssertionResult test_deserialize(const std::string& str, const T& ref_obj, bool& outcome)
+{
+    auto result = test_deserialize(str, ref_obj);
+    outcome = outcome && !!result;
+    return result;
+}
+
+template<typename T>
 testing::AssertionResult test_no_deserialize(const std::string& str)
 {
     rapidjson::Document doc = string_to_document(str);
@@ -130,21 +146,11 @@ testing::AssertionResult test_no_deserialize(const std::string& str)
 }
 
 template<typename T>
-void test_integer_type()
+testing::AssertionResult test_no_deserialize(const std::string& str, bool& outcome)
 {
-    EXPECT_TRUE(test_serialize(T(0), "0"));
-    EXPECT_TRUE(test_serialize(T(1), "1"));
-    EXPECT_TRUE(test_serialize(std::numeric_limits<T>::min(), std::to_string(std::numeric_limits<T>::min())));
-    EXPECT_TRUE(test_serialize(std::numeric_limits<T>::max(), std::to_string(std::numeric_limits<T>::max())));
-}
-
-template<typename T>
-void test_float_type()
-{
-    EXPECT_TRUE(test_serialize(T(0.0), "0.0"));
-    EXPECT_TRUE(test_serialize(T(1.0), "1.0"));
-    EXPECT_TRUE(test_serialize(T(-1.0), "-1.0"));
-    EXPECT_TRUE(test_serialize(T(4.5), "4.5"));
+    auto result = test_no_deserialize<T>(str);
+    outcome = outcome && !!result;
+    return result;
 }
 
 TEST(Serialization, SpecialTypes)
@@ -158,30 +164,62 @@ TEST(Serialization, BooleanTypes)
     EXPECT_TRUE(test_serialize(false, "false"));
 }
 
+template<typename T>
+testing::AssertionResult test_serialize_integer_type()
+{
+    bool outcome = true;
+    EXPECT_TRUE(test_serialize(T(0), "0", outcome));
+    EXPECT_TRUE(test_serialize(T(1), "1", outcome));
+    EXPECT_TRUE(test_serialize(std::numeric_limits<T>::min(), std::to_string(std::numeric_limits<T>::min()), outcome));
+    EXPECT_TRUE(test_serialize(std::numeric_limits<T>::max(), std::to_string(std::numeric_limits<T>::max()), outcome));
+
+    if (outcome) {
+        return testing::AssertionSuccess();
+    } else {
+        return testing::AssertionFailure();
+    }
+}
+
+template<typename T>
+testing::AssertionResult test_serialize_float_type()
+{
+    bool outcome = true;
+    EXPECT_TRUE(test_serialize(T(0.0), "0.0", outcome));
+    EXPECT_TRUE(test_serialize(T(1.0), "1.0", outcome));
+    EXPECT_TRUE(test_serialize(T(-1.0), "-1.0", outcome));
+    EXPECT_TRUE(test_serialize(T(4.5), "4.5", outcome));
+
+    if (outcome) {
+        return testing::AssertionSuccess();
+    } else {
+        return testing::AssertionFailure();
+    }
+}
+
 TEST(Serialization, NumericTypes)
 {
-    test_integer_type<char>();
-    test_integer_type<unsigned char>();
-    test_integer_type<short>();
-    test_integer_type<unsigned short>();
-    test_integer_type<int>();
-    test_integer_type<unsigned int>();
-    test_integer_type<long>();
-    test_integer_type<unsigned long>();
-    test_integer_type<long long>();
-    test_integer_type<unsigned long long>();
+    EXPECT_TRUE(test_serialize_integer_type<char>());
+    EXPECT_TRUE(test_serialize_integer_type<unsigned char>());
+    EXPECT_TRUE(test_serialize_integer_type<short>());
+    EXPECT_TRUE(test_serialize_integer_type<unsigned short>());
+    EXPECT_TRUE(test_serialize_integer_type<int>());
+    EXPECT_TRUE(test_serialize_integer_type<unsigned int>());
+    EXPECT_TRUE(test_serialize_integer_type<long>());
+    EXPECT_TRUE(test_serialize_integer_type<unsigned long>());
+    EXPECT_TRUE(test_serialize_integer_type<long long>());
+    EXPECT_TRUE(test_serialize_integer_type<unsigned long long>());
 
-    test_integer_type<int8_t>();
-    test_integer_type<uint8_t>();
-    test_integer_type<int16_t>();
-    test_integer_type<uint16_t>();
-    test_integer_type<int32_t>();
-    test_integer_type<uint32_t>();
-    test_integer_type<int64_t>();
-    test_integer_type<uint64_t>();
+    EXPECT_TRUE(test_serialize_integer_type<int8_t>());
+    EXPECT_TRUE(test_serialize_integer_type<uint8_t>());
+    EXPECT_TRUE(test_serialize_integer_type<int16_t>());
+    EXPECT_TRUE(test_serialize_integer_type<uint16_t>());
+    EXPECT_TRUE(test_serialize_integer_type<int32_t>());
+    EXPECT_TRUE(test_serialize_integer_type<uint32_t>());
+    EXPECT_TRUE(test_serialize_integer_type<int64_t>());
+    EXPECT_TRUE(test_serialize_integer_type<uint64_t>());
 
-    test_float_type<float>();
-    test_float_type<double>();
+    EXPECT_TRUE(test_serialize_float_type<float>());
+    EXPECT_TRUE(test_serialize_float_type<double>());
 }
 
 TEST(Serialization, EnumTypes)
@@ -415,33 +453,87 @@ TEST(Deserialization, BooleanTypes)
     EXPECT_TRUE(test_no_deserialize<bool>("{}"));
 }
 
+template<typename T>
+testing::AssertionResult test_deserialize_integer_type()
+{
+    bool outcome = true;
+    EXPECT_TRUE(test_deserialize("0", T(0), outcome));
+    EXPECT_TRUE(test_deserialize("1", T(1), outcome));
+
+    if constexpr (std::is_signed_v<T>) {
+        EXPECT_TRUE(test_deserialize("-1", T(-1), outcome));
+    }
+
+    EXPECT_TRUE(test_deserialize(std::to_string(std::numeric_limits<T>::min()), std::numeric_limits<T>::min(), outcome));
+    EXPECT_TRUE(test_deserialize(std::to_string(std::numeric_limits<T>::max()), std::numeric_limits<T>::max(), outcome));
+
+    EXPECT_TRUE(test_no_deserialize<T>("1.0", outcome));
+    EXPECT_TRUE(test_no_deserialize<T>("-1.0", outcome));
+    EXPECT_TRUE(test_no_deserialize<T>("true", outcome));
+    EXPECT_TRUE(test_no_deserialize<T>("\"string\"", outcome));
+    EXPECT_TRUE(test_no_deserialize<T>("[]", outcome));
+    EXPECT_TRUE(test_no_deserialize<T>("{}", outcome));
+
+    if (outcome) {
+        return testing::AssertionSuccess();
+    } else {
+        return testing::AssertionFailure();
+    }
+}
+
+template<typename T>
+testing::AssertionResult test_deserialize_float_type()
+{
+    bool outcome = true;
+    EXPECT_TRUE(test_deserialize("0", T(0.0), outcome));
+    EXPECT_TRUE(test_deserialize("0.0", T(0.0), outcome));
+    EXPECT_TRUE(test_deserialize("1", T(1.0), outcome));
+    EXPECT_TRUE(test_deserialize("1.0", T(1.0), outcome));
+    EXPECT_TRUE(test_deserialize("-1", T(-1.0), outcome));
+    EXPECT_TRUE(test_deserialize("-1.0", T(-1.0), outcome));
+    EXPECT_TRUE(test_deserialize("0.125", T(0.125), outcome));
+    EXPECT_TRUE(test_deserialize("-4.5", T(-4.5), outcome));
+    EXPECT_TRUE(test_deserialize("2.5e8", T(2.5e8), outcome));
+    EXPECT_TRUE(test_deserialize("2.5e-8", T(2.5e-8), outcome));
+    EXPECT_TRUE(test_deserialize("-2.5e8", T(-2.5e8), outcome));
+    EXPECT_TRUE(test_deserialize("2.5e04", T(2.5e4), outcome));
+    EXPECT_TRUE(test_deserialize("2.5e-04", T(2.5e-4), outcome));
+    EXPECT_TRUE(test_deserialize("-2.5e04", T(-2.5e4), outcome));
+    EXPECT_TRUE(test_deserialize("2.500e4", T(2.5e4), outcome));
+    EXPECT_TRUE(test_deserialize("2.500e-4", T(2.5e-4), outcome));
+    EXPECT_TRUE(test_deserialize("-2.500e4", T(-2.5e4), outcome));
+    EXPECT_TRUE(test_deserialize("2.5e16", T(2.5e16), outcome));
+    EXPECT_TRUE(test_deserialize("2.5e-16", T(2.5e-16), outcome));
+    EXPECT_TRUE(test_deserialize("-2.5e16", T(-2.5e16), outcome));
+
+    EXPECT_TRUE(test_no_deserialize<T>("true", outcome));
+    EXPECT_TRUE(test_no_deserialize<T>("\"string\"", outcome));
+    EXPECT_TRUE(test_no_deserialize<T>("[]", outcome));
+    EXPECT_TRUE(test_no_deserialize<T>("{}", outcome));
+
+    if (outcome) {
+        return testing::AssertionSuccess();
+    } else {
+        return testing::AssertionFailure();
+    }
+}
+
 TEST(Deserialization, NumericTypes)
 {
-    EXPECT_TRUE(test_deserialize("127", static_cast<char>(127)));
-    EXPECT_TRUE(test_deserialize("127", static_cast<signed char>(127)));
-    EXPECT_TRUE(test_deserialize("127", static_cast<unsigned char>(127)));
+    EXPECT_TRUE(test_deserialize_integer_type<char>());
+    EXPECT_TRUE(test_deserialize_integer_type<signed char>());
+    EXPECT_TRUE(test_deserialize_integer_type<unsigned char>());
+    EXPECT_TRUE(test_deserialize_integer_type<short>());
+    EXPECT_TRUE(test_deserialize_integer_type<unsigned short>());
+    EXPECT_TRUE(test_deserialize_integer_type<int>());
+    EXPECT_TRUE(test_deserialize_integer_type<unsigned int>());
+    EXPECT_TRUE(test_deserialize_integer_type<long>());
+    EXPECT_TRUE(test_deserialize_integer_type<unsigned long>());
+    EXPECT_TRUE(test_deserialize_integer_type<long long>());
+    EXPECT_TRUE(test_deserialize_integer_type<unsigned long long>());
 
-    EXPECT_TRUE(test_deserialize("1024", 1024));
-    EXPECT_TRUE(test_deserialize("-1024", -1024));
-    EXPECT_TRUE(test_deserialize("1024", 1024u));
-
-    EXPECT_TRUE(test_deserialize("2048", 2048l));
-    EXPECT_TRUE(test_deserialize("-2048", -2048l));
-    EXPECT_TRUE(test_deserialize("2048", 2048ul));
-
-    EXPECT_TRUE(test_deserialize("4096", 4096ll));
-    EXPECT_TRUE(test_deserialize("-4096", -4096ll));
-    EXPECT_TRUE(test_deserialize("4096", 4096ull));
-
-    EXPECT_TRUE(test_deserialize("9.5", 9.5f));
-    EXPECT_TRUE(test_deserialize("1.25", 1.25));
-
-    EXPECT_TRUE(test_no_deserialize<int>("1.0"));
-    EXPECT_TRUE(test_no_deserialize<int>("-1.0"));
-    EXPECT_TRUE(test_no_deserialize<int>("true"));
-    EXPECT_TRUE(test_no_deserialize<int>("\"string\""));
-    EXPECT_TRUE(test_no_deserialize<int>("[]"));
-    EXPECT_TRUE(test_no_deserialize<int>("{}"));
+    EXPECT_TRUE(test_deserialize_float_type<float>());
+    EXPECT_TRUE(test_deserialize_float_type<double>());
 }
 
 TEST(Deserialization, EnumTypes)
