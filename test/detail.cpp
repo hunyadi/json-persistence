@@ -4,6 +4,7 @@
 #include "persistence/object_members.hpp"
 #include "capture.hpp"
 #include "definitions.hpp"
+#include "measure.hpp"
 
 using namespace persistence;
 using namespace test;
@@ -78,50 +79,92 @@ TEST(Utility, Members)
     EXPECT_EQ(std::get<4>(members).name, "custom_value");
 }
 
-void test_base64(std::string_view str, std::string_view ref)
+testing::AssertionResult test_base64(const std::string_view& str, std::string_view ref)
 {
     std::string out;
-    base64_encode(str, out);
-    EXPECT_EQ(out, ref);
+    if (!base64_encode(str, out)) {
+        return testing::AssertionFailure() << "encode failed";
+    }
+    if (out != ref) {
+        return testing::AssertionFailure() << "encode mismatch; expected: " << ref << ", got: " << out;
+    }
 
     byte_vector raw;
-    base64_decode(ref, raw);
+    if (!base64_decode(ref, raw)) {
+        return testing::AssertionFailure() << "decode failed";
+    }
     std::string_view val(
         reinterpret_cast<const char*>(raw.data()),
         raw.size()
     );
-    EXPECT_EQ(val, str);
+    if (val != str) {
+        return testing::AssertionFailure() << "decode mismatch";
+    }
+    return testing::AssertionSuccess();
 }
 
-void test_no_base64_decode(std::string_view ref)
+testing::AssertionResult test_base64_encode(const byte_vector& vec)
+{
+    std::string out;
+    if (base64_encode(vec, out)) {
+        return testing::AssertionSuccess() << "encode successful";
+    } else {
+        return testing::AssertionFailure() << "encode failed";
+    }
+}
+
+testing::AssertionResult test_base64_decode(const std::string_view& ref)
 {
     byte_vector raw;
-    EXPECT_FALSE(base64_decode(ref, raw));
+    if (base64_decode(ref, raw)) {
+        return testing::AssertionSuccess() << "decode successful";
+    } else {
+        return testing::AssertionFailure() << "decode failed";
+    }
 }
 
 TEST(Utility, Base64)
 {
-   test_base64("", "");
-   test_base64("f", "Zg==");
-   test_base64("fo", "Zm8=");
-   test_base64("foo", "Zm9v");
-   test_base64("foob", "Zm9vYg==");
-   test_base64("fooba", "Zm9vYmE=");
-   test_base64("foobar", "Zm9vYmFy");
-   test_base64("Hello World", "SGVsbG8gV29ybGQ=");
-   test_base64("The quick brown fox jumped over the lazy dogs.", "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wZWQgb3ZlciB0aGUgbGF6eSBkb2dzLg==");
+    EXPECT_TRUE(test_base64("", ""));
+    EXPECT_TRUE(test_base64("f", "Zg=="));
+    EXPECT_TRUE(test_base64("fo", "Zm8="));
+    EXPECT_TRUE(test_base64("foo", "Zm9v"));
+    EXPECT_TRUE(test_base64("foob", "Zm9vYg=="));
+    EXPECT_TRUE(test_base64("fooba", "Zm9vYmE="));
+    EXPECT_TRUE(test_base64("foobar", "Zm9vYmFy"));
+    EXPECT_TRUE(test_base64("Hello World", "SGVsbG8gV29ybGQ="));
+    EXPECT_TRUE(test_base64("The quick brown fox jumped over the lazy dogs.", "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wZWQgb3ZlciB0aGUgbGF6eSBkb2dzLg=="));
 
-   test_no_base64_decode("A");
-   test_no_base64_decode("AA");
-   test_no_base64_decode("AAA");
-   test_no_base64_decode("A===");
-   test_no_base64_decode("===A");
-   test_no_base64_decode("==AA");
-   test_no_base64_decode("=AAA");
-   test_no_base64_decode("AAA.");
-   test_no_base64_decode(".AAA");
-   test_no_base64_decode("OOOO==AA");
-   test_no_base64_decode("OOOO=AAA");
-   test_no_base64_decode("OOOOAAA.");
-   test_no_base64_decode("OOOO.AAA");
+    EXPECT_FALSE(test_base64_decode("A"));
+    EXPECT_FALSE(test_base64_decode("AA"));
+    EXPECT_FALSE(test_base64_decode("AAA"));
+    EXPECT_FALSE(test_base64_decode("A==="));
+    EXPECT_FALSE(test_base64_decode("===A"));
+    EXPECT_FALSE(test_base64_decode("==AA"));
+    EXPECT_FALSE(test_base64_decode("=AAA"));
+    EXPECT_FALSE(test_base64_decode("AAA."));
+    EXPECT_FALSE(test_base64_decode(".AAA"));
+    EXPECT_FALSE(test_base64_decode("OOOO==AA"));
+    EXPECT_FALSE(test_base64_decode("OOOO=AAA"));
+    EXPECT_FALSE(test_base64_decode("OOOOAAA."));
+    EXPECT_FALSE(test_base64_decode("OOOO.AAA"));
 }
+
+#ifndef _DEBUG
+TEST(Performance, Base64)
+{
+    byte_vector vec;
+    for (std::size_t k = 0; k < 1000000000; ++k) {
+        vec.push_back(std::byte(k % 256));
+    }
+    std::string enc = measure("Base64 encode", [&]() {
+        std::string out;
+        base64_encode(vec, out);
+        return out;
+    });
+    measure("Base64 decode", [&]() {
+        byte_vector raw;
+        base64_decode(enc, raw);
+    });
+}
+#endif
