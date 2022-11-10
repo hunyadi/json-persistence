@@ -283,6 +283,11 @@ TEST(Serialization, DateTimeTypes)
 
 TEST(Serialization, Pointer)
 {
+    EXPECT_TRUE(test_serialize(std::make_unique<int>(23), "23"));
+    EXPECT_TRUE(test_serialize(std::make_shared<int>(23), "23"));
+    EXPECT_TRUE(test_serialize(std::make_unique<std::string>("string"), "\"string\""));
+    EXPECT_TRUE(test_serialize(std::make_shared<std::string>("string"), "\"string\""));
+
     auto raw_pointer = new TestValue("string");
     EXPECT_TRUE(test_serialize(raw_pointer, "{\"value\":\"string\"}"));
     delete raw_pointer;
@@ -304,13 +309,18 @@ TEST(Serialization, Tuple)
     EXPECT_TRUE(test_serialize(std::tuple<>(), "[]"));
     EXPECT_TRUE(test_serialize(std::make_tuple(std::string("value")), "[\"value\"]"));
     EXPECT_TRUE(test_serialize(std::make_tuple(19, std::string("eighty-two")), "[19,\"eighty-two\"]"));
+    EXPECT_TRUE(test_serialize(std::make_tuple(23, TestValue("string")), "[23,{\"value\":\"string\"}]"));
 }
 
 TEST(Serialization, Variant)
 {
-    using variant_type = std::variant<int, std::string>;
-    EXPECT_TRUE(test_serialize(variant_type("value"), "\"value\""));
-    EXPECT_TRUE(test_serialize(variant_type(23), "23"));
+    using simple_variant_type = std::variant<int, std::string>;
+    EXPECT_TRUE(test_serialize(simple_variant_type("value"), "\"value\""));
+    EXPECT_TRUE(test_serialize(simple_variant_type(23), "23"));
+
+    using complex_variant_type = std::variant<TestValue, TestNonCopyable>;
+    EXPECT_TRUE(test_serialize(complex_variant_type(TestValue("string")), "{\"value\":\"string\"}"));
+    EXPECT_TRUE(test_serialize(complex_variant_type(TestNonCopyable("string")), "{\"member\":{\"value\":\"string\"}}"));
 }
 
 TEST(Serialization, Vector)
@@ -673,6 +683,10 @@ TEST(Deserialization, DateTimeTypes)
 
 TEST(Deserialization, Pointer)
 {
+    EXPECT_TRUE(test_deserialize("23", std::make_unique<int>(23)));
+    EXPECT_TRUE(test_deserialize("23", std::make_shared<int>(23)));
+    EXPECT_TRUE(test_deserialize("\"string\"", std::make_unique<std::string>("string")));
+    EXPECT_TRUE(test_deserialize("\"string\"", std::make_shared<std::string>("string")));
     EXPECT_TRUE(test_deserialize("{\"value\": \"string\"}", std::make_unique<TestValue>("string")));
     EXPECT_TRUE(test_deserialize("{\"value\": \"string\"}", std::make_shared<TestValue>("string")));
 }
@@ -695,6 +709,7 @@ TEST(Deserialization, Tuple)
     EXPECT_TRUE(test_deserialize("[]", std::tuple<>()));
     EXPECT_TRUE(test_deserialize("[\"value\"]", std::make_tuple(std::string("value"))));
     EXPECT_TRUE(test_deserialize("[19, \"eighty-two\"]", std::make_tuple(19, std::string("eighty-two"))));
+    EXPECT_TRUE(test_deserialize("[23, {\"value\": \"string\"}]", std::make_tuple(23, TestValue("string"))));
 
     using tuple_type = std::tuple<int, std::string>;
     EXPECT_TRUE(test_no_deserialize<tuple_type>("[1]"));
@@ -707,18 +722,22 @@ TEST(Deserialization, Tuple)
 
 TEST(Deserialization, Variant)
 {
-    using variant_type = std::variant<int, std::string>;
+    using simple_variant_type = std::variant<int, std::string>;
+    EXPECT_EQ(deserialize<simple_variant_type>("\"value\""), simple_variant_type(std::string("value")));
+    EXPECT_EQ(deserialize<simple_variant_type>("23"), simple_variant_type(23));
 
-    EXPECT_EQ(deserialize<variant_type>("\"value\""), variant_type(std::string("value")));
-    EXPECT_EQ(deserialize<variant_type>("23"), variant_type(23));
+    simple_variant_type result;
+    EXPECT_FALSE(deserialize<simple_variant_type>("", result));
+    EXPECT_FALSE(deserialize<simple_variant_type>("null", result));
+    EXPECT_FALSE(deserialize<simple_variant_type>("true", result));
+    EXPECT_FALSE(deserialize<simple_variant_type>("4.5", result));
+    EXPECT_FALSE(deserialize<simple_variant_type>("[23]", result));
+    EXPECT_FALSE(deserialize<simple_variant_type>("{}", result));
 
-    variant_type result;
-    EXPECT_FALSE(deserialize<variant_type>("", result));
-    EXPECT_FALSE(deserialize<variant_type>("null", result));
-    EXPECT_FALSE(deserialize<variant_type>("true", result));
-    EXPECT_FALSE(deserialize<variant_type>("4.5", result));
-    EXPECT_FALSE(deserialize<variant_type>("[23]", result));
-    EXPECT_FALSE(deserialize<variant_type>("{}", result));
+    using complex_variant_type = std::variant<TestValue, TestNonCopyable>;
+    EXPECT_EQ(deserialize<complex_variant_type>("{\"value\": \"string\"}"), complex_variant_type(TestValue("string")));
+    EXPECT_EQ(deserialize<complex_variant_type>("{\"member\":{\"value\": \"string\"}}"), complex_variant_type(TestNonCopyable("string")));
+
 }
 
 TEST(Deserialization, Vector)
@@ -900,9 +919,12 @@ TEST(Deserialization, BackReferenceObject)
             "]"
         "}";
 
-    auto val = deserialize<TestBackReferenceObject>(std::move(json));
-    EXPECT_EQ(val.outer, val.inner[0]);
-    EXPECT_EQ(val.outer, val.inner[1]);
+    auto obj = deserialize<TestBackReferenceObject>(json);
+    EXPECT_EQ(obj.outer, obj.inner[0]);
+    EXPECT_EQ(obj.outer, obj.inner[1]);
+
+    // back-references are not supported by the parser
+    EXPECT_THROW(parse<TestBackReferenceObject>(json), JsonParseError);
 }
 
 TEST(Deserialization, ErrorReporting)

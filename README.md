@@ -82,7 +82,7 @@ This header-only library for C++17 and later provides type-safe serialization of
     * Use `<persistence/write_*.hpp>` for writing a C++ object to a string.
     * Use `<persistence/parse_*.hpp>` for parsing a string into a C++ object.
     * Use `<persistence/serialize_*.hpp>` for serializing a C++ object to a JSON DOM document.
-    * Use `<persistence/deserialize_*.hpp>` for parsing a JSON DOM document into a C++ object.
+    * Use `<persistence/deserialize_*.hpp>` for de-serializing a JSON DOM document into a C++ object.
 * Use `<persistence/*_all.hpp>` to import all supported data types for an operation type.
 * Use `<persistence/object.hpp>` to import helper macro `MEMBER_VARIABLE` only.
 * Use `<persistence/utility.hpp>` to import helper functions to convert between JSON DOM document and JSON string.
@@ -109,6 +109,39 @@ Add new template specializations to support (de-)serializing new types:
 
 * Uses standard C++17 features only (with the exception of RapidJSON engine).
 * Compiles on Linux, MacOS and Windows.
+
+## Data transformation modes
+
+The library supports several transformation modes:
+
+* writing a C++ object directly to a string (without JSON DOM):
+    ```cpp
+    std::string str = write_to_string(obj);
+    ```
+* parsing a string directly into a C++ object (without JSON DOM):
+    ```cpp
+    auto obj = parse<T>(str);
+    ```
+* serializing a C++ object to a JSON DOM document:
+    ```cpp
+    rapidjson::Document doc = serialize_to_document(obj);
+    ```
+* de-serializing a JSON DOM document into a C++ object:
+    ```cpp
+    auto obj = deserialize<T>(doc);
+    ```
+* writing a JSON DOM document to a string (with utility function `document_to_string`)
+* parsing a JSON DOM document from a string (with utility function `string_to_document`)
+* serializing a C++ object to a JSON DOM, and then writing the JSON DOM to a string:
+    ```cpp
+    rapidjson::Document doc = serialize_to_document(obj);
+    std::string str = document_to_string(doc);
+    ```
+* reading a string into a JSON DOM, and then de-serializing the data from JSON DOM into a C++ object:
+    ```cpp
+    rapidjson::Document doc = string_to_document(str);
+    auto obj = deserialize<T>(doc);
+    ```
 
 ## Enumeration to string conversion
 
@@ -194,11 +227,8 @@ wrong JSON data type; expected: string at /string_list/1
 
 ## Limitations and workarounds
 
-JSON writer and parser does not support back-references (`{"$ref": "/path/to/previous/occurrence"}`). Pointer-like types always create a new instance. Circular references will lead to an infinite loop. When using back-references,
+JSON parser does not support back-references (`{"$ref": "/path/to/previous/occurrence"}`); parsing pointer-like types always creates a new instance. When back-references are present, read the JSON string into a JSON DOM with the utility function `string_to_document`, and then de-serialize the data from JSON DOM with `deserialize`.
 
-* serialize the data to JSON DOM, and then use the utility function `document_to_string` to write the JSON DOM as a JSON string;
-* read the JSON string into a JSON DOM with the utility function `string_to_document`, and then de-serialize the data from JSON DOM.
+Parsing and de-serializing raw pointers is not permitted due to lack of clarity around ownership. Use `unique_ptr` and `shared_ptr` instead. Writing and serializing raw pointers is allowed, the pointee object is written.
 
-Parsing and de-serializing raw pointers is not permitted due to lack of clarity around ownership. Use `unique_ptr` and `smart_ptr` instead. Writing and serializing raw pointers is allowed.
-
-JSON parser does not support variant types. Instead, read the JSON string into a JSON DOM with the utility function `string_to_document`, and then de-serialize the data from JSON DOM. JSON writer, serializer and de-serializer support variant types.
+JSON parser does not support variant types. Instead, read the JSON string into a JSON DOM with the utility function `string_to_document`, and then de-serialize the data from JSON DOM with `deserialize`. JSON writer, serializer and de-serializer support variant types.

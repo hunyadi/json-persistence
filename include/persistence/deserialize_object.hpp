@@ -51,6 +51,7 @@ namespace persistence
                     );
                 } else {
                     result = false;
+                    return *this;
                 }
             }
 

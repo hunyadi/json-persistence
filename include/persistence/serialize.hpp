@@ -2,7 +2,7 @@
 #include "serialize_base.hpp"
 #include "detail/serialize_aware.hpp"
 #include "detail/traits.hpp"
-#include <stdexcept>
+#include "exception.hpp"
 
 namespace persistence
 {
@@ -28,7 +28,7 @@ namespace persistence
     }
 
     /**
-     * Generates the JSON DOM representation of an object.
+     * Serializes an object into a JSON DOM representation.
      */
     template<typename T>
     bool serialize_to_document(const T& obj, rapidjson::Document& doc)
@@ -36,5 +36,18 @@ namespace persistence
         GlobalSerializerContext global(doc);
         SerializerContext local(global);
         return serialize(obj, doc, local);
+    }
+
+    /**
+     * Serializes an object into a JSON DOM representation.
+     */
+    template<typename T>
+    rapidjson::Document serialize_to_document(const T& obj)
+    {
+        rapidjson::Document doc;
+        if (!serialize_to_document(obj, doc)) {
+            throw JsonSerializationError();
+        }
+        return doc;
     }
 }

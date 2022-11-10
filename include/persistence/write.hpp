@@ -36,7 +36,7 @@ namespace persistence
     }
 
     /**
-     * Generates the JSON string representation of an object.
+     * Produces the JSON string representation of an object.
      */
     template<typename T>
     bool write_to_string(const T& obj, std::string& str)
@@ -52,6 +52,9 @@ namespace persistence
         }
     }
 
+    /**
+     * Produces the JSON string representation of an object.
+     */
     template<typename T>
     std::string write_to_string(const T& obj)
     {
