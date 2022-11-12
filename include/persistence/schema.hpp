@@ -1,5 +1,6 @@
 #pragma once
 #include "bytes.hpp"
+#include "enum.hpp"
 #include "datetime.hpp"
 #include "dictionary.hpp"
 #include "object.hpp"
@@ -13,16 +14,20 @@ namespace persistence
     struct JsonSchemaFundamentalType;
     struct JsonSchemaSignedIntegerType;
     struct JsonSchemaUnsignedIntegerType;
+    struct JsonSchemaEnumType;
     struct JsonSchemaArrayType;
     struct JsonSchemaObjectType;
+    struct JsonSchemaOneOfType;
 
     using JsonSchemaType = std::variant<
         JsonSchemaReferenceType,
         JsonSchemaFundamentalType,
         JsonSchemaSignedIntegerType,
         JsonSchemaUnsignedIntegerType,
+        JsonSchemaEnumType,
         JsonSchemaArrayType,
-        JsonSchemaObjectType
+        JsonSchemaObjectType,
+        JsonSchemaOneOfType
     >;
 
     struct JsonSchemaReferenceType
@@ -121,13 +126,37 @@ namespace persistence
         }
     };
 
+    struct JsonSchemaEnumType
+    {
+        JsonSchemaEnumType(const std::string_view& type)
+            : type(type)
+        {}
+
+        std::string_view type;
+        std::variant<
+            std::vector<long long>,
+            std::vector<unsigned long long>,
+            std::vector<std::string>
+        > enum_values;
+
+        template <typename Archive>
+        constexpr auto persist(Archive& ar)
+        {
+            return ar
+                & MEMBER_VARIABLE(type)
+                & NAMED_MEMBER_VARIABLE("enum", enum_values)
+                ;
+        }
+    };
+
     struct JsonSchemaArrayType
     {
         std::string_view type = "array";
         std::optional<std::unique_ptr<JsonSchemaType>> items;
+        std::optional<std::vector<std::unique_ptr<JsonSchemaType>>> prefixItems;
+        std::optional<bool> uniqueItems;
         std::optional<std::size_t> minItems;
         std::optional<std::size_t> maxItems;
-        std::optional<bool> uniqueItems;
 
         template <typename Archive>
         constexpr auto persist(Archive& ar)
@@ -135,9 +164,10 @@ namespace persistence
             return ar
                 & MEMBER_VARIABLE(type)
                 & MEMBER_VARIABLE(items)
+                & MEMBER_VARIABLE(prefixItems)
+                & MEMBER_VARIABLE(uniqueItems)
                 & MEMBER_VARIABLE(minItems)
                 & MEMBER_VARIABLE(maxItems)
-                & MEMBER_VARIABLE(uniqueItems)
                 ;
         }
     };
@@ -160,6 +190,19 @@ namespace persistence
                 & MEMBER_VARIABLE(properties)
                 & MEMBER_VARIABLE(required)
                 & MEMBER_VARIABLE(additionalProperties)
+                ;
+        }
+    };
+
+    struct JsonSchemaOneOfType
+    {
+        std::vector<std::unique_ptr<JsonSchemaType>> oneOf;
+
+        template <typename Archive>
+        constexpr auto persist(Archive& ar)
+        {
+            return ar
+                & MEMBER_VARIABLE(oneOf)
                 ;
         }
     };
@@ -244,6 +287,32 @@ namespace persistence
         static auto type()
         {
             return JsonSchemaFundamentalType("string", "date-time");
+        }
+    };
+
+#if __cplusplus >= 202002L
+    template<>
+    struct JsonSchema<std::chrono::year_month_day>
+    {
+        static auto type()
+        {
+            return JsonSchemaFundamentalType("string", "date");
+        }
+    };
+#endif
+
+    template<typename T>
+    struct JsonSchema<T, std::enable_if_t<std::is_enum_v<T>>>
+    {
+        static auto type()
+        {
+            if constexpr (detect<T, enum_to_string_function>::value) {
+                return JsonSchemaEnumType("string");
+            } else if constexpr (std::is_integral_v<T>) {
+                return JsonSchemaEnumType("integer");
+            } else {
+                return JsonSchemaEnumType("object");
+            }
         }
     };
 
@@ -373,6 +442,79 @@ namespace persistence
     };
 
     template<typename T>
+    struct JsonSchema<T*>
+    {
+        static_assert(detail::fail<T>, "generating schema for raw pointers is not supported, use smart pointers instead");
+    };
+
+    template<typename T>
+    struct JsonSchema<std::unique_ptr<T>>
+    {
+        static auto type(JsonSchemaContext& context)
+        {
+            return JsonSchema<T>::type(context);
+        }
+    };
+
+    template<typename T>
+    struct JsonSchema<std::shared_ptr<T>>
+    {
+        static auto type(JsonSchemaContext& context)
+        {
+            return JsonSchema<T>::type(context);
+        }
+    };
+
+    template<typename T, std::size_t N>
+    struct JsonSchema<std::array<T, N>>
+    {
+        static JsonSchemaArrayType type(JsonSchemaContext& context)
+        {
+            auto schema = JsonSchemaArrayType();
+            schema.items = make_schema_ptr<T>(context);
+            schema.minItems = N;
+            schema.maxItems = N;
+            return schema;
+        }
+    };
+
+    template<typename... T>
+    struct JsonTupleSchema
+    {
+        static JsonSchemaArrayType type(JsonSchemaContext& context)
+        {
+            auto schema = JsonSchemaArrayType();
+            schema.minItems = sizeof...(T);
+            schema.maxItems = sizeof...(T);
+            std::vector<std::unique_ptr<JsonSchemaType>> items;
+            (items.push_back(make_schema_ptr<T>(context)), ...);
+            schema.prefixItems = std::move(items);
+            return schema;
+        }
+    };
+
+    template<typename T1, typename T2>
+    struct JsonSchema<std::pair<T1, T2>> : JsonTupleSchema<T1, T2>
+    {};
+
+    template<typename... T>
+    struct JsonSchema<std::tuple<T...>> : JsonTupleSchema<T...>
+    {};
+
+    template<typename... T>
+    struct JsonSchema<std::variant<T...>>
+    {
+        static JsonSchemaOneOfType type(JsonSchemaContext& context)
+        {
+            auto schema = JsonSchemaOneOfType();
+            std::vector<std::unique_ptr<JsonSchemaType>> items;
+            (items.push_back(make_schema_ptr<T>(context)), ...);
+            schema.oneOf = std::move(items);
+            return schema;
+        }
+    };
+
+    template<typename T>
     struct JsonSchema<std::vector<T>>
     {
         static JsonSchemaArrayType type(JsonSchemaContext& context)
@@ -491,7 +633,7 @@ namespace persistence
     }
 
     template<typename T>
-    auto versioned_schema()
+    auto schema_document()
     {
         auto doc = schema<T>();
         doc.schema_version = "https://json-schema.org/draft/2020-12/schema";

@@ -259,6 +259,60 @@ Notice how the second element of `string_list` (a C++ `vector<string>`) has the 
 wrong JSON data type; expected: string at /string_list/1
 ```
 
+## Generating JSON schema
+
+The library understands the most common C++ types and can emit corresponding [JSON Schema](https://json-schema.org/) types. For example, take the following C++ code:
+
+```cpp
+std::cout << schema_document_to_string<Example>() << std::endl;
+```
+
+In this case, the output may look like as follows:
+
+```json
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "definitions": {
+        "UserDefinedType": {
+            "type": "object",
+            "properties": {
+                "value": { "type": "string" }
+            },
+            "required": ["value"],
+            "additionalProperties": false
+        }
+    },
+    "type": "object",
+    "properties": {
+        "bool_value": {
+            "type": "boolean"
+        },
+        "string_value": {
+            "type": "string"
+        },
+        "string_list": {
+            "type": "array",
+            "items": { "type": "string" }
+        },
+        "optional_value": {
+            "type": "integer",
+            "minimum": -2147483648,
+            "maximum": 2147483647
+        },
+        "custom_value": {
+            "$ref": "#/definitions/UserDefinedType"
+        }
+    },
+    "required": [
+        "bool_value",
+        "string_value",
+        "string_list",
+        "custom_value"
+    ],
+    "additionalProperties": false
+}
+```
+
 ## Limitations and workarounds
 
 JSON parser does not support back-references (`{"$ref": "/path/to/previous/occurrence"}`); parsing pointer-like types always creates a new instance. When back-references are present, read the JSON string into a JSON DOM with the utility function `string_to_document`, and then de-serialize the data from JSON DOM with `deserialize`.

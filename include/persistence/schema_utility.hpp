@@ -11,8 +11,8 @@ namespace persistence
     }
 
     template<typename T>
-    std::string versioned_schema_to_string()
+    std::string schema_document_to_string()
     {
-        return write_to_string(versioned_schema<T>());
+        return write_to_string(schema_document<T>());
     }
 }
