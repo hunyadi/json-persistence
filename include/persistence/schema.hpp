@@ -1,0 +1,500 @@
+#pragma once
+#include "bytes.hpp"
+#include "datetime.hpp"
+#include "dictionary.hpp"
+#include "object.hpp"
+#include "detail/defer.hpp"
+#include "detail/traits.hpp"
+#include <set>
+
+namespace persistence
+{
+    struct JsonSchemaReferenceType;
+    struct JsonSchemaFundamentalType;
+    struct JsonSchemaSignedIntegerType;
+    struct JsonSchemaUnsignedIntegerType;
+    struct JsonSchemaArrayType;
+    struct JsonSchemaObjectType;
+
+    using JsonSchemaType = std::variant<
+        JsonSchemaReferenceType,
+        JsonSchemaFundamentalType,
+        JsonSchemaSignedIntegerType,
+        JsonSchemaUnsignedIntegerType,
+        JsonSchemaArrayType,
+        JsonSchemaObjectType
+    >;
+
+    struct JsonSchemaReferenceType
+    {
+        JsonSchemaReferenceType() = default;
+        JsonSchemaReferenceType(const std::string& ref)
+            : ref(ref)
+        {}
+
+        std::string ref;
+
+        template <typename Archive>
+        constexpr auto persist(Archive& ar)
+        {
+            return ar
+                & NAMED_MEMBER_VARIABLE("$ref", ref)
+                ;
+        }
+    };
+
+    struct JsonSchemaFundamentalType
+    {
+        struct Base64 {};
+
+        JsonSchemaFundamentalType() = default;
+
+        JsonSchemaFundamentalType(const std::string_view& type)
+            : type(type)
+        {}
+
+        JsonSchemaFundamentalType(const std::string_view& type, Base64)
+            : type(type)
+            , contentEncoding("base64")
+        {}
+
+        JsonSchemaFundamentalType(const std::string_view& type, const std::string_view& format)
+            : type(type)
+            , format(format)
+        {}
+
+        std::string_view type;
+        std::optional<std::string_view> format;
+        std::optional<std::string_view> contentEncoding;
+
+        template <typename Archive>
+        constexpr auto persist(Archive& ar)
+        {
+            return ar
+                & MEMBER_VARIABLE(type)
+                & MEMBER_VARIABLE(format)
+                & MEMBER_VARIABLE(contentEncoding)
+                ;
+        }
+    };
+
+    struct JsonSchemaSignedIntegerType
+    {
+        JsonSchemaSignedIntegerType(long long minimum, long long maximum)
+            : minimum(minimum)
+            , maximum(maximum)
+        {}
+
+        std::string_view type = "integer";
+        long long minimum;
+        long long maximum;
+
+        template <typename Archive>
+        constexpr auto persist(Archive& ar)
+        {
+            return ar
+                & MEMBER_VARIABLE(type)
+                & MEMBER_VARIABLE(minimum)
+                & MEMBER_VARIABLE(maximum)
+                ;
+        }
+    };
+
+    struct JsonSchemaUnsignedIntegerType
+    {
+        JsonSchemaUnsignedIntegerType(unsigned long long maximum)
+            : maximum(maximum)
+        {}
+
+        std::string_view type = "integer";
+        unsigned long long minimum = 0;
+        unsigned long long maximum;
+
+        template <typename Archive>
+        constexpr auto persist(Archive& ar)
+        {
+            return ar
+                & MEMBER_VARIABLE(type)
+                & MEMBER_VARIABLE(minimum)
+                & MEMBER_VARIABLE(maximum)
+                ;
+        }
+    };
+
+    struct JsonSchemaArrayType
+    {
+        std::string_view type = "array";
+        std::optional<std::unique_ptr<JsonSchemaType>> items;
+        std::optional<std::size_t> minItems;
+        std::optional<std::size_t> maxItems;
+        std::optional<bool> uniqueItems;
+
+        template <typename Archive>
+        constexpr auto persist(Archive& ar)
+        {
+            return ar
+                & MEMBER_VARIABLE(type)
+                & MEMBER_VARIABLE(items)
+                & MEMBER_VARIABLE(minItems)
+                & MEMBER_VARIABLE(maxItems)
+                & MEMBER_VARIABLE(uniqueItems)
+                ;
+        }
+    };
+
+    using JsonSchemaObjectProperties = literal_dict<std::unique_ptr<JsonSchemaType>>;
+    using JsonSchemaObjectRequired = std::vector<std::string_view>;
+
+    struct JsonSchemaObjectType
+    {
+        std::string_view type = "object";
+        std::optional<JsonSchemaObjectProperties> properties;
+        std::optional<JsonSchemaObjectRequired> required;
+        std::optional<std::variant<bool, std::unique_ptr<JsonSchemaType>>> additionalProperties;
+
+        template <typename Archive>
+        constexpr auto persist(Archive& ar)
+        {
+            return ar
+                & MEMBER_VARIABLE(type)
+                & MEMBER_VARIABLE(properties)
+                & MEMBER_VARIABLE(required)
+                & MEMBER_VARIABLE(additionalProperties)
+                ;
+        }
+    };
+
+    using JsonSchemaDefinitions = std::map<std::string_view, JsonSchemaType>;
+
+    struct JsonSchemaContext
+    {
+        JsonSchemaDefinitions definitions;
+    };
+
+    template<typename T, typename Enable = void>
+    struct JsonSchema
+    {};
+
+    template<>
+    struct JsonSchema<std::nullptr_t>
+    {
+        static auto type()
+        {
+            return JsonSchemaFundamentalType("null");
+        }
+    };
+
+    template<>
+    struct JsonSchema<bool>
+    {
+        static auto type()
+        {
+            return JsonSchemaFundamentalType("boolean");
+        }
+    };
+
+    template<typename T>
+    struct JsonSchema<T, std::enable_if_t<std::is_integral_v<T>&& std::is_signed_v<T>>>
+    {
+        static auto type()
+        {
+            return JsonSchemaSignedIntegerType(std::numeric_limits<T>::min(), std::numeric_limits<T>::max());
+        }
+    };
+
+    template<typename T>
+    struct JsonSchema<T, std::enable_if_t<std::is_integral_v<T> && !std::is_signed_v<T>>>
+    {
+        static auto type()
+        {
+            return JsonSchemaUnsignedIntegerType(std::numeric_limits<T>::max());
+        }
+    };
+
+    template<typename T>
+    struct JsonSchema<T, std::enable_if_t<std::is_floating_point_v<T>>>
+    {
+        static auto type()
+        {
+            return JsonSchemaFundamentalType("number");
+        }
+    };
+
+    template<>
+    struct JsonSchema<std::string>
+    {
+        static auto type()
+        {
+            return JsonSchemaFundamentalType("string");
+        }
+    };
+
+    template<>
+    struct JsonSchema<byte_vector>
+    {
+        static auto type()
+        {
+            return JsonSchemaFundamentalType("string", JsonSchemaFundamentalType::Base64());
+        }
+    };
+
+    template<>
+    struct JsonSchema<timestamp>
+    {
+        static auto type()
+        {
+            return JsonSchemaFundamentalType("string", "date-time");
+        }
+    };
+
+    template<typename C>
+    struct JsonSchemaVisitor;
+
+    template<typename T>
+    using schema_function = decltype(std::declval<T&>().persist(std::declval<JsonSchemaVisitor<T>&>()));
+
+    /** .True if the sub-schema can be registered as a named type. */
+    template<typename T, typename Enable = void>
+    struct is_schema_traversable : std::false_type
+    {};
+
+    template<typename T>
+    struct is_schema_traversable<T, std::enable_if_t<std::is_class_v<T>>>
+    {
+        constexpr static bool value = detect<T, schema_function>::value;
+    };
+
+    template<typename T>
+    inline constexpr bool is_schema_traversable_v = is_schema_traversable<T>::value;
+
+    /** True if the sub-schema uses types from an outside context. */
+    template<typename T>
+    using context_aware_schema_function = decltype(JsonSchema<T>::type(std::declval<JsonSchemaContext&>()));
+
+    template<typename T>
+    struct is_context_aware_schema
+    {
+        constexpr static bool value = detect<T, context_aware_schema_function>::value;
+    };
+
+    template<typename T>
+    inline constexpr bool is_context_aware_schema_v = is_context_aware_schema<T>::value;
+
+    template<typename T>
+    using context_free_schema_function = decltype(JsonSchema<T>::type());
+
+    /** True if the sub-schema does not use types from an outside context. */
+    template<typename T>
+    struct is_context_free_schema
+    {
+        constexpr static bool value = detect<T, context_free_schema_function>::value;
+    };
+
+    template<typename T>
+    inline constexpr bool is_context_free_schema_v = is_context_free_schema<T>::value;
+
+    template<typename T>
+    JsonSchemaType make_schema(JsonSchemaContext& context)
+    {
+        if constexpr (is_schema_traversable_v<T>) {
+            // save sub-schema in context
+            context.definitions.insert(
+                std::make_pair(
+                    std::string_view(typeid(T).name()),
+                    JsonSchema<T>::type(context)
+                )
+            );
+
+            // use alias to refer to sub-schema
+            return JsonSchemaReferenceType(
+                "#/definitions/" + std::string(typeid(T).name())
+            );
+        } else if constexpr (is_context_aware_schema_v<T>) {
+            return JsonSchema<T>::type(context);
+        } else {
+            return JsonSchema<T>::type();
+        }
+    }
+
+    template<typename T>
+    std::unique_ptr<JsonSchemaType> make_schema_ptr(JsonSchemaContext& context)
+    {
+        return std::make_unique<JsonSchemaType>(make_schema<T>(context));
+    }
+
+    template<typename C>
+    struct JsonSchemaVisitor
+    {
+        JsonSchemaVisitor(JsonSchemaContext& context, JsonSchemaObjectProperties& properties, JsonSchemaObjectRequired& required)
+            : context(context)
+            , properties(properties)
+            , required(required)
+        {}
+
+        template<typename T, typename B>
+        JsonSchemaVisitor& operator&(const member_variable<std::optional<T>, B>& member)
+        {
+            static_assert(std::is_base_of_v<B, C>, "expected a member variable part of the class inheritance chain");
+            properties.push_back(
+                std::make_pair(member.name, make_schema_ptr<T>(context))
+            );
+            return *this;
+        }
+
+        template<typename T, typename B>
+        JsonSchemaVisitor& operator&(const member_variable<T, B>& member)
+        {
+            static_assert(std::is_base_of_v<B, C>, "expected a member variable part of the class inheritance chain");
+            properties.push_back(
+                std::make_pair(member.name, make_schema_ptr<T>(context))
+            );
+            required.push_back(member.name);
+            return *this;
+        }
+
+        JsonSchemaContext& context;
+        JsonSchemaObjectProperties& properties;
+        JsonSchemaObjectRequired& required;
+    };
+
+    template<typename T>
+    struct JsonSchema<T, std::enable_if_t<is_schema_traversable_v<T>>>
+    {
+        static JsonSchemaObjectType type(JsonSchemaContext& context)
+        {
+            auto schema = JsonSchemaObjectType();
+            schema.properties = JsonSchemaObjectProperties();
+            schema.required = JsonSchemaObjectRequired();
+            schema.additionalProperties = false;
+            JsonSchemaVisitor<T> visitor(context, *schema.properties, *schema.required);
+            T().persist(visitor);
+            return schema;
+        }
+    };
+
+    template<typename T>
+    struct JsonSchema<std::vector<T>>
+    {
+        static JsonSchemaArrayType type(JsonSchemaContext& context)
+        {
+            auto schema = JsonSchemaArrayType();
+            schema.items = make_schema_ptr<T>(context);
+            return schema;
+        }
+    };
+
+    template<typename T>
+    struct JsonSchema<std::set<T>>
+    {
+        static JsonSchemaArrayType type(JsonSchemaContext& context)
+        {
+            auto schema = JsonSchemaArrayType();
+            schema.items = make_schema_ptr<T>(context);
+            schema.uniqueItems = true;
+            return schema;
+        }
+    };
+
+    template<typename MapType>
+    struct JsonMapSchema
+    {
+        static JsonSchemaObjectType type(JsonSchemaContext& context)
+        {
+            auto schema = JsonSchemaObjectType();
+            schema.additionalProperties = make_schema_ptr<typename MapType::mapped_type>(context);
+            return schema;
+        }
+    };
+
+    template<typename T>
+    struct JsonSchema<std::map<std::string, T>> : JsonMapSchema<std::map<std::string, T>>
+    {};
+
+    template<typename T>
+    struct JsonSchema<std::unordered_map<std::string, T>> : JsonMapSchema<std::unordered_map<std::string, T>>
+    {};
+
+    template<typename Base>
+    struct JsonSchemaDocument : Base
+    {
+        JsonSchemaDocument(Base&& type)
+            : Base(std::move(type))
+        {}
+
+        JsonSchemaDocument(std::string_view schema_version, Base&& type)
+            : Base(std::move(type))
+            , schema_version(schema_version)
+        {}
+
+        JsonSchemaDocument(JsonSchemaDefinitions&& definitions, Base&& type)
+            : Base(std::move(type))
+            , definitions(std::move(definitions))
+        {}
+
+        JsonSchemaDocument(std::string_view schema_version, JsonSchemaDefinitions&& definitions, Base&& type)
+            : Base(std::move(type))
+            , definitions(std::move(definitions))
+            , schema_version(schema_version)
+        {}
+
+        std::optional<std::string_view> schema_version;
+        std::optional<JsonSchemaDefinitions> definitions;
+
+        template <typename Archive>
+        constexpr auto persist(Archive& ar)
+        {
+            auto r = ar
+                & NAMED_MEMBER_VARIABLE("$schema", schema_version)
+                & MEMBER_VARIABLE(definitions)
+                ;
+            return this->Base::persist(r);
+        }
+    };
+
+    template<typename T, typename Enable = void>
+    struct JsonSchemaBuilder
+    {
+        // if you are getting a compile-time error pointing at this location, make sure the appropriate
+        // headers are included, and schema generation is supported for the type
+        static_assert(detail::fail<T>, "expected a type that can be converted to a JSON Schema");
+    };
+
+    template<typename T>
+    struct JsonSchemaBuilder<T, std::enable_if_t<is_context_free_schema_v<T>>>
+    {
+        auto build()
+        {
+            auto type = JsonSchema<T>::type();
+            return JsonSchemaDocument<decltype(type)>(std::move(type));
+        }
+    };
+
+    template<typename T>
+    struct JsonSchemaBuilder<T, std::enable_if_t<is_context_aware_schema_v<T>>>
+    {
+        auto build()
+        {
+            JsonSchemaContext context;
+            auto type = JsonSchema<T>::type(context);
+            if (!context.definitions.empty()) {
+                return JsonSchemaDocument<decltype(type)>(std::move(context.definitions), std::move(type));
+            } else {
+                return JsonSchemaDocument<decltype(type)>(std::move(type));
+            }
+        }
+    };
+
+    template<typename T>
+    auto schema()
+    {
+        return JsonSchemaBuilder<T>().build();
+    }
+
+    template<typename T>
+    auto versioned_schema()
+    {
+        auto doc = schema<T>();
+        doc.schema_version = "https://json-schema.org/draft/2020-12/schema";
+        return doc;
+    }
+}

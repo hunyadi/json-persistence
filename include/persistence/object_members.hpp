@@ -16,9 +16,10 @@ namespace persistence
                 : members(members)
             {}
 
-            template<typename T>
-            constexpr auto operator&(const member_variable<T, Class>& member) const
+            template<typename T, typename Base>
+            constexpr auto operator&(const member_variable<T, Base>& member) const
             {
+                static_assert(std::is_base_of_v<Base, Class>, "expected a member variable part of the class inheritance chain");
                 auto tpl = std::tuple_cat(members, std::make_tuple(member));
                 return ObjectMemberBuilder<Class, decltype(tpl)>(tpl);
             }
@@ -31,9 +32,10 @@ namespace persistence
         {
             constexpr ObjectMemberBuilder() = default;
 
-            template<typename T>
-            constexpr auto operator&(const member_variable<T, Class>& member) const
+            template<typename T, typename Base>
+            constexpr auto operator&(const member_variable<T, Base>& member) const
             {
+                static_assert(std::is_base_of_v<Base, Class>, "expected a member variable part of the class inheritance chain");
                 auto tpl = std::make_tuple(member);
                 return ObjectMemberBuilder<Class, decltype(tpl)>(tpl);
             }
@@ -49,9 +51,10 @@ namespace persistence
 
         constexpr ObjectMemberCounter() = default;
 
-        template<typename T>
-        constexpr auto operator&(const member_variable<T, Class>&) const
+        template<typename T, typename Base>
+        constexpr auto operator&(const member_variable<T, Base>&) const
         {
+            static_assert(std::is_base_of_v<Base, Class>, "expected a member variable part of the class inheritance chain");
             return ObjectMemberCounter<Class, Count + 1>();
         }
     };

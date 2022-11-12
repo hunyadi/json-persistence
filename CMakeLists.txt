@@ -14,18 +14,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
 
 if (MSVC)
-    # disable RTTI
-    string(REGEX REPLACE "/GR" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /GR-")
-
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
     # set warning level 4 and treat all warnings as errors
     add_compile_options(/W4 /WX /Zc:__cplusplus,rvalueCast,strictStrings)
 else()
-    # disable RTTI
-    string(REGEX REPLACE "-frtti" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
-
     # enable lots of warnings and treat all warnings as errors (except those originating from RapidJSON)
     add_compile_options(-Wall -Wextra -pedantic -Werror -Wfatal-errors -Wno-ambiguous-reversed-operator -Wno-deprecated-declarations)
 endif()

@@ -16,9 +16,11 @@ namespace persistence
             , object(object)
         {}
 
-        template<typename T>
-        JsonObjectDeserializer& operator&(const member_variable<std::optional<T>, C>& member)
+        template<typename T, typename B>
+        JsonObjectDeserializer& operator&(const member_variable<std::optional<T>, B>& member)
         {
+            static_assert(std::is_base_of_v<B, C>, "expected a member variable part of the class inheritance chain");
+
             PERSISTENCE_IF_UNLIKELY(!result) {
                 return *this;
             }
@@ -35,9 +37,11 @@ namespace persistence
             return *this;
         }
 
-        template<typename T>
-        JsonObjectDeserializer& operator&(const member_variable<T, C>& member)
+        template<typename T, typename B>
+        JsonObjectDeserializer& operator&(const member_variable<T, B>& member)
         {
+            static_assert(std::is_base_of_v<B, C>, "expected a member variable part of the class inheritance chain");
+
             PERSISTENCE_IF_UNLIKELY(!result) {
                 return *this;
             }

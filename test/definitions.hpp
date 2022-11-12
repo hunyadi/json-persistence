@@ -43,6 +43,31 @@ private:
     std::string value;
 };
 
+struct TestDerived : TestValue
+{
+    TestDerived() = default;
+    TestDerived(const std::string& value, const std::string& member)
+        : TestValue(value)
+        , member(member)
+    {}
+
+    template <typename Archive>
+    constexpr auto persist(Archive& ar)
+    {
+        return this->TestValue::persist(ar)
+            & MEMBER_VARIABLE(member)
+            ;
+    }
+
+    bool operator==(const TestDerived& op) const
+    {
+        return this->TestValue::operator==(op) && member == op.member;
+    }
+
+private:
+    std::string member;
+};
+
 struct TestNonCopyable
 {
     TestNonCopyable() = default;
@@ -207,4 +232,34 @@ struct Example
             & MEMBER_VARIABLE(custom_value)
             ;
     }
+};
+
+/** Documentation example. */
+struct Base
+{
+    template <typename Archive>
+    constexpr auto persist(Archive& ar)
+    {
+        return ar
+            & MEMBER_VARIABLE(base_member)
+            ;
+    }
+
+private:
+    std::string base_member = "base";
+};
+
+/** Documentation example. */
+struct Derived : Base
+{
+    template <typename Archive>
+    constexpr auto persist(Archive& ar)
+    {
+        return this->Base::persist(ar)
+            & MEMBER_VARIABLE(derived_member)
+            ;
+    }
+
+private:
+    std::string derived_member = "derived";
 };

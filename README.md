@@ -143,6 +143,40 @@ The library supports several transformation modes:
     auto obj = deserialize<T>(doc);
     ```
 
+## Defining persistence in derived classes
+
+The following example illustrates how to define the `persist` function in a derived class that inherits members from a base class and defines additional member variables of its own:
+
+```cpp
+struct Base
+{
+    template <typename Archive>
+    constexpr auto persist(Archive& ar)
+    {
+        return ar
+            & MEMBER_VARIABLE(base_member)
+            ;
+    }
+
+private:
+    std::string base_member;
+};
+
+struct Derived : Base
+{
+    template <typename Archive>
+    constexpr auto persist(Archive& ar)
+    {
+        return this->Base::persist(ar)
+            & MEMBER_VARIABLE(derived_member)
+            ;
+    }
+
+private:
+    std::string derived_member;
+};
+```
+
 ## Enumeration to string conversion
 
 In order to (de-)serialize, parse and write enumeration types as strings, define value-to-string and string-to-value conversions with the type trait class `enum_traits`:

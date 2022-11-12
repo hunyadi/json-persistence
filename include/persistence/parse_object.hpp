@@ -59,9 +59,10 @@ namespace persistence
             return member_variables(cls);
         }
 
-        template<typename T>
-        bool parse_member(const std::string_view& key, const member_variable<T, C>& member)
+        template<typename T, typename B>
+        bool parse_member(const std::string_view& key, const member_variable<T, B>& member)
         {
+            static_assert(std::is_base_of_v<B, C>, "expected a member variable part of the class inheritance chain");
             if (member.name == key) {
                 context.emplace<JsonParser<T>>(context, member.ref(ref));
                 return true;
