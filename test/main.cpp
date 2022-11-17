@@ -330,6 +330,11 @@ TEST(Serialization, Vector)
     EXPECT_TRUE(test_serialize(std::vector<int>{1, 2, 3}, "[1,2,3]"));
     EXPECT_TRUE(test_serialize(std::vector<std::vector<int>>{ { 1 }, { 1,2 }, { 1,2,3 } }, "[[1],[1,2],[1,2,3]]"));
 
+    EXPECT_TRUE(test_serialize(
+        std::vector<TestDefault>{ TestDefault("a"), TestDefault("b"), TestDefault("c") },
+        "[{\"value\":\"a\"},{\"value\":\"b\"},{\"value\":\"c\"}]"
+    ));
+
     std::vector<std::string> val = { "one", "two" };
     EXPECT_TRUE(test_serialize(val, "[\"one\",\"two\"]"));
 }
@@ -347,6 +352,11 @@ TEST(Serialization, Set)
 {
     EXPECT_TRUE(test_serialize(std::set<int>(), "[]"));
     EXPECT_TRUE(test_serialize(std::set<int>{1, 2, 3}, "[1,2,3]"));
+
+    EXPECT_TRUE(test_serialize(
+        std::set<TestDefault>{ TestDefault("a"), TestDefault("b"), TestDefault("c") },
+        "[{\"value\":\"a\"},{\"value\":\"b\"},{\"value\":\"c\"}]"
+    ));
 
     std::set<std::string> val = { "one", "two" };
     EXPECT_TRUE(test_serialize(val, "[\"one\",\"two\"]"));
@@ -756,6 +766,11 @@ TEST(Deserialization, Vector)
     std::vector<std::vector<int>> ref_nested = { { 1 }, { 1,2 }, { 1,2,3 } };
     EXPECT_TRUE(test_deserialize("[[1], [1, 2], [1, 2, 3]]", ref_nested));
 
+    EXPECT_TRUE(test_deserialize(
+        "[{\"value\":\"a\"}, {\"value\":\"b\"}, {\"value\":\"c\"}]",
+        std::vector<TestDefault> { TestDefault("a"), TestDefault("b"), TestDefault("c") }
+    ));
+
     EXPECT_TRUE(test_no_deserialize<std::vector<int>>("[\"one\"]"));
     EXPECT_TRUE(test_no_deserialize<std::vector<std::string>>("[2,3]"));
     EXPECT_TRUE(test_no_deserialize<std::vector<int>>("true"));
@@ -795,6 +810,10 @@ TEST(Deserialization, Set)
     EXPECT_TRUE(test_deserialize(
         "[\"one\", \"two\"]",
         std::set<std::string> { "one", "two" }
+    ));
+    EXPECT_TRUE(test_deserialize(
+        "[{\"value\":\"a\"}, {\"value\":\"b\"}, {\"value\":\"c\"}]",
+        std::set<TestDefault> { TestDefault("c"), TestDefault("b"), TestDefault("a") }
     ));
 
     EXPECT_TRUE(test_no_deserialize<std::set<int>>("[\"one\"]"));

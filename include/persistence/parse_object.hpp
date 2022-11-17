@@ -28,13 +28,13 @@ namespace persistence
     };
 
     template<typename C>
-    struct JsonObjectParser : EventHandler
+    struct JsonObjectParser : JsonEventHandler
     {
         static_assert(std::is_class_v<C>, "expected a class type");
 
     public:
         JsonObjectParser(ReaderContext& context, C& ref)
-            : context(context)
+            : JsonEventHandler(context)
             , ref(ref)
         {}
 
@@ -47,9 +47,15 @@ namespace persistence
         bool parse(const JsonObjectKey& json_key) override
         {
             std::string_view key = json_key.identifier;
-            return std::apply([=](const auto&... members) {
+            bool result = std::apply([=](const auto&... members) {
                 return (parse_member(key, members) || ...);
             }, members);
+            if (result) {
+                return true;
+            } else {
+                context.fail("expected class member name; got: " + std::string(key.data(), key.size()));
+                return false;
+            }
         }
 
     private:
@@ -67,7 +73,6 @@ namespace persistence
 
     private:
         inline static auto members = member_variables(C());
-        ReaderContext& context;
         C& ref;
     };
 
@@ -85,14 +90,14 @@ namespace persistence
     };
 
     template<typename T>
-    struct JsonParser<T, std::enable_if_t<has_custom_parser<T>::value>> : EventHandler
+    struct JsonParser<T, std::enable_if_t<has_custom_parser<T>::value>> : JsonSingleEventHandler<JsonObjectStart>
     {
         static_assert(!std::is_same_v<parser_function<T>, void>, "`persist` function cannot have a return type of `void`, use `auto` instead");
 
         using json_type = JsonObjectStart;
 
         JsonParser(ReaderContext& context, T& ref)
-            : context(context)
+            : JsonSingleEventHandler<JsonObjectStart>(context)
             , ref(ref)
         {}
 
@@ -103,7 +108,6 @@ namespace persistence
         }
 
     private:
-        ReaderContext& context;
         T& ref;
     };
 }

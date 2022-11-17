@@ -8,26 +8,29 @@
 namespace persistence
 {
     template<>
-    struct JsonParser<std::chrono::year_month_day> : EventHandler
+    struct JsonParser<std::chrono::year_month_day> : JsonSingleEventHandler<JsonValueString>
     {
         using json_type = JsonValueString;
 
         JsonParser(ReaderContext& context, std::chrono::year_month_day& ref)
-            : context(context)
+            : JsonSingleEventHandler<JsonValueString>(context)
             , ref(ref)
         {}
 
         bool parse(const JsonValueString& s) override
         {
             timestamp ts;
-            bool result = parse_date(s.literal.data(), s.literal.size(), ts);
-            ref = std::chrono::time_point_cast<std::chrono::days>(ts);
-            context.pop();
-            return result;
+            if (parse_date(s.literal.data(), s.literal.size(), ts)) {
+                ref = std::chrono::time_point_cast<std::chrono::days>(ts);
+                context.pop();
+                return true;
+            } else {
+                context.fail("invalid ISO-8601 date; expected: YYYY-MM-DD, got: " + std::string(s.literal.data(), s.literal.size()));
+                return false;
+            }
         }
 
     private:
-        ReaderContext& context;
         std::chrono::year_month_day& ref;
     };
 }

@@ -11,20 +11,21 @@ namespace persistence
      * @tparam N The remaining number of items, including JSON array start/end brackets.
      */
     template<typename C, std::size_t I, std::size_t N>
-    struct JsonFixedArrayParser : EventHandler
+    struct JsonFixedArrayParser : JsonSingleEventHandler<typename JsonParser<std::tuple_element_t<I - 1, C>>::json_type>
     {
-        using element_type = typename std::tuple_element<I - 1, C>::type;
+        using element_type = std::tuple_element_t<I - 1, C>;
         using element_parser_type = JsonParser<element_type>;
+        using element_json_type = typename element_parser_type::json_type;
         using next_parser_type = JsonFixedArrayParser<C, I + 1, N - 1>;
 
         JsonFixedArrayParser(ReaderContext& context, C& container)
-            : context(context)
+            : JsonSingleEventHandler<element_json_type>(context)
             , container(container)
         {}
 
-        bool parse(const typename element_parser_type::json_type& json_item) override
+        bool parse(const element_json_type& json_item) override
         {
-            return stateless_parse(context, container, json_item);
+            return stateless_parse(this->context, container, json_item);
         }
 
     private:
@@ -36,16 +37,15 @@ namespace persistence
         }
 
     private:
-        ReaderContext& context;
         C& container;
     };
 
     /** Parses the start of a tuple-like type. */
     template<typename C, std::size_t N>
-    struct JsonFixedArrayParser<C, 0, N> : EventHandler
+    struct JsonFixedArrayParser<C, 0, N> : JsonSingleEventHandler<JsonArrayStart>
     {
         JsonFixedArrayParser(ReaderContext& context, C& container)
-            : context(context)
+            : JsonSingleEventHandler<JsonArrayStart>(context)
             , container(container)
         {}
 
@@ -56,16 +56,15 @@ namespace persistence
         }
 
     private:
-        ReaderContext& context;
         C& container;
     };
 
     /** Parses the end of a tuple-like type. */
     template<typename C, std::size_t I>
-    struct JsonFixedArrayParser<C, I, 0> : EventHandler
+    struct JsonFixedArrayParser<C, I, 0> : JsonSingleEventHandler<JsonArrayEnd>
     {
         JsonFixedArrayParser(ReaderContext& context, C& container)
-            : context(context)
+            : JsonSingleEventHandler<JsonArrayEnd>(context)
             , container(container)
         {}
 
@@ -76,7 +75,6 @@ namespace persistence
         }
 
     private:
-        ReaderContext& context;
         C& container;
     };
 

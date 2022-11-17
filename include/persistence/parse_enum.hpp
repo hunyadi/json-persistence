@@ -5,12 +5,12 @@
 namespace persistence
 {
     template<typename T>
-    struct JsonParser<T, std::enable_if_t<std::is_enum_v<T>>> : EventHandler
+    struct JsonParser<T, std::enable_if_t<std::is_enum_v<T>>> : JsonEventHandler
     {
         using json_type = JsonValueNumber;
 
         JsonParser(ReaderContext& context, T& ref)
-            : context(context)
+            : JsonEventHandler(context)
             , ref(ref)
         {}
 
@@ -22,8 +22,14 @@ namespace persistence
                     "expected function with signature: static bool from_string(const std::string_view&, Enum&)"
                 );
 
-                return enum_traits<T>::from_string(s.literal, ref);
+                if (enum_traits<T>::from_string(s.literal, ref)) {
+                    return true;
+                } else {
+                    context.fail("expected an enumeration string value; got: " + std::string(s.literal.data(), s.literal.size()));
+                    return false;
+                }
             } else {
+                context.fail("expected an enumeration numeric value; got: " + std::string(s.literal.data(), s.literal.size()));
                 return false;
             }
         }
@@ -34,20 +40,21 @@ namespace persistence
                 std::underlying_type_t<T> value;
                 const char* last = n.literal.data() + n.literal.size();
                 auto result = std::from_chars(n.literal.data(), last, value);
-                if (result.ec != std::errc() || result.ptr != last) {
+                if (result.ec == std::errc() && result.ptr == last) {
+                    ref = static_cast<T>(value);
+                    context.pop();
+                    return true;
+                } else {
+                    context.fail("expected an enumeration numeric value; got: " + std::string(n.literal.data(), n.literal.size()));
                     return false;
                 }
-
-                ref = static_cast<T>(value);
-                context.pop();
-                return true;
             } else {
+                context.fail("expected an enumeration string value; got: " + std::string(n.literal.data(), n.literal.size()));
                 return false;
             }
         }
 
     private:
-        ReaderContext& context;
         T& ref;
     };
 }

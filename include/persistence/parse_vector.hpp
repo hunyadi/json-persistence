@@ -1,5 +1,6 @@
 #pragma once
 #include "parse_base.hpp"
+#include "parse_fundamental.hpp"
 #include "detail/unlikely.hpp"
 
 namespace persistence
@@ -8,10 +9,10 @@ namespace persistence
      * Parses a JSON array of possibly composite values into a C++ `vector<T>`.
      */
     template<typename T>
-    struct JsonArrayParser : EventHandler
+    struct JsonArrayParser : JsonEventHandler
     {
         JsonArrayParser(ReaderContext& context, std::vector<T>& container)
-            : context(context)
+            : JsonEventHandler(context)
             , container(container)
         {}
 
@@ -29,7 +30,6 @@ namespace persistence
         }
 
     private:
-        ReaderContext& context;
         std::vector<T>& container;
     };
 
@@ -37,10 +37,10 @@ namespace persistence
      * Parses a JSON array of boolean values into a C++ `vector<bool>` efficiently.
      */
     template<>
-    struct JsonArrayParser<bool> : EventHandler
+    struct JsonArrayParser<bool> : JsonEventHandler
     {
         JsonArrayParser(ReaderContext& context, std::vector<bool>& container)
-            : context(context)
+            : JsonEventHandler(context)
             , container(container)
         {}
 
@@ -57,7 +57,6 @@ namespace persistence
         }
 
     private:
-        ReaderContext& context;
         std::vector<bool>& container;
     };
 
@@ -67,12 +66,12 @@ namespace persistence
      * @tparam Integer or floating-point type.
      */
     template<typename T>
-    struct JsonNumberArrayParser : EventHandler
+    struct JsonNumberArrayParser : JsonEventHandler
     {
         static_assert(std::is_arithmetic_v<T>, "T must be an arithmetic type");
 
         JsonNumberArrayParser(ReaderContext& context, std::vector<T>& container)
-            : context(context)
+            : JsonEventHandler(context)
             , container(container)
         {}
 
@@ -85,16 +84,15 @@ namespace persistence
         bool parse(const JsonValueNumber& n) override
         {
             T value;
-            PERSISTENCE_IF_UNLIKELY(!parse_number(n.literal, value)) {
+            if (JsonNumberValueParser<T>::parse(context, n, value)) {
+                container.push_back(value);
+                return true;
+            } else {
                 return false;
             }
-
-            container.push_back(value);
-            return true;
         }
 
     private:
-        ReaderContext& context;
         std::vector<T>& container;
     };
 
@@ -159,10 +157,10 @@ namespace persistence
     };
 
     template<>
-    struct JsonArrayParser<std::string> : EventHandler
+    struct JsonArrayParser<std::string> : JsonEventHandler
     {
         JsonArrayParser(ReaderContext& context, std::vector<std::string>& container)
-            : context(context)
+            : JsonEventHandler(context)
             , container(container)
         {}
 
@@ -179,17 +177,16 @@ namespace persistence
         }
 
     private:
-        ReaderContext& context;
         std::vector<std::string>& container;
     };
 
     template<typename T>
-    struct JsonParser<std::vector<T>> : EventHandler
+    struct JsonParser<std::vector<T>> : JsonSingleEventHandler<JsonArrayStart>
     {
         using json_type = JsonArrayStart;
 
         JsonParser(ReaderContext& context, std::vector<T>& ref)
-            : context(context)
+            : JsonSingleEventHandler<JsonArrayStart>(context)
             , ref(ref)
         {}
 
@@ -200,7 +197,6 @@ namespace persistence
         }
 
     private:
-        ReaderContext& context;
         std::vector<T>& ref;
     };
 }

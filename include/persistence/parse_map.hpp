@@ -6,10 +6,10 @@
 namespace persistence
 {
     template<typename C>
-    struct JsonMapParser : EventHandler
+    struct JsonMapParser : JsonEventHandler
     {
         JsonMapParser(ReaderContext& context, C& container)
-            : context(context)
+            : JsonEventHandler(context)
             , container(container)
         {}
 
@@ -30,17 +30,16 @@ namespace persistence
         }
 
     private:
-        ReaderContext& context;
         C& container;
     };
 
     template<typename C>
-    struct JsonMappedTypeParser : EventHandler
+    struct JsonMappedTypeParser : JsonSingleEventHandler<JsonObjectStart>
     {
         using json_type = JsonObjectStart;
 
         JsonMappedTypeParser(ReaderContext& context, C& container)
-            : context(context)
+            : JsonSingleEventHandler<JsonObjectStart>(context)
             , container(container)
         {}
 
@@ -51,7 +50,6 @@ namespace persistence
         }
 
     private:
-        ReaderContext& context;
         C& container;
     };
 

@@ -1,84 +1,30 @@
 #pragma once
 #include "detail/version.hpp"
 #include "detail/defer.hpp"
+#include "detail/parse_event.hpp"
 #include "detail/polymorphic_stack.hpp"
 #include <memory>
-#include <string_view>
 #include <vector>
 
 namespace persistence
 {
-    struct JsonValueNull
-    {};
-
-    struct JsonValueBoolean
-    {
-        bool value;
-
-        JsonValueBoolean(bool value = false) : value(value) {}
-    };
-
-    struct JsonValueNumber
-    {
-        std::string_view literal;
-
-        JsonValueNumber() = default;
-        JsonValueNumber(const char* str, std::size_t len) : literal(str, len) {}
-    };
-
-    struct JsonValueString
-    {
-        std::string_view literal;
-
-        JsonValueString() = default;
-        JsonValueString(const char* str, std::size_t len) : literal(str, len) {}
-    };
-
-    struct JsonObjectStart
-    {};
-
-    struct JsonObjectKey
-    {
-        std::string_view identifier;
-
-        JsonObjectKey() = default;
-        JsonObjectKey(const char* str, std::size_t len) : identifier(str, len) {}
-    };
-
-    struct JsonObjectEnd
-    {};
-
-    struct JsonArrayStart
-    {};
-
-    struct JsonArrayEnd
-    {};
-
-    struct EventHandler
-    {
-        virtual ~EventHandler() {}
-        virtual bool parse(const JsonValueNull&) { return false; }
-        virtual bool parse(const JsonValueBoolean&) { return false; }
-        virtual bool parse(const JsonValueNumber&) { return false; }
-        virtual bool parse(const JsonValueString&) { return false; }
-        virtual bool parse(const JsonObjectStart&) { return false; }
-        virtual bool parse(const JsonObjectKey&) { return false; }
-        virtual bool parse(const JsonObjectEnd&) { return false; }
-        virtual bool parse(const JsonArrayStart&) { return false; }
-        virtual bool parse(const JsonArrayEnd&) { return false; }
-    };
-
     struct EventDispatcher
     {
-        EventHandler* handler = nullptr;
-
-        bool Null() { return handler->parse(JsonValueNull()); }
-        bool Bool(bool b) { return handler->parse(JsonValueBoolean(b)); }
         bool Int(int) { return false; }
         bool Uint(unsigned int) { return false; }
         bool Int64(int64_t) { return false; }
         bool Uint64(uint64_t) { return false; }
         bool Double(double) { return false; }
+
+        bool Null()
+        {
+            return handler->parse(JsonValueNull());
+        }
+
+        bool Bool(bool b)
+        {
+            return handler->parse(JsonValueBoolean(b));
+        }
 
         bool RawNumber(const char* str, std::size_t length, bool /*copy*/)
         {
@@ -114,6 +60,8 @@ namespace persistence
         {
             return handler->parse(JsonArrayEnd());
         }
+
+        EventHandler* handler = nullptr;
     };
 
     class ReaderContext
@@ -145,9 +93,151 @@ namespace persistence
             return emplace<C>(std::forward<T>(args)...);
         }
 
-    private:
+        bool has_error() const
+        {
+            return !error_message.empty();
+        }
+
+        std::string get_error() const
+        {
+            return error_message;
+        }
+
+        void fail(std::string&& reason)
+        {
+            error_message = std::move(reason);
+        }
+
         EventDispatcher& dispatcher;
+
+    private:
         detail::PolymorphicStack<EventHandler> stack;
+        std::string error_message;
+    };
+
+    struct JsonEventHandler : EventHandler
+    {
+        JsonEventHandler(ReaderContext& context)
+            : context(context)
+        {}
+
+        template<typename FoundToken>
+        bool fail()
+        {
+            context.fail("unexpected JSON token " + std::string(FoundToken::name));
+            return false;
+        }
+
+        virtual bool parse(const JsonValueNull&)
+        {
+            return fail<JsonValueNull>();
+        }
+
+        virtual bool parse(const JsonValueBoolean&)
+        {
+            return fail<JsonValueBoolean>();
+        }
+
+        virtual bool parse(const JsonValueNumber&)
+        {
+            return fail<JsonValueNumber>();
+        }
+
+        virtual bool parse(const JsonValueString&)
+        {
+            return fail<JsonValueString>();
+        }
+
+        virtual bool parse(const JsonObjectStart&)
+        {
+            return fail<JsonObjectStart>();
+        }
+
+        virtual bool parse(const JsonObjectKey&)
+        {
+            return fail<JsonObjectKey>();
+        }
+
+        virtual bool parse(const JsonObjectEnd&)
+        {
+            return fail<JsonObjectEnd>();
+        }
+
+        virtual bool parse(const JsonArrayStart&)
+        {
+            return fail<JsonArrayStart>();
+        }
+
+        virtual bool parse(const JsonArrayEnd&)
+        {
+            return fail<JsonArrayEnd>();
+        }
+
+    protected:
+        ReaderContext& context;
+    };
+
+    template<typename ExpectToken>
+    struct JsonSingleEventHandler : EventHandler
+    {
+        JsonSingleEventHandler(ReaderContext& context)
+            : context(context)
+        {}
+
+        template<typename FoundToken>
+        bool fail()
+        {
+            context.fail("expected JSON token " + std::string(ExpectToken::name) + "; got: " + std::string(FoundToken::name));
+            return false;
+        }
+
+        virtual bool parse(const JsonValueNull&)
+        {
+            return fail<JsonValueNull>();
+        }
+
+        virtual bool parse(const JsonValueBoolean&)
+        {
+            return fail<JsonValueBoolean>();
+        }
+
+        virtual bool parse(const JsonValueNumber&)
+        {
+            return fail<JsonValueNumber>();
+        }
+
+        virtual bool parse(const JsonValueString&)
+        {
+            return fail<JsonValueString>();
+        }
+
+        virtual bool parse(const JsonObjectStart&)
+        {
+            return fail<JsonObjectStart>();
+        }
+
+        virtual bool parse(const JsonObjectKey&)
+        {
+            return fail<JsonObjectKey>();
+        }
+
+        virtual bool parse(const JsonObjectEnd&)
+        {
+            return fail<JsonObjectEnd>();
+        }
+
+        virtual bool parse(const JsonArrayStart&)
+        {
+            return fail<JsonArrayStart>();
+        }
+
+        virtual bool parse(const JsonArrayEnd&)
+        {
+            return fail<JsonArrayEnd>();
+        }
+
+    protected:
+        ReaderContext& context;
     };
 
     template<typename T, typename Enable = void>

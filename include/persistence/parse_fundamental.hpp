@@ -6,12 +6,12 @@
 namespace persistence
 {
     template<>
-    struct JsonParser<std::nullptr_t> : EventHandler
+    struct JsonParser<std::nullptr_t> : JsonSingleEventHandler<JsonValueNull>
     {
         using json_type = JsonValueNull;
 
         JsonParser(ReaderContext& context, std::nullptr_t& ref)
-            : context(context)
+            : JsonSingleEventHandler<JsonValueNull>(context)
             , ref(ref)
         {}
 
@@ -23,17 +23,16 @@ namespace persistence
         }
 
     private:
-        ReaderContext& context;
         std::nullptr_t& ref;
     };
 
     template<>
-    struct JsonParser<bool> : EventHandler
+    struct JsonParser<bool> : JsonSingleEventHandler<JsonValueBoolean>
     {
         using json_type = JsonValueBoolean;
 
         JsonParser(ReaderContext& context, bool& ref)
-            : context(context)
+            : JsonSingleEventHandler<JsonValueBoolean>(context)
             , ref(ref)
         {}
 
@@ -45,32 +44,49 @@ namespace persistence
         }
 
     private:
-        ReaderContext& context;
         bool& ref;
     };
 
     template<typename T>
-    struct JsonNumberParser : EventHandler
+    struct JsonNumberValueParser
+    {
+        static bool parse(ReaderContext& context, const JsonValueNumber& n, T& ref)
+        {
+            if (parse_number(n.literal, ref)) {
+                return true;
+            } else {
+                auto value = std::string(n.literal.data(), n.literal.size());
+                if constexpr (std::is_integral_v<T>) {
+                    context.fail("expected an integer; got: " + value);
+                } else if constexpr (std::is_floating_point_v<T>) {
+                    context.fail("expected a floating-point number; got: " + value);
+                }
+                return false;
+            }
+        }
+    };
+
+    template<typename T>
+    struct JsonNumberParser : JsonSingleEventHandler<JsonValueNumber>
     {
         using json_type = JsonValueNumber;
 
         JsonNumberParser(ReaderContext& context, T& ref)
-            : context(context)
+            : JsonSingleEventHandler<JsonValueNumber>(context)
             , ref(ref)
         {}
 
         bool parse(const JsonValueNumber& n) override
         {
-            PERSISTENCE_IF_UNLIKELY(!parse_number(n.literal, ref)) {
+            if (JsonNumberValueParser<T>::parse(context, n, ref)) {
+                context.pop();
+                return true;
+            } else {
                 return false;
             }
-
-            context.pop();
-            return true;
         }
 
     private:
-        ReaderContext& context;
         T& ref;
     };
 
@@ -153,12 +169,12 @@ namespace persistence
     };
 
     template<>
-    struct JsonParser<std::string> : EventHandler
+    struct JsonParser<std::string> : JsonSingleEventHandler<JsonValueString>
     {
         using json_type = JsonValueString;
 
         JsonParser(ReaderContext& context, std::string& ref)
-            : context(context)
+            : JsonSingleEventHandler<JsonValueString>(context)
             , ref(ref)
         {}
 
@@ -170,7 +186,6 @@ namespace persistence
         }
 
     private:
-        ReaderContext& context;
         std::string& ref;
     };
 }

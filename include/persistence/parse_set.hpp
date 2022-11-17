@@ -1,6 +1,8 @@
 #pragma once
 #include "parse_base.hpp"
+#include "parse_fundamental.hpp"
 #include <set>
+#include <vector>
 
 namespace persistence
 {
@@ -8,8 +10,58 @@ namespace persistence
      * Parses a JSON array of possibly composite values into a C++ `set<T>`.
      */
     template<typename T>
-    struct JsonSetParser : EventHandler
-    {};
+    struct JsonSetParser : JsonEventHandler
+    {
+        JsonSetParser(ReaderContext& context, std::set<T>& container)
+            : JsonEventHandler(context)
+            , container(container)
+        {}
+
+        bool parse(const JsonArrayEnd&) override
+        {
+            container.insert(storage.begin(), storage.end());
+            context.pop();
+            return true;
+        }
+
+        bool parse(const typename JsonParser<T>::json_type& json_item) override
+        {
+            storage.emplace_back();
+            auto&& handler = context.emplace<JsonParser<T>>(context, storage.back());
+            return handler.parse(json_item);
+        }
+
+    private:
+        std::vector<T> storage;
+        std::set<T>& container;
+    };
+
+    /**
+     * Parses a JSON array of boolean values into a C++ `set<bool>` efficiently.
+     */
+    template<>
+    struct JsonSetParser<bool> : JsonEventHandler
+    {
+        JsonSetParser(ReaderContext& context, std::set<bool>& container)
+            : JsonEventHandler(context)
+            , container(container)
+        {}
+
+        bool parse(const JsonArrayEnd&) override
+        {
+            context.pop();
+            return true;
+        }
+
+        bool parse(const JsonValueBoolean& b) override
+        {
+            container.insert(b.value);
+            return true;
+        }
+
+    private:
+        std::set<bool>& container;
+    };
 
     /**
      * Parses a JSON array of numbers into a C++ `set<T>` efficiently.
@@ -17,12 +69,12 @@ namespace persistence
      * @tparam Integer or floating-point type.
      */
     template<typename T>
-    struct JsonNumberSetParser : EventHandler
+    struct JsonNumberSetParser : JsonEventHandler
     {
         static_assert(std::is_arithmetic_v<T>, "T must be an arithmetic type");
 
         JsonNumberSetParser(ReaderContext& context, std::set<T>& container)
-            : context(context)
+            : JsonEventHandler(context)
             , container(container)
         {}
 
@@ -35,16 +87,15 @@ namespace persistence
         bool parse(const JsonValueNumber& n) override
         {
             T value;
-            if (!parse_number(n.literal, value)) {
+            if (JsonNumberValueParser<T>::parse(context, n, value)) {
+                container.insert(value);
+                return true;
+            } else {
                 return false;
             }
-
-            container.insert(value);
-            return true;
         }
 
     private:
-        ReaderContext& context;
         std::set<T>& container;
     };
 
@@ -109,10 +160,10 @@ namespace persistence
     };
 
     template<>
-    struct JsonSetParser<std::string> : EventHandler
+    struct JsonSetParser<std::string> : JsonEventHandler
     {
         JsonSetParser(ReaderContext& context, std::set<std::string>& container)
-            : context(context)
+            : JsonEventHandler(context)
             , container(container)
         {}
 
@@ -129,17 +180,16 @@ namespace persistence
         }
 
     private:
-        ReaderContext& context;
         std::set<std::string>& container;
     };
 
     template<typename T>
-    struct JsonParser<std::set<T>> : EventHandler
+    struct JsonParser<std::set<T>> : JsonSingleEventHandler<JsonArrayStart>
     {
         using json_type = JsonArrayStart;
 
         JsonParser(ReaderContext& context, std::set<T>& ref)
-            : context(context)
+            : JsonSingleEventHandler<JsonArrayStart>(context)
             , ref(ref)
         {}
 
@@ -150,7 +200,6 @@ namespace persistence
         }
 
     private:
-        ReaderContext& context;
         std::set<T>& ref;
     };
 }

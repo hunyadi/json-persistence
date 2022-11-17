@@ -58,6 +58,11 @@ struct TestDefault
             ;
     }
 
+    bool operator<(const TestDefault& op) const
+    {
+        return value < op.value;
+    }
+
     bool operator==(const TestDefault& op) const
     {
         return value == op.value;
