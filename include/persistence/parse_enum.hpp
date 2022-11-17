@@ -14,7 +14,7 @@ namespace persistence
             , ref(ref)
         {}
 
-        bool parse(JsonValueString s) override
+        bool parse(const JsonValueString& s) override
         {
             if constexpr (detect<T, enum_from_string_function>::value) {
                 static_assert(
@@ -28,7 +28,7 @@ namespace persistence
             }
         }
 
-        bool parse(JsonValueNumber n) override
+        bool parse(const JsonValueNumber& n) override
         {
             if constexpr (!detect<T, enum_from_string_function>::value) {
                 std::underlying_type_t<T> value;

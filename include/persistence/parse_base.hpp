@@ -57,15 +57,15 @@ namespace persistence
     struct EventHandler
     {
         virtual ~EventHandler() {}
-        virtual bool parse(JsonValueNull) { return false; }
-        virtual bool parse(JsonValueBoolean) { return false; }
-        virtual bool parse(JsonValueNumber) { return false; }
-        virtual bool parse(JsonValueString) { return false; }
-        virtual bool parse(JsonObjectStart) { return false; }
-        virtual bool parse(JsonObjectKey) { return false; }
-        virtual bool parse(JsonObjectEnd) { return false; }
-        virtual bool parse(JsonArrayStart) { return false; }
-        virtual bool parse(JsonArrayEnd) { return false; }
+        virtual bool parse(const JsonValueNull&) { return false; }
+        virtual bool parse(const JsonValueBoolean&) { return false; }
+        virtual bool parse(const JsonValueNumber&) { return false; }
+        virtual bool parse(const JsonValueString&) { return false; }
+        virtual bool parse(const JsonObjectStart&) { return false; }
+        virtual bool parse(const JsonObjectKey&) { return false; }
+        virtual bool parse(const JsonObjectEnd&) { return false; }
+        virtual bool parse(const JsonArrayStart&) { return false; }
+        virtual bool parse(const JsonArrayEnd&) { return false; }
     };
 
     struct EventDispatcher
@@ -75,7 +75,7 @@ namespace persistence
         bool Null() { return handler->parse(JsonValueNull()); }
         bool Bool(bool b) { return handler->parse(JsonValueBoolean(b)); }
         bool Int(int) { return false; }
-        bool Uint(unsigned) { return false; }
+        bool Uint(unsigned int) { return false; }
         bool Int64(int64_t) { return false; }
         bool Uint64(uint64_t) { return false; }
         bool Double(double) { return false; }

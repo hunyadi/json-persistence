@@ -77,7 +77,7 @@ namespace persistence
 #endif
 
     template<typename T>
-    bool parse_number(std::string_view str, T& value)
+    bool parse_number(const std::string_view& str, T& value)
     {
         NumberParser<T> parser;
         return parser.parse(str, value);

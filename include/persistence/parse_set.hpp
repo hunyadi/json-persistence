@@ -26,13 +26,13 @@ namespace persistence
             , container(container)
         {}
 
-        bool parse(JsonArrayEnd) override
+        bool parse(const JsonArrayEnd&) override
         {
             context.pop();
             return true;
         }
 
-        bool parse(JsonValueNumber n) override
+        bool parse(const JsonValueNumber& n) override
         {
             T value;
             if (!parse_number(n.literal, value)) {
@@ -116,13 +116,13 @@ namespace persistence
             , container(container)
         {}
 
-        bool parse(JsonArrayEnd) override
+        bool parse(const JsonArrayEnd&) override
         {
             context.pop();
             return true;
         }
 
-        bool parse(JsonValueString s) override
+        bool parse(const JsonValueString& s) override
         {
             container.emplace(s.literal.begin(), s.literal.end());
             return true;
@@ -143,7 +143,7 @@ namespace persistence
             , ref(ref)
         {}
 
-        bool parse(JsonArrayStart) override
+        bool parse(const JsonArrayStart&) override
         {
             context.replace<JsonSetParser<T>>(context, ref);
             return true;

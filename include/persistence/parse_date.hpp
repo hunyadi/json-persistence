@@ -17,7 +17,7 @@ namespace persistence
             , ref(ref)
         {}
 
-        bool parse(JsonValueString s) override
+        bool parse(const JsonValueString& s) override
         {
             timestamp ts;
             bool result = parse_date(s.literal.data(), s.literal.size(), ts);

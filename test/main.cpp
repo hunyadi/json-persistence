@@ -377,6 +377,9 @@ TEST(Serialization, Object)
     TestValue value_object("test string");
     EXPECT_TRUE(test_serialize(value_object, "{\"value\":\"test string\"}"));
 
+    TestDefault default_object;
+    EXPECT_TRUE(test_serialize(default_object, "{\"value\":\"default\"}"));
+
     TestDerived derived_object("base", "derived");
     EXPECT_TRUE(test_serialize(derived_object, "{\"value\":\"base\",\"member\":\"derived\"}"));
 
@@ -861,6 +864,7 @@ TEST(Deserialization, UnorderedMap)
 TEST(Deserialization, Object)
 {
     EXPECT_TRUE(test_deserialize("{\"value\":\"test string\"}", TestValue("test string")));
+    EXPECT_TRUE(test_deserialize("{}", TestDefault("default")));
     EXPECT_TRUE(test_deserialize("{\"value\":\"base\",\"member\":\"derived\"}", TestDerived("base", "derived")));
 
     const char* json =

@@ -14,7 +14,7 @@ namespace persistence
             , ref(ref)
         {}
 
-        bool parse(JsonValueString s) override
+        bool parse(const JsonValueString& s) override
         {
             bool result = parse_datetime(s.literal.data(), s.literal.size(), ref);
             context.pop();

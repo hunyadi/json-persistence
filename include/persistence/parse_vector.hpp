@@ -15,13 +15,13 @@ namespace persistence
             , container(container)
         {}
 
-        bool parse(JsonArrayEnd) override
+        bool parse(const JsonArrayEnd&) override
         {
             context.pop();
             return true;
         }
 
-        bool parse(typename JsonParser<T>::json_type json_item) override
+        bool parse(const typename JsonParser<T>::json_type& json_item) override
         {
             container.emplace_back();
             auto&& handler = context.emplace<JsonParser<T>>(context, container.back());
@@ -44,13 +44,13 @@ namespace persistence
             , container(container)
         {}
 
-        bool parse(JsonArrayEnd) override
+        bool parse(const JsonArrayEnd&) override
         {
             context.pop();
             return true;
         }
 
-        bool parse(JsonValueBoolean b) override
+        bool parse(const JsonValueBoolean& b) override
         {
             container.push_back(b.value);
             return true;
@@ -76,13 +76,13 @@ namespace persistence
             , container(container)
         {}
 
-        bool parse(JsonArrayEnd) override
+        bool parse(const JsonArrayEnd&) override
         {
             context.pop();
             return true;
         }
 
-        bool parse(JsonValueNumber n) override
+        bool parse(const JsonValueNumber& n) override
         {
             T value;
             PERSISTENCE_IF_UNLIKELY(!parse_number(n.literal, value)) {
@@ -166,13 +166,13 @@ namespace persistence
             , container(container)
         {}
 
-        bool parse(JsonArrayEnd) override
+        bool parse(const JsonArrayEnd&) override
         {
             context.pop();
             return true;
         }
 
-        bool parse(JsonValueString s) override
+        bool parse(const JsonValueString& s) override
         {
             container.emplace_back(s.literal.begin(), s.literal.end());
             return true;
@@ -193,7 +193,7 @@ namespace persistence
             , ref(ref)
         {}
 
-        bool parse(JsonArrayStart) override
+        bool parse(const JsonArrayStart&) override
         {
             context.replace<JsonArrayParser<T>>(context, ref);
             return true;

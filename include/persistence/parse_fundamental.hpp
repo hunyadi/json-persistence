@@ -15,7 +15,7 @@ namespace persistence
             , ref(ref)
         {}
 
-        bool parse(JsonValueNull) override
+        bool parse(const JsonValueNull&) override
         {
             ref = nullptr;
             context.pop();
@@ -37,7 +37,7 @@ namespace persistence
             , ref(ref)
         {}
 
-        bool parse(JsonValueBoolean b) override
+        bool parse(const JsonValueBoolean& b) override
         {
             ref = b.value;
             context.pop();
@@ -59,7 +59,7 @@ namespace persistence
             , ref(ref)
         {}
 
-        bool parse(JsonValueNumber n) override
+        bool parse(const JsonValueNumber& n) override
         {
             PERSISTENCE_IF_UNLIKELY(!parse_number(n.literal, ref)) {
                 return false;
@@ -162,7 +162,7 @@ namespace persistence
             , ref(ref)
         {}
 
-        bool parse(JsonValueString s) override
+        bool parse(const JsonValueString& s) override
         {
             ref.assign(s.literal.begin(), s.literal.end());
             context.pop();

@@ -143,6 +143,28 @@ The library supports several transformation modes:
     auto obj = deserialize<T>(doc);
     ```
 
+## Default member initializers
+
+If a class has a [default member initializer](https://en.cppreference.com/w/cpp/language/data_members#Member_initialization), the value of that member variable is assigned when the object is constructed. As a result, these member variables can be treated as if they were optional for JSON de-serialization and parsing; when the corresponding object key is missing in the source JSON, processing can continue without error. Use the macro `MEMBER_VARIABLE_DEFAULT` to indicate that omitting the JSON property corresponding to this member variable is allowed:
+
+```cpp
+struct Default
+{
+    template <typename Archive>
+    constexpr auto persist(Archive& ar)
+    {
+        return ar
+            & MEMBER_VARIABLE_DEFAULT(value)
+            ;
+    }
+
+private:
+    std::string value = "default";
+};
+```
+
+The same technique can be applied to member variables whose value is assigned in the default constructor.
+
 ## Defining persistence in derived classes
 
 The following example illustrates how to define the `persist` function in a derived class that inherits members from a base class and defines additional member variables of its own:

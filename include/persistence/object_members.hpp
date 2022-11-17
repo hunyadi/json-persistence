@@ -60,10 +60,10 @@ namespace persistence
     };
 
     template<typename Class>
-    constexpr auto member_variables(Class& cls)
+    constexpr auto member_variables(const Class& cls)
     {
         static_assert(std::is_class_v<Class>, "expected a class type");
         constexpr auto builder = detail::ObjectMemberBuilder<Class, std::tuple<>>();
-        return cls.persist(builder).members;
+        return const_cast<Class&>(cls).persist(builder).members;
     }
 }

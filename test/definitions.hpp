@@ -43,6 +43,30 @@ private:
     std::string value;
 };
 
+struct TestDefault
+{
+    TestDefault() = default;
+    TestDefault(const std::string& value)
+        : value(value)
+    {}
+
+    template <typename Archive>
+    constexpr auto persist(Archive& ar)
+    {
+        return ar
+            & MEMBER_VARIABLE_DEFAULT(value)
+            ;
+    }
+
+    bool operator==(const TestDefault& op) const
+    {
+        return value == op.value;
+    }
+
+private:
+    std::string value = "default";
+};
+
 struct TestDerived : TestValue
 {
     TestDerived() = default;

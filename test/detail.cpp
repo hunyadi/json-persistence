@@ -70,13 +70,13 @@ TEST(Utility, PolymorphicStack)
 
 TEST(Utility, Members)
 {
-    Example cls;
-    constexpr auto members = member_variables(cls);
-    EXPECT_EQ(std::get<0>(members).name, "bool_value");
-    EXPECT_EQ(std::get<1>(members).name, "string_value");
-    EXPECT_EQ(std::get<2>(members).name, "string_list");
-    EXPECT_EQ(std::get<3>(members).name, "optional_value");
-    EXPECT_EQ(std::get<4>(members).name, "custom_value");
+    const Example object;
+    constexpr auto members = member_variables(object);
+    EXPECT_EQ(std::get<0>(members).name(), "bool_value");
+    EXPECT_EQ(std::get<1>(members).name(), "string_value");
+    EXPECT_EQ(std::get<2>(members).name(), "string_list");
+    EXPECT_EQ(std::get<3>(members).name(), "optional_value");
+    EXPECT_EQ(std::get<4>(members).name(), "custom_value");
 }
 
 testing::AssertionResult test_base64(const std::string_view& str, std::string_view ref)

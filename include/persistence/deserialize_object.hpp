@@ -7,6 +7,16 @@
 
 namespace persistence
 {
+    namespace detail
+    {
+        template<typename T, typename C>
+        rapidjson::Value::ConstMemberIterator find_object_member(const rapidjson::Value& json_object, const member_variable<T, C>& member)
+        {
+            rapidjson::Value name(rapidjson::StringRef(member.name().data(), member.name().size()));
+            return json_object.FindMember(name);
+        }
+    }
+
     template<bool Exception, typename C>
     struct JsonObjectDeserializer : JsonContextAwareDeserializer
     {
@@ -21,11 +31,7 @@ namespace persistence
         {
             static_assert(std::is_base_of_v<B, C>, "expected a member variable part of the class inheritance chain");
 
-            PERSISTENCE_IF_UNLIKELY(!result) {
-                return *this;
-            }
-
-            auto it = json_object.FindMember(member.name.data());
+            auto it = detail::find_object_member(json_object, member);
             if (it != json_object.MemberEnd()) {
                 T value;
                 DeserializerContext value_context(context, Segment(it->name.GetString()));
@@ -42,15 +48,15 @@ namespace persistence
         {
             static_assert(std::is_base_of_v<B, C>, "expected a member variable part of the class inheritance chain");
 
-            PERSISTENCE_IF_UNLIKELY(!result) {
+            auto it = detail::find_object_member(json_object, member);
+            if (it != json_object.MemberEnd()) {
+                DeserializerContext value_context(context, Segment(it->name.GetString()));
+                result = deserialize<Exception>(it->value, member.ref(object), value_context);
                 return *this;
-            }
-
-            auto it = json_object.FindMember(member.name.data());
-            PERSISTENCE_IF_UNLIKELY(it == json_object.MemberEnd()) {
+            } else {
                 if constexpr (Exception) {
                     throw JsonDeserializationError(
-                        "missing required property: " + std::string(member.name),
+                        "missing required property: " + std::string(member.name()),
                         Path(context.segments()).str()
                     );
                 } else {
@@ -58,9 +64,18 @@ namespace persistence
                     return *this;
                 }
             }
+        }
 
-            DeserializerContext value_context(context, Segment(it->name.GetString()));
-            result = deserialize<Exception>(it->value, member.ref(object), value_context);
+        template<typename T, typename B>
+        JsonObjectDeserializer& operator&(const member_variable_default<T, B>& member)
+        {
+            static_assert(std::is_base_of_v<B, C>, "expected a member variable part of the class inheritance chain");
+
+            auto it = detail::find_object_member(json_object, member);
+            if (it != json_object.MemberEnd()) {
+                DeserializerContext value_context(context, Segment(it->name.GetString()));
+                result = deserialize<Exception>(it->value, member.ref(object), value_context);
+            }
             return *this;
         }
 

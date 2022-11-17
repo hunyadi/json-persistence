@@ -13,13 +13,13 @@ namespace persistence
             , container(container)
         {}
 
-        bool parse(JsonObjectEnd) override
+        bool parse(const JsonObjectEnd&) override
         {
             context.pop();
             return true;
         }
 
-        bool parse(JsonObjectKey json_key) override
+        bool parse(const JsonObjectKey& json_key) override
         {
             using value_type = typename C::mapped_type;
             std::string_view key = json_key.identifier;
@@ -44,7 +44,7 @@ namespace persistence
             , container(container)
         {}
 
-        bool parse(JsonObjectStart) override
+        bool parse(const JsonObjectStart&) override
         {
             context.replace<JsonMapParser<C>>(context, container);
             return true;

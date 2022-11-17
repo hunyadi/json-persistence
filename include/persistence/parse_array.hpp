@@ -22,13 +22,13 @@ namespace persistence
             , container(container)
         {}
 
-        bool parse(typename element_parser_type::json_type json_item) override
+        bool parse(const typename element_parser_type::json_type& json_item) override
         {
             return stateless_parse(context, container, json_item);
         }
 
     private:
-        static bool stateless_parse(ReaderContext& context, C& container, typename element_parser_type::json_type json_item)
+        static bool stateless_parse(ReaderContext& context, C& container, const typename element_parser_type::json_type& json_item)
         {
             context.replace<next_parser_type>(context, container);
             auto&& handler = context.emplace<element_parser_type>(context, std::get<I - 1>(container));
@@ -49,7 +49,7 @@ namespace persistence
             , container(container)
         {}
 
-        bool parse(JsonArrayStart) override
+        bool parse(const JsonArrayStart&) override
         {
             context.replace<JsonFixedArrayParser<C, 1, N - 1>>(context, container);
             return true;
@@ -69,7 +69,7 @@ namespace persistence
             , container(container)
         {}
 
-        bool parse(JsonArrayEnd) override
+        bool parse(const JsonArrayEnd&) override
         {
             context.pop();
             return true;

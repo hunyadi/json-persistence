@@ -14,7 +14,7 @@ namespace persistence
             , ref(ref)
         {}
 
-        bool parse(JsonValueString s) override
+        bool parse(const JsonValueString& s) override
         {
             if (!base64_decode(s.literal, ref)) {
                 return false;

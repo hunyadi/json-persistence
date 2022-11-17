@@ -405,7 +405,7 @@ namespace persistence
         {
             static_assert(std::is_base_of_v<B, C>, "expected a member variable part of the class inheritance chain");
             properties.push_back(
-                std::make_pair(member.name, make_schema_ptr<T>(context))
+                std::make_pair(member.name(), make_schema_ptr<T>(context))
             );
             return *this;
         }
@@ -415,9 +415,9 @@ namespace persistence
         {
             static_assert(std::is_base_of_v<B, C>, "expected a member variable part of the class inheritance chain");
             properties.push_back(
-                std::make_pair(member.name, make_schema_ptr<T>(context))
+                std::make_pair(member.name(), make_schema_ptr<T>(context))
             );
-            required.push_back(member.name);
+            required.push_back(member.name());
             return *this;
         }
 

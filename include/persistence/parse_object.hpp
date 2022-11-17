@@ -38,13 +38,13 @@ namespace persistence
             , ref(ref)
         {}
 
-        bool parse(JsonObjectEnd) override
+        bool parse(const JsonObjectEnd&) override
         {
             context.pop();
             return true;
         }
 
-        bool parse(JsonObjectKey json_key) override
+        bool parse(const JsonObjectKey& json_key) override
         {
             std::string_view key = json_key.identifier;
             return std::apply([=](const auto&... members) {
@@ -53,17 +53,11 @@ namespace persistence
         }
 
     private:
-        static auto initialize()
-        {
-            C cls;
-            return member_variables(cls);
-        }
-
         template<typename T, typename B>
         bool parse_member(const std::string_view& key, const member_variable<T, B>& member)
         {
             static_assert(std::is_base_of_v<B, C>, "expected a member variable part of the class inheritance chain");
-            if (member.name == key) {
+            if (member.name() == key) {
                 context.emplace<JsonParser<T>>(context, member.ref(ref));
                 return true;
             } else {
@@ -72,7 +66,7 @@ namespace persistence
         }
 
     private:
-        inline static auto members = initialize();
+        inline static auto members = member_variables(C());
         ReaderContext& context;
         C& ref;
     };
@@ -102,7 +96,7 @@ namespace persistence
             , ref(ref)
         {}
 
-        bool parse(JsonObjectStart) override
+        bool parse(const JsonObjectStart&) override
         {
             context.replace<JsonObjectParser<T>>(context, ref);
             return true;
