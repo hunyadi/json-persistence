@@ -2,6 +2,7 @@
 #include "deserialize_base.hpp"
 #include "detail/deserialize_aware.hpp"
 #include <rapidjson/pointer.h>
+#include <memory>
 
 namespace persistence
 {

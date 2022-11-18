@@ -3,7 +3,6 @@
 #include "deserialize_check.hpp"
 #include "detail/deserialize_aware.hpp"
 #include <tuple>
-#include <utility>
 
 namespace persistence
 {

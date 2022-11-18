@@ -8,14 +8,20 @@ namespace persistence
     struct DocumentContext
     {
         DocumentContext(rapidjson::Document& document)
-            : document(document)
+            : doc(document)
         {}
+
+        rapidjson::Document& document()
+        {
+            return doc;
+        }
 
         rapidjson::MemoryPoolAllocator<>& allocator()
         {
-            return document.GetAllocator();
+            return doc.GetAllocator();
         }
 
-        rapidjson::Document& document;
+    private:
+        rapidjson::Document& doc;
     };
 }

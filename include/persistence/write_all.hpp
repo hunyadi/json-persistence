@@ -3,6 +3,7 @@
 * Writer functions convert a C++ object into its JSON string representation.
 */
 
+#include "detail/version.hpp"
 #include "write.hpp"
 #include "write_fundamental.hpp"
 #include "write_object.hpp"

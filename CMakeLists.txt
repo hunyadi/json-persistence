@@ -40,7 +40,32 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 
 # project configuration
-add_executable(json-persistence-tests ${CMAKE_SOURCE_DIR}/test/main.cpp ${CMAKE_SOURCE_DIR}/test/detail.cpp)
+add_executable(json-persistence-tests
+    ${CMAKE_SOURCE_DIR}/test/detail.cpp
+    ${CMAKE_SOURCE_DIR}/test/main.cpp
+
+    ${CMAKE_SOURCE_DIR}/test/schema.cpp
+
+    ${CMAKE_SOURCE_DIR}/test/serialize_bytes.cpp
+    ${CMAKE_SOURCE_DIR}/test/serialize_container.cpp
+    ${CMAKE_SOURCE_DIR}/test/serialize_datetime.cpp
+    ${CMAKE_SOURCE_DIR}/test/serialize_enum.cpp
+    ${CMAKE_SOURCE_DIR}/test/serialize_fundamental.cpp
+    ${CMAKE_SOURCE_DIR}/test/serialize_object.cpp
+    ${CMAKE_SOURCE_DIR}/test/serialize_string.cpp
+    ${CMAKE_SOURCE_DIR}/test/serialize_tuple.cpp
+    ${CMAKE_SOURCE_DIR}/test/serialize_variant.cpp
+
+    ${CMAKE_SOURCE_DIR}/test/deserialize_bytes.cpp
+    ${CMAKE_SOURCE_DIR}/test/deserialize_container.cpp
+    ${CMAKE_SOURCE_DIR}/test/deserialize_datetime.cpp
+    ${CMAKE_SOURCE_DIR}/test/deserialize_enum.cpp
+    ${CMAKE_SOURCE_DIR}/test/deserialize_fundamental.cpp
+    ${CMAKE_SOURCE_DIR}/test/deserialize_object.cpp
+    ${CMAKE_SOURCE_DIR}/test/deserialize_string.cpp
+    ${CMAKE_SOURCE_DIR}/test/deserialize_tuple.cpp
+    ${CMAKE_SOURCE_DIR}/test/deserialize_variant.cpp
+)
 target_include_directories(json-persistence-tests PRIVATE ${CMAKE_SOURCE_DIR}/include ${RAPIDJSON_INCLUDE_DIRS})
 target_link_libraries(json-persistence-tests GTest::gtest_main)
 

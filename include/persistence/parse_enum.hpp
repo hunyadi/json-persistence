@@ -1,6 +1,8 @@
 #pragma once
 #include "enum.hpp"
 #include "parse_base.hpp"
+#include "detail/traits.hpp"
+#include <charconv>
 
 namespace persistence
 {

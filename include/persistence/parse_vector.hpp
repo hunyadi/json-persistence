@@ -2,6 +2,7 @@
 #include "parse_base.hpp"
 #include "parse_fundamental.hpp"
 #include "detail/unlikely.hpp"
+#include <vector>
 
 namespace persistence
 {

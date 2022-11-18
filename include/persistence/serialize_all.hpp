@@ -3,6 +3,7 @@
 * Serialization functions convert a C++ object into values in a JSON DOM object.
 */
 
+#include "detail/version.hpp"
 #include "serialize.hpp"
 #include "serialize_fundamental.hpp"
 #include "serialize_object.hpp"

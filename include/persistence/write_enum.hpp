@@ -2,6 +2,7 @@
 #include "enum.hpp"
 #include "write_fundamental.hpp"
 #include "write_string.hpp"
+#include "detail/traits.hpp"
 
 namespace persistence
 {

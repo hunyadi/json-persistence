@@ -3,6 +3,7 @@
 #include "deserialize_base.hpp"
 #include "deserialize_check.hpp"
 #include "detail/deserialize_aware.hpp"
+#include "detail/traits.hpp"
 #include <optional>
 
 namespace persistence

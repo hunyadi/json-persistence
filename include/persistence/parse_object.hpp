@@ -2,6 +2,7 @@
 #include "object.hpp"
 #include "object_members.hpp"
 #include "parse_base.hpp"
+#include "detail/traits.hpp"
 #include <optional>
 
 namespace persistence

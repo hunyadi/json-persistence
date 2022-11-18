@@ -2,7 +2,6 @@
 #include "write_base.hpp"
 #include "detail/write_aware.hpp"
 #include <tuple>
-#include <utility>
 
 namespace persistence
 {

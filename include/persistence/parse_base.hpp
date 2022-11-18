@@ -3,8 +3,7 @@
 #include "detail/defer.hpp"
 #include "detail/parse_event.hpp"
 #include "detail/polymorphic_stack.hpp"
-#include <memory>
-#include <vector>
+#include <string>
 
 namespace persistence
 {

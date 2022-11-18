@@ -14,9 +14,8 @@ namespace persistence
          * @tparam Base Type that all polymorphic objects derive from.
          */
         template<typename Base, std::size_t Capacity = 128, std::size_t MemorySize = 4096>
-        class PolymorphicStack
+        struct PolymorphicStack
         {
-        public:
             static_assert(std::has_virtual_destructor<Base>::value, "base class requires a virtual destructor for proper de-allocation");
 
             template<typename Class, typename... T>

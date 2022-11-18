@@ -2,8 +2,8 @@
 #if __cplusplus < 202002L
 #error This feature requires C++20 or later.
 #endif
-#include "parse_base.hpp"
 #include "datetime.hpp"
+#include "parse_base.hpp"
 
 namespace persistence
 {

@@ -2,6 +2,7 @@
 #include "object.hpp"
 #include "write_base.hpp"
 #include "detail/write_aware.hpp"
+#include "detail/traits.hpp"
 #include <optional>
 
 namespace persistence

@@ -1,7 +1,6 @@
 #pragma once
 #include "references.hpp"
 #include "segment.hpp"
-#include <memory>
 
 namespace persistence
 {

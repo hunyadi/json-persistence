@@ -15,7 +15,6 @@ namespace persistence
 
     struct DeserializerContext
     {
-    public:
         DeserializerContext(GlobalDeserializerContext& global)
             : global(global)
             , parent(nullptr)
@@ -39,7 +38,7 @@ namespace persistence
 
         rapidjson::Document& document()
         {
-            return global.document;
+            return global.document();
         }
 
         rapidjson::MemoryPoolAllocator<>& allocator()

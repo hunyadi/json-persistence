@@ -4,8 +4,5 @@
 namespace persistence
 {
     /** Context for serializing an object to a JSON string. */
-    struct GlobalWriterContext : WriterReferenceContext
-    {};
-
-    using WriterContext = OutputContext<GlobalWriterContext>;
+    using WriterContext = OutputContext<WriterReferenceContext>;
 }

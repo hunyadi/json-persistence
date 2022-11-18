@@ -1,9 +1,9 @@
 #pragma once
 #include "deserialize_base.hpp"
 #include "detail/deserialize_aware.hpp"
+#include "detail/deserialize_context.hpp"
 #include "detail/traits.hpp"
 #include <rapidjson/error/en.h>
-#include <string>
 
 namespace persistence
 {

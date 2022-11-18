@@ -2,6 +2,7 @@
 #include "exception.hpp"
 #include "detail/config.hpp"
 #include "detail/deserialize_context.hpp"
+#include "detail/path.hpp"
 #include "detail/unlikely.hpp"
 #include <rapidjson/document.h>
 

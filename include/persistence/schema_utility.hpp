@@ -1,6 +1,13 @@
 #pragma once
 #include "schema.hpp"
-#include "write_all.hpp"
+#include "write_fundamental.hpp"
+#include "write_object.hpp"
+#include "write_pointer.hpp"
+#include "write_map.hpp"
+#include "write_string.hpp"
+#include "write_variant.hpp"
+#include "write_vector.hpp"
+#include "write.hpp"
 
 namespace persistence
 {

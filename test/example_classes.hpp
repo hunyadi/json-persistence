@@ -4,20 +4,6 @@
 #include <string>
 #include <vector>
 
-enum class Side : short
-{
-    Left = 1,
-    Right = 2
-};
-
-enum class Suit
-{
-    Diamonds,
-    Hearts,
-    Clubs,
-    Spades
-};
-
 struct TestValue
 {
     TestValue() = default;

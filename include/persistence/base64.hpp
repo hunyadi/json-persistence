@@ -20,15 +20,6 @@ namespace persistence
         #endif
         };
 
-        inline bool is_valid_base64_char(char c)
-        {
-            return ((c >= 'A') && (c <= 'Z'))
-                || ((c >= 'a') && (c <= 'z'))
-                || ((c >= '0') && (c <= '9'))
-                || ((c == '+') || (c == '/'))
-            ;
-        }
-
         constexpr std::array<char, 64> encode_table {
             'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
             'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
@@ -39,19 +30,25 @@ namespace persistence
         /**
          * Produces the Base64-encoding of a sequence of bytes.
          *
-         * @param value An integer storing data on the 3 least-significant bytes.
+         * @param in_a First byte to encode.
+         * @param in_b Second byte to encode.
+         * @param in_c Third byte to encode.
          * @param out A pointer to a string to receive 4 Base64-encoded characters.
          */
-        inline void encode_triplet(std::uint32_t value, char* out)
+        inline void encode_triplet(std::byte in_a, std::byte in_b, std::byte in_c, char* out)
         {
-            *out++ = encode_table[(value >> 18) & 0x3F];
-            *out++ = encode_table[(value >> 12) & 0x3F];
-            *out++ = encode_table[(value >>  6) & 0x3F];
-            *out++ = encode_table[value & 0x3F];
-        }
+            auto a = std::to_integer<std::size_t>(in_a);
+            auto b = std::to_integer<std::size_t>(in_b);
+            auto c = std::to_integer<std::size_t>(in_c);
 
+            *out++ = encode_table[a >> 2];
+            *out++ = encode_table[((a & 0b00000011) << 4) | (b >> 4)];
+            *out++ = encode_table[((b & 0b00001111) << 2) | (c >> 6)];
+            *out++ = encode_table[c & 0b00111111];
+        }
+        
         /**
-         * Produces the Base64-encoding of the first 6 bytes of an integer.
+         * Produces the Base64-encoding of the first 6 bytes of a 64-bit integer.
          *
          * @param value An integer with big-endian representation.
          * @param out A pointer to a string to receive 8 Base64-encoded characters.
@@ -69,7 +66,7 @@ namespace persistence
         }
 
         /**
-         * Produces the Base64-encoding of the first 6 bytes of an integer.
+         * Produces the Base64-encoding of the first 6 bytes of a 64-bit integer.
          *
          * @param value An integer with little-endian representation.
          * @param out A pointer to a string to receive 8 Base64-encoded characters.
@@ -84,24 +81,6 @@ namespace persistence
             *out++ = encode_table[(((value >> 24) & 0b00000011) << 4) | ((value >> 36) & 0b00001111)];
             *out++ = encode_table[(((value >> 32) & 0b00001111) << 2) | ((value >> 46) & 0b00000011)];
             *out++ = encode_table[(value >> 40) & 0b00111111];
-        }
-
-        /**
-         * Produces the Base64-encoding of a sequence of bytes.
-         *
-         * @param a First byte to encode.
-         * @param b Second byte to encode.
-         * @param c Third byte to encode.
-         * @param out A pointer to a string to receive 4 Base64-encoded characters.
-         */
-        inline void encode_triplet(std::byte a, std::byte b, std::byte c, char* out)
-        {
-            std::uint32_t concat_bytes =
-                (std::to_integer<std::uint32_t>(a) << 16) |
-                (std::to_integer<std::uint32_t>(b) <<  8) |
-                std::to_integer<std::uint32_t>(c)
-            ;
-            encode_triplet(concat_bytes, out);
         }
     }
 

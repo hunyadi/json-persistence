@@ -2,6 +2,7 @@
 #include "serialize_base.hpp"
 #include "detail/serialize_aware.hpp"
 #include "detail/path.hpp"
+#include <memory>
 
 namespace persistence
 {

@@ -1,6 +1,7 @@
 #pragma once
-#include "write_base.hpp"
 #include "base64.hpp"
+#include "write_base.hpp"
+#include <string>
 
 namespace persistence
 {

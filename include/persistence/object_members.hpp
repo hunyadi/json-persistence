@@ -6,6 +6,11 @@ namespace persistence
 {
     namespace detail
     {
+        template<typename T, typename... Ts>
+        constexpr std::tuple<Ts..., T> tuple_append(const std::tuple<Ts...>& tup, const T& elem) {
+            return std::tuple_cat(tup, std::make_tuple(elem));
+        }
+
         /**
         * Enumerates member variables of a class at compile-time.
         */
@@ -20,7 +25,7 @@ namespace persistence
             constexpr auto operator&(const member_variable<T, Base>& member) const
             {
                 static_assert(std::is_base_of_v<Base, Class>, "expected a member variable part of the class inheritance chain");
-                auto tpl = std::tuple_cat(members, std::make_tuple(member));
+                auto tpl = tuple_append(members, member);
                 return ObjectMemberBuilder<Class, decltype(tpl)>(tpl);
             }
 

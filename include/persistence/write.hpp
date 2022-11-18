@@ -30,7 +30,7 @@ namespace persistence
     template<typename T>
     bool write_to_string(const T& obj, StringWriter& writer)
     {
-        GlobalWriterContext global;
+        WriterReferenceContext global;
         WriterContext local(global);
         return serialize(obj, writer, local);
     }

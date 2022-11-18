@@ -2,6 +2,7 @@
 #include "write_base.hpp"
 #include "detail/write_aware.hpp"
 #include "detail/path.hpp"
+#include <memory>
 
 namespace persistence
 {

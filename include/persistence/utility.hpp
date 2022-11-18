@@ -11,7 +11,7 @@ namespace persistence
     /**
      * Generates a JSON string representation from a DOM object.
      */
-    std::string document_to_string(const rapidjson::Document& doc)
+    inline std::string document_to_string(const rapidjson::Document& doc)
     {
         rapidjson::StringBuffer buffer;
         rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
@@ -22,7 +22,7 @@ namespace persistence
     /**
      * Parses a JSON string representation into a DOM object.
      */
-    rapidjson::Document string_to_document(const std::string& str)
+    inline rapidjson::Document string_to_document(const std::string& str)
     {
         rapidjson::Document doc;
         doc.Parse(str.data());
@@ -32,7 +32,7 @@ namespace persistence
     /**
      * Parses a JSON string representation into a DOM object.
      */
-    rapidjson::Document string_to_document(std::string&& str)
+    inline rapidjson::Document string_to_document(std::string&& str)
     {
         rapidjson::Document doc;
         doc.ParseInsitu(str.data());
