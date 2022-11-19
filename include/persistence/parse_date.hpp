@@ -4,6 +4,7 @@
 #endif
 #include "datetime.hpp"
 #include "parse_base.hpp"
+#include "detail/unlikely.hpp"
 
 namespace persistence
 {
@@ -20,14 +21,14 @@ namespace persistence
         bool parse(const JsonValueString& s) override
         {
             timestamp ts;
-            if (parse_date(s.literal.data(), s.literal.size(), ts)) {
-                ref = std::chrono::time_point_cast<std::chrono::days>(ts);
-                context.pop();
-                return true;
-            } else {
+            PERSISTENCE_IF_UNLIKELY(!parse_date(s.literal.data(), s.literal.size(), ts)) {
                 context.fail("invalid ISO-8601 date; expected: YYYY-MM-DD, got: " + std::string(s.literal.data(), s.literal.size()));
                 return false;
             }
+
+            ref = std::chrono::time_point_cast<std::chrono::days>(ts);
+            context.pop();
+            return true;
         }
 
     private:

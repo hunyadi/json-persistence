@@ -1,5 +1,6 @@
 #pragma once
 #include "serialize_base.hpp"
+#include "detail/unlikely.hpp"
 #include <cmath>
 
 namespace persistence
@@ -116,31 +117,28 @@ namespace persistence
     struct JsonSerializer<unsigned long long> : JsonUnsignedLongIntegerSerializer<unsigned long long>
     {};
 
-    template<>
-    struct JsonSerializer<float>
+    template<typename T>
+    struct JsonFloatSerializer
     {
-        bool operator()(float value, rapidjson::Value& json) const
+        static_assert(std::is_floating_point_v<T>, "T must be a floating point type");
+
+        bool operator()(T value, rapidjson::Value& json) const
         {
-            if (std::isfinite(value)) {
-                json.SetDouble(value);
-                return true;
-            } else {
-                return false;  // JSON specification does not allow for NaN, Inf, -Inf and subnormal values
+            PERSISTENCE_IF_UNLIKELY(!std::isfinite(value)) {
+                // JSON specification does not allow for NaN, Inf, -Inf and subnormal values
+                return false;
             }
+
+            json.SetDouble(value);
+            return true;
         }
     };
 
     template<>
-    struct JsonSerializer<double>
-    {
-        bool operator()(double value, rapidjson::Value& json) const
-        {
-            if (std::isfinite(value)) {
-                json.SetDouble(value);
-                return true;
-            } else {
-                return false;  // JSON specification does not allow for NaN, Inf, -Inf and subnormal values
-            }
-        }
-    };
+    struct JsonSerializer<float> : JsonFloatSerializer<float>
+    {};
+
+    template<>
+    struct JsonSerializer<double> : JsonFloatSerializer<double>
+    {};
 }

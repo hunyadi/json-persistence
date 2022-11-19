@@ -1,6 +1,7 @@
 #pragma once
 #include "parse_base.hpp"
 #include "parse_fundamental.hpp"
+#include "detail/unlikely.hpp"
 #include <set>
 #include <vector>
 
@@ -87,12 +88,12 @@ namespace persistence
         bool parse(const JsonValueNumber& n) override
         {
             T value;
-            if (JsonNumberValueParser<T>::parse(context, n, value)) {
-                container.insert(value);
-                return true;
-            } else {
+            PERSISTENCE_IF_UNLIKELY(!JsonNumberValueParser<T>::parse(context, n, value)) {
                 return false;
             }
+
+            container.insert(value);
+            return true;
         }
 
     private:

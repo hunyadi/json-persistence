@@ -1,6 +1,7 @@
 #pragma once
 #include "write_base.hpp"
 #include "detail/write_aware.hpp"
+#include "detail/unlikely.hpp"
 #include <array>
 
 namespace persistence
@@ -16,7 +17,7 @@ namespace persistence
             std::size_t idx = 0;
             for (const auto& item : container) {
                 WriterContext item_context(context, Segment(idx));
-                if (!serialize<T>(item, writer, item_context)) {
+                PERSISTENCE_IF_UNLIKELY(!serialize<T>(item, writer, item_context)) {
                     return false;
                 }
                 ++idx;

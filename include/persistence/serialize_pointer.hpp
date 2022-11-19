@@ -1,6 +1,7 @@
 #pragma once
 #include "serialize_base.hpp"
 #include "detail/serialize_aware.hpp"
+#include "detail/unlikely.hpp"
 #include "detail/path.hpp"
 #include <memory>
 
@@ -50,7 +51,7 @@ namespace persistence
                 json.AddMember(ref_key, ref_json, context.global().allocator());
 
             } else {
-                if (!serialize(*pointer, json, context)) {
+                PERSISTENCE_IF_UNLIKELY(!serialize(*pointer, json, context)) {
                     return false;
                 }
 

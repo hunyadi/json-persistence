@@ -2,6 +2,7 @@
 #include "dictionary.hpp"
 #include "write_base.hpp"
 #include "detail/write_aware.hpp"
+#include "detail/unlikely.hpp"
 #include <map>
 #include <unordered_map>
 
@@ -19,7 +20,7 @@ namespace persistence
                 writer.Key(key.data(), static_cast<rapidjson::SizeType>(key.size()), true);
 
                 WriterContext value_context(context, Segment(key));
-                if (!serialize<typename C::value_type::second_type>(value, writer, value_context)) {
+                PERSISTENCE_IF_UNLIKELY(!serialize<typename C::value_type::second_type>(value, writer, value_context)) {
                     return false;
                 }
             }

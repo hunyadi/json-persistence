@@ -1,6 +1,7 @@
 #pragma once
 #include "serialize_base.hpp"
 #include "detail/serialize_aware.hpp"
+#include "detail/unlikely.hpp"
 #include <tuple>
 #include <utility>
 
@@ -34,7 +35,7 @@ namespace persistence
         {
             rapidjson::Value item_json;
             SerializerContext item_context(context, Segment(index));
-            if (!serialize(item, item_json, item_context)) {
+            PERSISTENCE_IF_UNLIKELY(!serialize(item, item_json, item_context)) {
                 return false;
             }
 

@@ -2,6 +2,7 @@
 #include "object.hpp"
 #include "write_base.hpp"
 #include "detail/write_aware.hpp"
+#include "detail/unlikely.hpp"
 #include "detail/traits.hpp"
 #include <optional>
 
@@ -48,7 +49,7 @@ namespace persistence
         template<typename T>
         JsonObjectWriter& write(const std::string_view& name, const T& ref)
         {
-            if (!result) {
+            PERSISTENCE_IF_UNLIKELY(!result) {
                 return *this;
             }
 

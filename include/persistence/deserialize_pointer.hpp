@@ -1,6 +1,7 @@
 #pragma once
 #include "deserialize_base.hpp"
 #include "detail/deserialize_aware.hpp"
+#include "detail/unlikely.hpp"
 #include <rapidjson/pointer.h>
 #include <memory>
 
@@ -20,7 +21,7 @@ namespace persistence
         bool operator()(const rapidjson::Value& json, std::unique_ptr<T>& pointer) const
         {
             auto p = std::make_unique<T>();
-            if (!deserialize<Exception>(json, *p, context)) {
+            PERSISTENCE_IF_UNLIKELY(!deserialize<Exception>(json, *p, context)) {
                 return false;
             }
 
@@ -41,12 +42,12 @@ namespace persistence
                 if (it != json.MemberEnd()) {
                     rapidjson::Pointer path(it->value.GetString(), it->value.GetStringLength());
                     rapidjson::Value* object = path.Get(context.document());
-                    if (!object) {
+                    PERSISTENCE_IF_UNLIKELY(!object) {
                         return false;
                     }
 
                     pointer = std::reinterpret_pointer_cast<T>(context.get(object));
-                    if (!pointer) {
+                    PERSISTENCE_IF_UNLIKELY(!pointer) {
                         return false;
                     }
 
@@ -55,7 +56,7 @@ namespace persistence
             }
 
             auto p = std::make_shared<T>();
-            if (!deserialize<Exception>(json, *p, context)) {
+            PERSISTENCE_IF_UNLIKELY(!deserialize<Exception>(json, *p, context)) {
                 return false;
             }
 

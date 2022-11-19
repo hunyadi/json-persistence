@@ -16,13 +16,13 @@ namespace persistence
 
         bool parse(const JsonValueString& s) override
         {
-            if (base64_decode(s.literal, ref)) {
-                context.pop();
-                return true;
-            } else {
+            PERSISTENCE_IF_UNLIKELY(!base64_decode(s.literal, ref)) {
                 context.fail("invalid Base64-encoding for sequence of bytes");
                 return false;
             }
+
+            context.pop();
+            return true;
         }
 
     private:

@@ -3,6 +3,7 @@
 #include "object_members.hpp"
 #include "parse_base.hpp"
 #include "detail/traits.hpp"
+#include "detail/unlikely.hpp"
 #include <optional>
 
 namespace persistence
@@ -51,12 +52,13 @@ namespace persistence
             bool result = std::apply([=](const auto&... members) {
                 return (parse_member(key, members) || ...);
             }, members);
-            if (result) {
-                return true;
-            } else {
+
+            PERSISTENCE_IF_UNLIKELY(!result) {
                 context.fail("expected class member name; got: " + std::string(key.data(), key.size()));
                 return false;
             }
+
+            return true;
         }
 
     private:
@@ -64,11 +66,11 @@ namespace persistence
         bool parse_member(const std::string_view& key, const member_variable<T, B>& member)
         {
             static_assert(std::is_base_of_v<B, C>, "expected a member variable part of the class inheritance chain");
-            if (member.name() == key) {
+            if (member.name() != key) {
+                return false;
+            } else {
                 context.emplace<JsonParser<T>>(context, member.ref(ref));
                 return true;
-            } else {
-                return false;
             }
         }
 

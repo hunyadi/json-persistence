@@ -1,6 +1,7 @@
 #pragma once
 #include "write_base.hpp"
 #include "detail/write_aware.hpp"
+#include "detail/unlikely.hpp"
 #include "detail/path.hpp"
 #include <memory>
 
@@ -47,7 +48,7 @@ namespace persistence
                 writer.EndObject();
 
             } else {
-                if (!serialize(*pointer, writer, context)) {
+                PERSISTENCE_IF_UNLIKELY(!serialize(*pointer, writer, context)) {
                     return false;
                 }
 

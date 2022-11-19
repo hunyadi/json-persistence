@@ -2,6 +2,7 @@
 #include "deserialize_base.hpp"
 #include "deserialize_check.hpp"
 #include "detail/deserialize_aware.hpp"
+#include "detail/unlikely.hpp"
 #include <set>
 
 namespace persistence
@@ -22,7 +23,7 @@ namespace persistence
             for (auto&& it = json.Begin(); it != json.End(); ++it) {
                 T item;
                 DeserializerContext item_context(context, Segment(k));
-                if (!deserialize<Exception>(*it, item, item_context)) {
+                PERSISTENCE_IF_UNLIKELY(!deserialize<Exception>(*it, item, item_context)) {
                     return false;
                 }
                 container.insert(std::move(item));

@@ -5,8 +5,9 @@ namespace persistence
 {
     struct JsonContextAwareWriter
     {
-        WriterContext& context;
-
         explicit JsonContextAwareWriter(WriterContext& context) : context(context) {}
+
+    protected:
+        WriterContext& context;
     };
 }

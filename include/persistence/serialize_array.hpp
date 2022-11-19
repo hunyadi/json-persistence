@@ -1,6 +1,7 @@
 #pragma once
 #include "serialize_base.hpp"
 #include "detail/serialize_aware.hpp"
+#include "detail/unlikely.hpp"
 #include <array>
 
 namespace persistence
@@ -18,7 +19,7 @@ namespace persistence
             for (const auto& item : container) {
                 rapidjson::Value item_json;
                 SerializerContext item_context(context, Segment(idx));
-                if (!serialize<T>(item, item_json, item_context)) {
+                PERSISTENCE_IF_UNLIKELY(!serialize<T>(item, item_json, item_context)) {
                     return false;
                 }
                 json.PushBack(item_json, context.global().allocator());  // ownership of value is transferred

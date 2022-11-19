@@ -2,6 +2,7 @@
 #include "dictionary.hpp"
 #include "serialize_base.hpp"
 #include "detail/serialize_aware.hpp"
+#include "detail/unlikely.hpp"
 #include <map>
 #include <unordered_map>
 
@@ -18,7 +19,7 @@ namespace persistence
             for (auto&& [key, value] : container) {
                 rapidjson::Value value_json;
                 SerializerContext value_context(context, Segment(key));
-                if (!serialize<typename C::value_type::second_type>(value, value_json, value_context)) {
+                PERSISTENCE_IF_UNLIKELY(!serialize<typename C::value_type::second_type>(value, value_json, value_context)) {
                     return false;
                 }
 

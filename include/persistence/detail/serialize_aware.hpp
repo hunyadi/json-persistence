@@ -5,8 +5,9 @@ namespace persistence
 {
     struct JsonContextAwareSerializer
     {
-        SerializerContext& context;
-
         explicit JsonContextAwareSerializer(SerializerContext& context) : context(context) {}
+
+    protected:
+        SerializerContext& context;
     };
 }

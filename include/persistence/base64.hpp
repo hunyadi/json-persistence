@@ -46,7 +46,7 @@ namespace persistence
             *out++ = encode_table[((b & 0b00001111) << 2) | (c >> 6)];
             *out++ = encode_table[c & 0b00111111];
         }
-        
+
         /**
          * Produces the Base64-encoding of the first 6 bytes of a 64-bit integer.
          *

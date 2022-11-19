@@ -2,6 +2,7 @@
 #include "enum.hpp"
 #include "deserialize_check.hpp"
 #include "deserialize_fundamental.hpp"
+#include "detail/unlikely.hpp"
 
 namespace persistence
 {
@@ -23,7 +24,7 @@ namespace persistence
                 }
 
                 std::string_view view(json.GetString(), json.GetStringLength());
-                if (!enum_traits<T>::from_string(view, value)) {
+                PERSISTENCE_IF_UNLIKELY(!enum_traits<T>::from_string(view, value)) {
                     if constexpr (Exception) {
                         throw JsonDeserializationError(
                             "unrecognized enumeration value; got: " + std::string(view),
@@ -38,7 +39,7 @@ namespace persistence
                 using integer_type = std::underlying_type_t<T>;
 
                 integer_type integer_value;
-                if (!deserialize<Exception>(json, integer_value, context)) {
+                PERSISTENCE_IF_UNLIKELY(!deserialize<Exception>(json, integer_value, context)) {
                     return false;
                 }
 

@@ -1,8 +1,9 @@
 #pragma once
+#include "base64.hpp"
 #include "deserialize_base.hpp"
 #include "deserialize_check.hpp"
 #include "detail/deserialize_aware.hpp"
-#include "base64.hpp"
+#include "detail/unlikely.hpp"
 
 namespace persistence
 {
@@ -17,7 +18,7 @@ namespace persistence
                 return false;
             }
 
-            if (!base64_decode(std::string_view(json.GetString(), json.GetStringLength()), container)) {
+            PERSISTENCE_IF_UNLIKELY(!base64_decode(std::string_view(json.GetString(), json.GetStringLength()), container)) {
                 if constexpr (Exception) {
                     throw JsonDeserializationError(
                         "invalid Base64-encoding for sequence of bytes",

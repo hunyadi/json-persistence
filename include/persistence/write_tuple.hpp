@@ -1,6 +1,7 @@
 #pragma once
 #include "write_base.hpp"
 #include "detail/write_aware.hpp"
+#include "detail/unlikely.hpp"
 #include <tuple>
 
 namespace persistence
@@ -13,7 +14,7 @@ namespace persistence
         bool operator()(const C& container, StringWriter& writer) const
         {
             writer.StartArray();
-            if (!serialize_elements(container, writer, std::make_index_sequence<S>())) {
+            PERSISTENCE_IF_UNLIKELY(!serialize_elements(container, writer, std::make_index_sequence<S>())) {
                 return false;
             }
             writer.EndArray();
@@ -35,7 +36,7 @@ namespace persistence
         bool serialize_element(std::size_t index, const T& item, StringWriter& writer) const
         {
             WriterContext item_context(context, Segment(index));
-            if (!serialize(item, writer, item_context)) {
+            PERSISTENCE_IF_UNLIKELY(!serialize(item, writer, item_context)) {
                 return false;
             }
             return true;

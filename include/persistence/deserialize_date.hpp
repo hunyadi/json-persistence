@@ -6,6 +6,7 @@
 #include "deserialize_base.hpp"
 #include "deserialize_check.hpp"
 #include "detail/deserialize_aware.hpp"
+#include "detail/unlikely.hpp"
 
 namespace persistence
 {
@@ -21,7 +22,7 @@ namespace persistence
             }
 
             timestamp ts;
-            if (!parse_date(json.GetString(), json.GetStringLength(), ts)) {
+            PERSISTENCE_IF_UNLIKELY(!parse_date(json.GetString(), json.GetStringLength(), ts)) {
                 if constexpr (Exception) {
                     throw JsonDeserializationError(
                         "invalid ISO-8601 date; expected: YYYY-MM-DD, got: " + std::string(json.GetString(), json.GetStringLength()),

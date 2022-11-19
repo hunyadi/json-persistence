@@ -85,12 +85,12 @@ namespace persistence
         bool parse(const JsonValueNumber& n) override
         {
             T value;
-            if (JsonNumberValueParser<T>::parse(context, n, value)) {
-                container.push_back(value);
-                return true;
-            } else {
+            PERSISTENCE_IF_UNLIKELY(!JsonNumberValueParser<T>::parse(context, n, value)) {
                 return false;
             }
+
+            container.push_back(value);
+            return true;
         }
 
     private:

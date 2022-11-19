@@ -1,5 +1,6 @@
 #pragma once
 #include "write_base.hpp"
+#include "detail/unlikely.hpp"
 #include <cmath>
 
 namespace persistence
@@ -116,31 +117,28 @@ namespace persistence
     struct JsonWriter<unsigned long long> : JsonUnsignedLongIntegerWriter<unsigned long long>
     {};
 
-    template<>
-    struct JsonWriter<float>
+    template<typename T>
+    struct JsonFloatWriter
     {
-        bool operator()(float value, StringWriter& writer) const
+        static_assert(std::is_floating_point_v<T>, "T must be a floating point type");
+
+        bool operator()(T value, StringWriter& writer) const
         {
-            if (std::isfinite(value)) {
-                writer.Double(value);
-                return true;
-            } else {
-                return false;  // JSON specification does not allow for NaN, Inf, -Inf and subnormal values
+            PERSISTENCE_IF_UNLIKELY(!std::isfinite(value)) {
+                // JSON specification does not allow for NaN, Inf, -Inf and subnormal values
+                return false;
             }
+
+            writer.Double(value);
+            return true;
         }
     };
 
     template<>
-    struct JsonWriter<double>
-    {
-        bool operator()(double value, StringWriter& writer) const
-        {
-            if (std::isfinite(value)) {
-                writer.Double(value);
-                return true;
-            } else {
-                return false;  // JSON specification does not allow for NaN, Inf, -Inf and subnormal values
-            }
-        }
-    };
+    struct JsonWriter<float> : JsonFloatWriter<float>
+    {};
+
+    template<>
+    struct JsonWriter<double> : JsonFloatWriter<double>
+    {};
 }
