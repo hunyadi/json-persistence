@@ -7,73 +7,17 @@
 
 namespace persistence
 {
-    struct EventDispatcher
-    {
-        bool Int(int) { return false; }
-        bool Uint(unsigned int) { return false; }
-        bool Int64(int64_t) { return false; }
-        bool Uint64(uint64_t) { return false; }
-        bool Double(double) { return false; }
-
-        bool Null()
-        {
-            return handler->parse(JsonValueNull());
-        }
-
-        bool Bool(bool b)
-        {
-            return handler->parse(JsonValueBoolean(b));
-        }
-
-        bool RawNumber(const char* str, std::size_t length, bool /*copy*/)
-        {
-            return handler->parse(JsonValueNumber(str, length));
-        }
-
-        bool String(const char* str, std::size_t length, bool /*copy*/)
-        {
-            return handler->parse(JsonValueString(str, length));
-        }
-
-        bool StartObject()
-        {
-            return handler->parse(JsonObjectStart());
-        }
-
-        bool Key(const char* str, std::size_t length, bool /*copy*/)
-        {
-            return handler->parse(JsonObjectKey(str, length));
-        }
-
-        bool EndObject(std::size_t /*memberCount*/)
-        {
-            return handler->parse(JsonObjectEnd());
-        }
-
-        bool StartArray()
-        {
-            return handler->parse(JsonArrayStart());
-        }
-
-        bool EndArray(std::size_t /*elementCount*/)
-        {
-            return handler->parse(JsonArrayEnd());
-        }
-
-        EventHandler* handler = nullptr;
-    };
-
     class ReaderContext
     {
     public:
-        ReaderContext(EventDispatcher& dispatcher)
+        ReaderContext(JsonParseEventDispatcher& dispatcher)
             : dispatcher(dispatcher)
         {}
 
         ReaderContext(const ReaderContext&) = delete;
 
         template<typename C, typename... T>
-        EventHandler& emplace(T&&... args)
+        JsonParseEvent& emplace(T&&... args)
         {
             dispatcher.handler = &stack.emplace<C>(std::forward<T>(args)...);
             return *dispatcher.handler;
@@ -86,7 +30,7 @@ namespace persistence
         }
 
         template<typename C, typename... T>
-        EventHandler& replace(T&&... args)
+        JsonParseEvent& replace(T&&... args)
         {
             stack.pop();
             return emplace<C>(std::forward<T>(args)...);
@@ -107,16 +51,16 @@ namespace persistence
             error_message = std::move(reason);
         }
 
-        EventDispatcher& dispatcher;
+        JsonParseEventDispatcher& dispatcher;
 
     private:
-        detail::PolymorphicStack<EventHandler> stack;
+        detail::PolymorphicStack<JsonParseEvent> stack;
         std::string error_message;
     };
 
-    struct JsonEventHandler : EventHandler
+    struct JsonParseHandler : JsonParseEvent
     {
-        JsonEventHandler(ReaderContext& context)
+        JsonParseHandler(ReaderContext& context)
             : context(context)
         {}
 
@@ -127,47 +71,72 @@ namespace persistence
             return false;
         }
 
-        virtual bool parse(const JsonValueNull&)
+        bool parse(const JsonValueNull&) override
         {
             return fail<JsonValueNull>();
         }
 
-        virtual bool parse(const JsonValueBoolean&)
+        bool parse(const JsonValueBoolean&) override
         {
             return fail<JsonValueBoolean>();
         }
 
-        virtual bool parse(const JsonValueNumber&)
+        bool parse(const JsonValueInteger&) override
+        {
+            return fail<JsonValueInteger>();
+        }
+
+        bool parse(const JsonValueUnsigned&) override
+        {
+            return fail<JsonValueUnsigned>();
+        }
+
+        bool parse(const JsonValueInteger64&) override
+        {
+            return fail<JsonValueInteger64>();
+        }
+
+        bool parse(const JsonValueUnsigned64&) override
+        {
+            return fail<JsonValueUnsigned64>();
+        }
+
+        bool parse(const JsonValueDouble&) override
+        {
+            return fail<JsonValueDouble>();
+        }
+
+        bool parse(const JsonValueNumber&) override
         {
             return fail<JsonValueNumber>();
         }
 
-        virtual bool parse(const JsonValueString&)
+        bool parse(const JsonValueString&) override
         {
             return fail<JsonValueString>();
         }
 
-        virtual bool parse(const JsonObjectStart&)
+        bool parse(const JsonObjectStart&) override
         {
             return fail<JsonObjectStart>();
         }
 
-        virtual bool parse(const JsonObjectKey&)
+        bool parse(const JsonObjectKey&) override
         {
             return fail<JsonObjectKey>();
         }
 
-        virtual bool parse(const JsonObjectEnd&)
+        bool parse(const JsonObjectEnd&) override
         {
             return fail<JsonObjectEnd>();
         }
 
-        virtual bool parse(const JsonArrayStart&)
+        bool parse(const JsonArrayStart&) override
         {
             return fail<JsonArrayStart>();
         }
 
-        virtual bool parse(const JsonArrayEnd&)
+        bool parse(const JsonArrayEnd&) override
         {
             return fail<JsonArrayEnd>();
         }
@@ -177,9 +146,9 @@ namespace persistence
     };
 
     template<typename ExpectToken>
-    struct JsonSingleEventHandler : EventHandler
+    struct JsonParseSingleHandler : JsonParseEvent
     {
-        JsonSingleEventHandler(ReaderContext& context)
+        JsonParseSingleHandler(ReaderContext& context)
             : context(context)
         {}
 
@@ -190,47 +159,72 @@ namespace persistence
             return false;
         }
 
-        virtual bool parse(const JsonValueNull&)
+        bool parse(const JsonValueNull&) override
         {
             return fail<JsonValueNull>();
         }
 
-        virtual bool parse(const JsonValueBoolean&)
+        bool parse(const JsonValueBoolean&) override
         {
             return fail<JsonValueBoolean>();
         }
 
-        virtual bool parse(const JsonValueNumber&)
+        bool parse(const JsonValueInteger&) override
+        {
+            return fail<JsonValueInteger>();
+        }
+
+        bool parse(const JsonValueUnsigned&) override
+        {
+            return fail<JsonValueUnsigned>();
+        }
+
+        bool parse(const JsonValueInteger64&) override
+        {
+            return fail<JsonValueInteger64>();
+        }
+
+        bool parse(const JsonValueUnsigned64&) override
+        {
+            return fail<JsonValueUnsigned64>();
+        }
+
+        bool parse(const JsonValueDouble&) override
+        {
+            return fail<JsonValueDouble>();
+        }
+
+        bool parse(const JsonValueNumber&) override
         {
             return fail<JsonValueNumber>();
         }
 
-        virtual bool parse(const JsonValueString&)
+        bool parse(const JsonValueString&) override
         {
             return fail<JsonValueString>();
         }
 
-        virtual bool parse(const JsonObjectStart&)
+        bool parse(const JsonObjectStart&) override
         {
             return fail<JsonObjectStart>();
         }
 
-        virtual bool parse(const JsonObjectKey&)
+        bool parse(const JsonObjectKey&) override
         {
             return fail<JsonObjectKey>();
         }
 
-        virtual bool parse(const JsonObjectEnd&)
+        bool parse(const JsonObjectEnd&) override
         {
             return fail<JsonObjectEnd>();
         }
 
-        virtual bool parse(const JsonArrayStart&)
+        bool parse(const JsonArrayStart&) override
         {
             return fail<JsonArrayStart>();
         }
 
-        virtual bool parse(const JsonArrayEnd&)
+        bool parse(const JsonArrayEnd&) override
         {
             return fail<JsonArrayEnd>();
         }

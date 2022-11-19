@@ -9,12 +9,12 @@
 namespace persistence
 {
     template<>
-    struct JsonParser<std::chrono::year_month_day> : JsonSingleEventHandler<JsonValueString>
+    struct JsonParser<std::chrono::year_month_day> : JsonParseSingleHandler<JsonValueString>
     {
         using json_type = JsonValueString;
 
         JsonParser(ReaderContext& context, std::chrono::year_month_day& ref)
-            : JsonSingleEventHandler<JsonValueString>(context)
+            : JsonParseSingleHandler<JsonValueString>(context)
             , ref(ref)
         {}
 

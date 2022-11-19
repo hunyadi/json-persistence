@@ -1,6 +1,7 @@
 #pragma once
 #include "enum.hpp"
 #include "parse_base.hpp"
+#include "parse_fundamental.hpp"
 #include "detail/traits.hpp"
 #include "detail/unlikely.hpp"
 #include <charconv>
@@ -8,12 +9,12 @@
 namespace persistence
 {
     template<typename T>
-    struct JsonParser<T, std::enable_if_t<std::is_enum_v<T>>> : JsonEventHandler
+    struct JsonParser<T, std::enable_if_t<std::is_enum_v<T>>> : JsonParseHandler
     {
         using json_type = JsonValueNumber;
 
         JsonParser(ReaderContext& context, T& ref)
-            : JsonEventHandler(context)
+            : JsonParseHandler(context)
             , ref(ref)
         {}
 
@@ -37,6 +38,26 @@ namespace persistence
             }
         }
 
+        bool parse(const JsonValueInteger& n) override
+        {
+            return parse_integer(n.value);
+        }
+
+        bool parse(const JsonValueUnsigned& n) override
+        {
+            return parse_integer(n.value);
+        }
+
+        bool parse(const JsonValueInteger64& n) override
+        {
+            return parse_integer(n.value);
+        }
+
+        bool parse(const JsonValueUnsigned64& n) override
+        {
+            return parse_integer(n.value);
+        }
+
         bool parse(const JsonValueNumber& n) override
         {
             if constexpr (!detect<T, enum_from_string_function>::value) {
@@ -54,6 +75,26 @@ namespace persistence
                 return true;
             } else {
                 context.fail("expected an enumeration string value; got: " + std::string(n.literal.data(), n.literal.size()));
+                return false;
+            }
+        }
+
+    private:
+        template<typename V>
+        bool parse_integer(V value)
+        {
+            if constexpr (!detect<T, enum_from_string_function>::value) {
+                using integer_type = std::underlying_type_t<T>;
+                integer_type integer_value;
+                PERSISTENCE_IF_UNLIKELY(!JsonNumberValueParser<integer_type>::parse(context, value, integer_value)) {
+                    return false;
+                }
+
+                ref = static_cast<T>(integer_value);
+                context.pop();
+                return true;
+            } else {
+                context.fail("expected an enumeration string value; got: " + std::to_string(value));
                 return false;
             }
         }

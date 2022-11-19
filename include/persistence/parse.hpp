@@ -14,14 +14,17 @@ namespace persistence
             context.emplace<JsonParser<T>>(context, value);
             rapidjson::Reader reader;
             rapidjson::StringStream stream(str.data());
-            return reader.Parse<rapidjson::kParseNumbersAsStringsFlag>(stream, context.dispatcher);
+
+            // pass flag `kParseNumbersAsStringsFlag` as non-type template argument to prevent
+            // rapidjson from parsing numbers and emitting type-specific events
+            return reader.Parse(stream, context.dispatcher);
         }
     }
 
     template<typename T>
     bool parse(const std::string& str, T& value)
     {
-        EventDispatcher dispatcher;
+        JsonParseEventDispatcher dispatcher;
         ReaderContext context(dispatcher);
         auto result = detail::parse(context, str, value);
         return !result.IsError();
@@ -31,7 +34,7 @@ namespace persistence
     T parse(const std::string& str)
     {
         T obj;
-        EventDispatcher dispatcher;
+        JsonParseEventDispatcher dispatcher;
         ReaderContext context(dispatcher);
         auto result = detail::parse(context, str, obj);
         if (result.IsError()) {

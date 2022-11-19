@@ -11,7 +11,7 @@ namespace persistence
      * @tparam N The remaining number of items, including JSON array start/end brackets.
      */
     template<typename C, std::size_t I, std::size_t N>
-    struct JsonFixedArrayParser : JsonSingleEventHandler<typename JsonParser<std::tuple_element_t<I - 1, C>>::json_type>
+    struct JsonFixedArrayParser : JsonParseSingleHandler<typename JsonParser<std::tuple_element_t<I - 1, C>>::json_type>
     {
         using element_type = std::tuple_element_t<I - 1, C>;
         using element_parser_type = JsonParser<element_type>;
@@ -19,21 +19,72 @@ namespace persistence
         using next_parser_type = JsonFixedArrayParser<C, I + 1, N - 1>;
 
         JsonFixedArrayParser(ReaderContext& context, C& container)
-            : JsonSingleEventHandler<element_json_type>(context)
+            : JsonParseSingleHandler<element_json_type>(context)
             , container(container)
         {}
 
-        bool parse(const element_json_type& json_item) override
+        bool parse(const JsonValueNull& item) override
         {
-            return stateless_parse(this->context, container, json_item);
+            return stateless_parse(this->context, container, item);
+        }
+
+        bool parse(const JsonValueBoolean& item) override
+        {
+            return stateless_parse(this->context, container, item);
+        }
+
+        bool parse(const JsonValueInteger& item) override
+        {
+            return stateless_parse(this->context, container, item);
+        }
+
+        bool parse(const JsonValueUnsigned& item) override
+        {
+            return stateless_parse(this->context, container, item);
+        }
+
+        bool parse(const JsonValueInteger64& item) override
+        {
+            return stateless_parse(this->context, container, item);
+        }
+
+        bool parse(const JsonValueUnsigned64& item) override
+        {
+            return stateless_parse(this->context, container, item);
+        }
+
+        bool parse(const JsonValueDouble& item) override
+        {
+            return stateless_parse(this->context, container, item);
+        }
+
+        bool parse(const JsonValueNumber& item) override
+        {
+            return stateless_parse(this->context, container, item);
+        }
+
+        bool parse(const JsonValueString& item) override
+        {
+            return stateless_parse(this->context, container, item);
+        }
+
+        bool parse(const JsonObjectStart& item) override
+        {
+            return stateless_parse(this->context, container, item);
+        }
+
+        bool parse(const JsonArrayStart& item) override
+        {
+            return stateless_parse(this->context, container, item);
         }
 
     private:
-        static bool stateless_parse(ReaderContext& context, C& container, const typename element_parser_type::json_type& json_item)
+        template<typename TokenType>
+        static bool stateless_parse(ReaderContext& context, C& container, const TokenType& item)
         {
             context.replace<next_parser_type>(context, container);
             auto&& handler = context.emplace<element_parser_type>(context, std::get<I - 1>(container));
-            return handler.parse(json_item);
+            return handler.parse(item);
         }
 
     private:
@@ -42,10 +93,10 @@ namespace persistence
 
     /** Parses the start of a tuple-like type. */
     template<typename C, std::size_t N>
-    struct JsonFixedArrayParser<C, 0, N> : JsonSingleEventHandler<JsonArrayStart>
+    struct JsonFixedArrayParser<C, 0, N> : JsonParseSingleHandler<JsonArrayStart>
     {
         JsonFixedArrayParser(ReaderContext& context, C& container)
-            : JsonSingleEventHandler<JsonArrayStart>(context)
+            : JsonParseSingleHandler<JsonArrayStart>(context)
             , container(container)
         {}
 
@@ -61,10 +112,10 @@ namespace persistence
 
     /** Parses the end of a tuple-like type. */
     template<typename C, std::size_t I>
-    struct JsonFixedArrayParser<C, I, 0> : JsonSingleEventHandler<JsonArrayEnd>
+    struct JsonFixedArrayParser<C, I, 0> : JsonParseSingleHandler<JsonArrayEnd>
     {
         JsonFixedArrayParser(ReaderContext& context, C& container)
-            : JsonSingleEventHandler<JsonArrayEnd>(context)
+            : JsonParseSingleHandler<JsonArrayEnd>(context)
             , container(container)
         {}
 

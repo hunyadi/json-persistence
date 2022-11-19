@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include "persistence/detail/numeric_traits.hpp"
 #include "persistence/detail/polymorphic_stack.hpp"
 #include "persistence/base64.hpp"
 #include "persistence/object_members.hpp"
@@ -8,6 +9,77 @@
 
 using namespace persistence;
 using namespace test;
+
+TEST(Utility, NumericTraits)
+{
+    // unsigned <-- unsigned
+    EXPECT_TRUE(is_assignable<std::uint32_t>(std::numeric_limits<std::uint32_t>::min()));
+    EXPECT_TRUE(is_assignable<std::uint32_t>(std::numeric_limits<std::uint32_t>::max()));
+    EXPECT_TRUE(is_assignable<std::uint64_t>(std::numeric_limits<std::uint32_t>::min()));
+    EXPECT_TRUE(is_assignable<std::uint64_t>(std::numeric_limits<std::uint32_t>::max()));
+    EXPECT_TRUE(is_assignable<std::uint32_t>(std::numeric_limits<std::uint64_t>::min()));
+    EXPECT_FALSE(is_assignable<std::uint32_t>(std::numeric_limits<std::uint64_t>::max()));
+
+    // signed <-- signed
+    EXPECT_TRUE(is_assignable<std::int32_t>(std::numeric_limits<std::int32_t>::min()));
+    EXPECT_TRUE(is_assignable<std::int32_t>(std::numeric_limits<std::int32_t>::max()));
+    EXPECT_TRUE(is_assignable<std::int64_t>(std::numeric_limits<std::int32_t>::min()));
+    EXPECT_TRUE(is_assignable<std::int64_t>(std::numeric_limits<std::int32_t>::max()));
+    EXPECT_FALSE(is_assignable<std::int32_t>(std::numeric_limits<std::int64_t>::min()));
+    EXPECT_FALSE(is_assignable<std::int32_t>(std::numeric_limits<std::int64_t>::max()));
+
+    // unsigned <-- signed
+    EXPECT_FALSE(is_assignable<std::uint32_t>(std::numeric_limits<std::int32_t>::min()));
+    EXPECT_TRUE(is_assignable<std::uint32_t>(std::numeric_limits<std::int32_t>::max()));
+    EXPECT_FALSE(is_assignable<std::uint64_t>(std::numeric_limits<std::int32_t>::min()));
+    EXPECT_TRUE(is_assignable<std::uint64_t>(std::numeric_limits<std::int32_t>::max()));
+    EXPECT_FALSE(is_assignable<std::uint32_t>(std::numeric_limits<std::int64_t>::min()));
+    EXPECT_FALSE(is_assignable<std::uint32_t>(std::numeric_limits<std::int64_t>::max()));
+
+    // signed <-- unsigned
+    EXPECT_TRUE(is_assignable<std::int32_t>(std::numeric_limits<std::uint32_t>::min()));
+    EXPECT_FALSE(is_assignable<std::int32_t>(std::numeric_limits<std::uint32_t>::max()));
+    EXPECT_TRUE(is_assignable<std::int64_t>(std::numeric_limits<std::uint32_t>::min()));
+    EXPECT_TRUE(is_assignable<std::int64_t>(std::numeric_limits<std::uint32_t>::max()));
+    EXPECT_TRUE(is_assignable<std::int32_t>(std::numeric_limits<std::uint64_t>::min()));
+    EXPECT_FALSE(is_assignable<std::int32_t>(std::numeric_limits<std::uint64_t>::max()));
+
+    // float <-- integer with smaller width
+    EXPECT_TRUE(is_assignable<float>(std::numeric_limits<std::int16_t>::min()));
+    EXPECT_TRUE(is_assignable<float>(std::numeric_limits<std::int16_t>::max()));
+    EXPECT_TRUE(is_assignable<float>(std::numeric_limits<std::uint16_t>::min()));
+    EXPECT_TRUE(is_assignable<float>(std::numeric_limits<std::uint16_t>::max()));
+
+    // float <-- integer with identical width
+    EXPECT_FALSE(is_assignable<float>(std::numeric_limits<std::int32_t>::min()));
+    EXPECT_FALSE(is_assignable<float>(std::numeric_limits<std::int32_t>::max()));
+    EXPECT_TRUE(is_assignable<float>(std::numeric_limits<std::uint32_t>::min()));
+    EXPECT_FALSE(is_assignable<float>(std::numeric_limits<std::uint32_t>::max()));
+
+    // double <-- integer with smaller width
+    EXPECT_TRUE(is_assignable<double>(std::numeric_limits<std::int32_t>::min()));
+    EXPECT_TRUE(is_assignable<double>(std::numeric_limits<std::int32_t>::max()));
+    EXPECT_TRUE(is_assignable<double>(std::numeric_limits<std::uint32_t>::min()));
+    EXPECT_TRUE(is_assignable<double>(std::numeric_limits<std::uint32_t>::max()));
+
+    // double <-- integer with identical width
+    EXPECT_FALSE(is_assignable<double>(std::numeric_limits<std::int64_t>::min()));
+    EXPECT_FALSE(is_assignable<double>(std::numeric_limits<std::int64_t>::max()));
+    EXPECT_TRUE(is_assignable<double>(std::numeric_limits<std::uint64_t>::min()));
+    EXPECT_FALSE(is_assignable<double>(std::numeric_limits<std::uint64_t>::max()));
+
+    // float <-- float or double
+    EXPECT_TRUE(is_assignable<float>(std::numeric_limits<float>::lowest()));
+    EXPECT_TRUE(is_assignable<float>(std::numeric_limits<float>::max()));
+    EXPECT_FALSE(is_assignable<float>(std::numeric_limits<double>::lowest()));
+    EXPECT_FALSE(is_assignable<float>(std::numeric_limits<double>::max()));
+
+    // double <-- float or double
+    EXPECT_TRUE(is_assignable<double>(std::numeric_limits<float>::lowest()));
+    EXPECT_TRUE(is_assignable<double>(std::numeric_limits<float>::max()));
+    EXPECT_TRUE(is_assignable<double>(std::numeric_limits<double>::lowest()));
+    EXPECT_TRUE(is_assignable<double>(std::numeric_limits<double>::max()));
+}
 
 struct BaseClass
 {

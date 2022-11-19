@@ -1,17 +1,18 @@
 #pragma once
 #include "number.hpp"
 #include "parse_base.hpp"
+#include "detail/numeric_traits.hpp"
 #include "detail/unlikely.hpp"
 
 namespace persistence
 {
     template<>
-    struct JsonParser<std::nullptr_t> : JsonSingleEventHandler<JsonValueNull>
+    struct JsonParser<std::nullptr_t> : JsonParseSingleHandler<JsonValueNull>
     {
         using json_type = JsonValueNull;
 
         JsonParser(ReaderContext& context, std::nullptr_t& ref)
-            : JsonSingleEventHandler<JsonValueNull>(context)
+            : JsonParseSingleHandler<JsonValueNull>(context)
             , ref(ref)
         {}
 
@@ -27,12 +28,12 @@ namespace persistence
     };
 
     template<>
-    struct JsonParser<bool> : JsonSingleEventHandler<JsonValueBoolean>
+    struct JsonParser<bool> : JsonParseSingleHandler<JsonValueBoolean>
     {
         using json_type = JsonValueBoolean;
 
         JsonParser(ReaderContext& context, bool& ref)
-            : JsonSingleEventHandler<JsonValueBoolean>(context)
+            : JsonParseSingleHandler<JsonValueBoolean>(context)
             , ref(ref)
         {}
 
@@ -50,12 +51,22 @@ namespace persistence
     template<typename T>
     struct JsonNumberValueParser
     {
-        static bool parse(ReaderContext& context, const JsonValueNumber& n, T& ref)
+        template<typename V>
+        static bool parse(ReaderContext& context, V value, T& ref)
         {
-            if (parse_number(n.literal, ref)) {
-                return true;
-            } else {
-                auto value = std::string(n.literal.data(), n.literal.size());
+            PERSISTENCE_IF_UNLIKELY(!is_assignable<T>(value)) {
+                context.fail("number cannot be assigned without data loss");
+                return false;
+            }
+
+            ref = static_cast<T>(value);
+            return true;
+        }
+
+        static bool parse(ReaderContext& context, const std::string_view& literal, T& ref)
+        {
+            PERSISTENCE_IF_UNLIKELY(!parse_number(literal, ref)) {
+                auto value = std::string(literal.data(), literal.size());
                 if constexpr (std::is_integral_v<T>) {
                     context.fail("expected an integer; got: " + value);
                 } else if constexpr (std::is_floating_point_v<T>) {
@@ -63,22 +74,49 @@ namespace persistence
                 }
                 return false;
             }
+
+            return true;
         }
     };
 
     template<typename T>
-    struct JsonNumberParser : JsonSingleEventHandler<JsonValueNumber>
+    struct JsonNumberParser : JsonParseSingleHandler<JsonValueNumber>
     {
         using json_type = JsonValueNumber;
 
         JsonNumberParser(ReaderContext& context, T& ref)
-            : JsonSingleEventHandler<JsonValueNumber>(context)
+            : JsonParseSingleHandler<JsonValueNumber>(context)
             , ref(ref)
         {}
 
+        bool parse(const JsonValueInteger& n) override
+        {
+            return parse_number(n.value);
+        }
+
+        bool parse(const JsonValueUnsigned& n) override
+        {
+            return parse_number(n.value);
+        }
+
+        bool parse(const JsonValueInteger64& n) override
+        {
+            return parse_number(n.value);
+        }
+
+        bool parse(const JsonValueUnsigned64& n) override
+        {
+            return parse_number(n.value);
+        }
+
+        bool parse(const JsonValueDouble& n) override
+        {
+            return parse_number(n.value);
+        }
+
         bool parse(const JsonValueNumber& n) override
         {
-            PERSISTENCE_IF_UNLIKELY(!JsonNumberValueParser<T>::parse(context, n, ref)) {
+            PERSISTENCE_IF_UNLIKELY(!JsonNumberValueParser<T>::parse(context, n.literal, ref)) {
                 return false;
             }
 
@@ -87,6 +125,18 @@ namespace persistence
         }
 
     private:
+        template<typename V>
+        bool parse_number(V value)
+        {
+            PERSISTENCE_IF_UNLIKELY(!JsonNumberValueParser<T>::parse(context, value, ref)) {
+                return false;
+            }
+
+            context.pop();
+            return true;
+        }
+
+    protected:
         T& ref;
     };
 

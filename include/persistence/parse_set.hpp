@@ -11,10 +11,10 @@ namespace persistence
      * Parses a JSON array of possibly composite values into a C++ `set<T>`.
      */
     template<typename T>
-    struct JsonSetParser : JsonEventHandler
+    struct JsonSetParser : JsonParseHandler
     {
         JsonSetParser(ReaderContext& context, std::set<T>& container)
-            : JsonEventHandler(context)
+            : JsonParseHandler(context)
             , container(container)
         {}
 
@@ -41,10 +41,10 @@ namespace persistence
      * Parses a JSON array of boolean values into a C++ `set<bool>` efficiently.
      */
     template<>
-    struct JsonSetParser<bool> : JsonEventHandler
+    struct JsonSetParser<bool> : JsonParseHandler
     {
         JsonSetParser(ReaderContext& context, std::set<bool>& container)
-            : JsonEventHandler(context)
+            : JsonParseHandler(context)
             , container(container)
         {}
 
@@ -70,12 +70,12 @@ namespace persistence
      * @tparam Integer or floating-point type.
      */
     template<typename T>
-    struct JsonNumberSetParser : JsonEventHandler
+    struct JsonNumberSetParser : JsonParseHandler
     {
         static_assert(std::is_arithmetic_v<T>, "T must be an arithmetic type");
 
         JsonNumberSetParser(ReaderContext& context, std::set<T>& container)
-            : JsonEventHandler(context)
+            : JsonParseHandler(context)
             , container(container)
         {}
 
@@ -85,14 +85,52 @@ namespace persistence
             return true;
         }
 
+        bool parse(const JsonValueInteger& n) override
+        {
+            return parse_number(n.value);
+        }
+
+        bool parse(const JsonValueUnsigned& n) override
+        {
+            return parse_number(n.value);
+        }
+
+        bool parse(const JsonValueInteger64& n) override
+        {
+            return parse_number(n.value);
+        }
+
+        bool parse(const JsonValueUnsigned64& n) override
+        {
+            return parse_number(n.value);
+        }
+
+        bool parse(const JsonValueDouble& n) override
+        {
+            return parse_number(n.value);
+        }
+
         bool parse(const JsonValueNumber& n) override
         {
             T value;
-            PERSISTENCE_IF_UNLIKELY(!JsonNumberValueParser<T>::parse(context, n, value)) {
+            PERSISTENCE_IF_UNLIKELY(!JsonNumberValueParser<T>::parse(context, n.literal, value)) {
                 return false;
             }
 
             container.insert(value);
+            return true;
+        }
+
+    private:
+        template<typename V>
+        bool parse_number(V value)
+        {
+            T item_value;
+            PERSISTENCE_IF_UNLIKELY(!JsonNumberValueParser<T>::parse(context, value, item_value)) {
+                return false;
+            }
+
+            container.insert(item_value);
             return true;
         }
 
@@ -161,10 +199,10 @@ namespace persistence
     };
 
     template<>
-    struct JsonSetParser<std::string> : JsonEventHandler
+    struct JsonSetParser<std::string> : JsonParseHandler
     {
         JsonSetParser(ReaderContext& context, std::set<std::string>& container)
-            : JsonEventHandler(context)
+            : JsonParseHandler(context)
             , container(container)
         {}
 
@@ -185,12 +223,12 @@ namespace persistence
     };
 
     template<typename T>
-    struct JsonParser<std::set<T>> : JsonSingleEventHandler<JsonArrayStart>
+    struct JsonParser<std::set<T>> : JsonParseSingleHandler<JsonArrayStart>
     {
         using json_type = JsonArrayStart;
 
         JsonParser(ReaderContext& context, std::set<T>& ref)
-            : JsonSingleEventHandler<JsonArrayStart>(context)
+            : JsonParseSingleHandler<JsonArrayStart>(context)
             , ref(ref)
         {}
 
