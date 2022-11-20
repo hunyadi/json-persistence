@@ -24,12 +24,14 @@ TEST(Deserialization, Pointer)
     EXPECT_TRUE(test_deserialize("\"string\"", std::make_shared<std::string>("string")));
     EXPECT_TRUE(test_deserialize("{\"value\": \"string\"}", std::make_unique<TestValue>("string")));
     EXPECT_TRUE(test_deserialize("{\"value\": \"string\"}", std::make_shared<TestValue>("string")));
+    EXPECT_TRUE(test_deserialize("{}", std::make_shared<TestDefault>()));
 }
 
 TEST(Deserialization, Object)
 {
     EXPECT_TRUE(test_deserialize("{\"value\":\"test string\"}", TestValue("test string")));
     EXPECT_TRUE(test_deserialize("{}", TestDefault("default")));
+    EXPECT_TRUE(test_deserialize("{\"value\":\"test string\"}", TestDefault("test string")));
     EXPECT_TRUE(test_deserialize("{\"value\":\"base\",\"member\":\"derived\"}", TestDerived("base", "derived")));
 
     const char* json =

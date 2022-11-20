@@ -22,15 +22,28 @@ TEST(Deserialization, Vector)
 {
     EXPECT_TRUE(test_deserialize("[]", std::vector<int>()));
     EXPECT_TRUE(test_deserialize("[1, 2, 3]", std::vector<int> { 1, 2, 3 }));
+    EXPECT_TRUE(test_deserialize("[1.5, 2.5, 3.5]", std::vector<float> { 1.5, 2.5, 3.5 }));
     EXPECT_TRUE(test_deserialize("[\"one\", \"two\"]", std::vector<std::string> { "one", "two" }));
 
-    std::vector<std::vector<int>> ref_nested = { { 1 }, { 1,2 }, { 1,2,3 } };
-    EXPECT_TRUE(test_deserialize("[[1], [1, 2], [1, 2, 3]]", ref_nested));
+    EXPECT_TRUE(test_deserialize(
+        "[[1], [1, 2], [1, 2, 3]]",
+        std::vector<std::vector<int>> { { 1 }, { 1,2 }, { 1,2,3 } }
+    ));
 
     EXPECT_TRUE(test_deserialize(
-        "[{\"value\":\"a\"}, {\"value\":\"b\"}, {\"value\":\"c\"}]",
-        std::vector<TestDefault> { TestDefault("a"), TestDefault("b"), TestDefault("c") }
+        "[{\"value\":\"a\"}, {\"value\":\"b\"}, {}]",
+        std::vector<TestDefault> { TestDefault("a"), TestDefault("b"), TestDefault() }
     ));
+    EXPECT_TRUE(test_deserialize(
+        "[{\"value\":\"a\"}, {\"value\":\"b\"}, {\"value\":\"default\"}]",
+        std::vector<TestDefault> { TestDefault("a"), TestDefault("b"), TestDefault() }
+    ));
+
+    std::vector<TestValue> v;
+    v.push_back(TestValue("a"));
+    v.push_back(TestValue("b"));
+    v.push_back(TestValue("c"));
+    EXPECT_TRUE(test_deserialize("[{\"value\":\"a\"}, {\"value\":\"b\"}, {\"value\":\"c\"}]", v));
 
     EXPECT_TRUE(test_no_deserialize<std::vector<int>>("[\"one\"]"));
     EXPECT_TRUE(test_no_deserialize<std::vector<std::string>>("[2,3]"));
@@ -45,18 +58,20 @@ TEST(Deserialization, Set)
     EXPECT_TRUE(test_deserialize("[]", std::set<int>()));
     EXPECT_TRUE(test_deserialize("[]", std::set<std::string>()));
 
-    EXPECT_TRUE(test_deserialize(
-        "[1, 2, 3]",
-        std::set<int> { 1, 2, 3 }
-    ));
-    EXPECT_TRUE(test_deserialize(
-        "[\"one\", \"two\"]",
-        std::set<std::string> { "one", "two" }
-    ));
+    EXPECT_TRUE(test_deserialize("[1, 2, 3]", std::set<int> { 1, 2, 3 }));
+    EXPECT_TRUE(test_deserialize("[1.5, 2.5, 3.5]", std::set<float> { 1.5, 2.5, 3.5 }));
+    EXPECT_TRUE(test_deserialize("[\"one\", \"two\"]", std::set<std::string> { "one", "two" }));
+    
     EXPECT_TRUE(test_deserialize(
         "[{\"value\":\"a\"}, {\"value\":\"b\"}, {\"value\":\"c\"}]",
         std::set<TestDefault> { TestDefault("c"), TestDefault("b"), TestDefault("a") }
     ));
+
+    std::set<TestValue> s;
+    s.insert(TestValue("a"));
+    s.insert(TestValue("b"));
+    s.insert(TestValue("c"));
+    EXPECT_TRUE(test_deserialize("[{\"value\":\"a\"}, {\"value\":\"b\"}, {\"value\":\"c\"}]", s));
 
     EXPECT_TRUE(test_no_deserialize<std::set<int>>("[\"one\"]"));
     EXPECT_TRUE(test_no_deserialize<std::set<std::string>>("[2,3]"));
@@ -70,6 +85,7 @@ TEST(Deserialization, Map)
 {
     using map_type = std::map<std::string, int>;
     using string_map_type = std::map<std::string, std::string>;
+    using vector_map_type = std::map<std::string, std::vector<int>>;
 
     EXPECT_TRUE(test_deserialize("{}", map_type()));
     EXPECT_TRUE(test_deserialize("{}", string_map_type()));
@@ -86,6 +102,18 @@ TEST(Deserialization, Map)
             { "key1", "value1" }, { "key2", "value2" }
         }
     ));
+    EXPECT_TRUE(test_deserialize(
+        "{\"key1\": [1, 2], \"key2\": [4, 8, 16, 32]}",
+        vector_map_type{
+            { "key1", {1, 2} }, { "key2", {4, 8, 16, 32} }
+        }
+    ));
+
+    std::map<std::string, TestValue> obj_map;
+    obj_map.insert(std::make_pair("key1", TestValue("a")));
+    obj_map.insert(std::make_pair("key2", TestValue("b")));
+    obj_map.insert(std::make_pair("key3", TestValue("c")));
+    EXPECT_TRUE(test_deserialize("{\"key1\":{\"value\":\"a\"},\"key2\":{\"value\":\"b\"},\"key3\":{\"value\":\"c\"}}", obj_map));
 
     EXPECT_TRUE(test_no_deserialize<map_type>("true"));
     EXPECT_TRUE(test_no_deserialize<map_type>("23"));
@@ -114,6 +142,10 @@ TEST(Deserialization, UnorderedMap)
             { "key1", "value1" }, { "key2", "value2" }
         }
     ));
+
+    std::unordered_map<std::string, TestValue> obj_map;
+    obj_map.insert(std::make_pair("key1", TestValue("a")));
+    EXPECT_TRUE(test_deserialize("{\"key1\":{\"value\":\"a\"}}", obj_map));
 
     EXPECT_TRUE(test_no_deserialize<map_type>("true"));
     EXPECT_TRUE(test_no_deserialize<map_type>("23"));

@@ -22,27 +22,43 @@ namespace test
     /** Measures time elapsed by executing a code block. */
     struct Timer
     {
+        using time_point = std::chrono::high_resolution_clock::time_point;
+
         Timer(const char* description)
             : description(description)
-            , started_at(std::chrono::high_resolution_clock::now())
         {}
 
         ~Timer()
         {
-            auto finished_at = std::chrono::high_resolution_clock::now();
-            std::cout << description << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(finished_at - started_at).count() << " ms" << std::endl;
+            stop();
+        }
+
+        void start()
+        {
+            started_at = std::chrono::high_resolution_clock::now();
+        }
+
+        void stop()
+        {
+            if (started_at != time_point()) {
+                auto finished_at = std::chrono::high_resolution_clock::now();
+                std::cout << description << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(finished_at - started_at).count() << " ms" << std::endl;
+                started_at = time_point();
+            }
         }
 
     private:
         const char* description;
-        std::chrono::high_resolution_clock::time_point started_at;
+        time_point started_at;
     };
 
     template<typename F, std::enable_if_t<returns_nonvoid<F>::value, int> = 0>
     auto measure(const char* description, F operation)
     {
         Timer timer(description);
+        timer.start();
         auto result = operation();
+        timer.stop();
         return result;
     }
 
@@ -50,6 +66,8 @@ namespace test
     void measure(const char* description, F operation)
     {
         Timer timer(description);
+        timer.start();
         operation();
+        timer.stop();
     }
 }

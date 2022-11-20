@@ -20,6 +20,10 @@ TEST(Serialization, Variant)
     EXPECT_TRUE(test_serialize(simple_variant_type("value"), "\"value\""));
     EXPECT_TRUE(test_serialize(simple_variant_type(23), "23"));
 
+    using mixed_variant_type = std::variant<std::string, TestValue>;
+    EXPECT_TRUE(test_serialize(mixed_variant_type("value"), "\"value\""));
+    EXPECT_TRUE(test_serialize(mixed_variant_type(TestValue("string")), "{\"value\":\"string\"}"));
+
     using complex_variant_type = std::variant<TestValue, TestNonCopyable>;
     EXPECT_TRUE(test_serialize(complex_variant_type(TestValue("string")), "{\"value\":\"string\"}"));
     EXPECT_TRUE(test_serialize(complex_variant_type(TestNonCopyable("string")), "{\"member\":{\"value\":\"string\"}}"));

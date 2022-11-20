@@ -20,7 +20,10 @@ namespace persistence
 
         bool parse(const JsonArrayEnd&) override
         {
-            container.insert(storage.begin(), storage.end());
+            for (auto&& item : storage) {
+                container.insert(std::move(item));
+            }
+            storage.clear();
             context.pop();
             return true;
         }

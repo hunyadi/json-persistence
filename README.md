@@ -16,7 +16,8 @@ This header-only library for C++17 and later provides type-safe serialization of
 * (De-)serialize dictionary types `map<string, T>` and `unordered_map<string, T>` to/from a JSON object.
 * Serialize variant types to their stored type. De-serialize variant types using the first matching type.
 * (De-)serialize class types by enumerating their member variables.
-* Omit object fields for missing value in `optional<T>`.
+* Omit JSON object field for missing value in `optional<T>`.
+* Skip missing JSON object field for variable with default member initializer in a C++ class.
 * (De-)serialize pointer types such as `shared_ptr<T>` and `unique_ptr<T>`.
 * Back-reference support for (de-)serialization of C++ pointer types via JSON pointer `{"$ref": "/path/to/previous/occurrence"}`.
 * Serialize C++ objects that share pointers only once. De-serialize back-references as C++ pointers to the same object.
@@ -334,6 +335,20 @@ In this case, the output may look like as follows:
     "additionalProperties": false
 }
 ```
+
+## Performance
+
+The following table shows relative performance of writing, parsing and (de-)serializing a C++ `vector` object of 1 million elements. Each element is a composite object holding (vectors of) boolean, integer and string values. When represented as JSON, the string takes approximately 1 GB. DOM is the `Document` object constructed by RapidJSON when de-serializing a JSON string.
+
+| Operation                                                    | Duration |
+|:------------------------------------------------------------ | --------:|
+| write object to string                                       |  3047 ms |
+| parse object from string                                     |  6554 ms |
+| deserialize DOM from string                                  |  3694 ms |
+| serialize DOM to string                                      |  3699 ms |
+| serialize object to DOM                                      |  5527 ms |
+| deserialize object from DOM with exceptions disabled         |  4242 ms |
+| deserialize object from DOM with exceptions enabled          |  4572 ms |
 
 ## Limitations and workarounds
 

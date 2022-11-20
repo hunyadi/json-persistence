@@ -49,6 +49,13 @@ TEST(Deserialization, DateTimeTypes)
     EXPECT_TRUE(test_no_deserialize<timestamp>("\"2022-02-01T23:02:SSZ\""));
     EXPECT_TRUE(test_no_deserialize<timestamp>("\"2022-02-01T23:02:99Z\""));
 
+    // invalid separator
+    EXPECT_TRUE(test_no_deserialize<timestamp>("\"2022 02-01T23:02:01Z\""));
+    EXPECT_TRUE(test_no_deserialize<timestamp>("\"2022-02 01T23:02:01Z\""));
+    EXPECT_TRUE(test_no_deserialize<timestamp>("\"2022-02-01X23:02:01Z\""));
+    EXPECT_TRUE(test_no_deserialize<timestamp>("\"2022-02-01T23 02:01Z\""));
+    EXPECT_TRUE(test_no_deserialize<timestamp>("\"2022-02-01T23:02 01Z\""));
+
     // invalid type
     EXPECT_TRUE(test_no_deserialize<timestamp>("true"));
     EXPECT_TRUE(test_no_deserialize<timestamp>("23"));
@@ -75,6 +82,10 @@ TEST(Deserialization, DateTimeTypes)
     EXPECT_TRUE(test_no_deserialize<year_month_day>("\"2022-02-00\""));
     EXPECT_TRUE(test_no_deserialize<year_month_day>("\"2022-02-30\""));
     EXPECT_TRUE(test_no_deserialize<year_month_day>("\"2022-02-99\""));
+
+    // invalid separator
+    EXPECT_TRUE(test_no_deserialize<year_month_day>("\"2022 02-01\""));
+    EXPECT_TRUE(test_no_deserialize<year_month_day>("\"2022-02 01\""));
 
     // invalid type
     EXPECT_TRUE(test_no_deserialize<year_month_day>("true"));

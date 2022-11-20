@@ -25,6 +25,11 @@ struct TestValue
         return value == op.value;
     }
 
+    bool operator<(const TestValue& op) const
+    {
+        return value < op.value;
+    }
+
 private:
     std::string value;
 };
@@ -44,14 +49,14 @@ struct TestDefault
             ;
     }
 
-    bool operator<(const TestDefault& op) const
-    {
-        return value < op.value;
-    }
-
     bool operator==(const TestDefault& op) const
     {
         return value == op.value;
+    }
+
+    bool operator<(const TestDefault& op) const
+    {
+        return value < op.value;
     }
 
 private:

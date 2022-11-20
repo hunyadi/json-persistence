@@ -57,29 +57,41 @@ TEST(Performance, Object)
         items.push_back(item);
     }
 
-    auto&& json = measure("write object to string", [&]() {
+    auto json = measure("write object to string", [&]() {
         return write_to_string(items);
     });
+    EXPECT_GT(json.size(), 0);
     std::cout << "JSON string has size of " << json.size() << " B" << std::endl;
+    measure("parse object from string", [&]() {
+        parse<std::vector<TestDataTransferObject>>(json);
+    });
+    
+    auto doc = measure("deserialize DOM from string", [&]() {
+        return string_to_document(json);
+    });
+    EXPECT_FALSE(doc.HasParseError());
+    measure("serialize DOM to string", [&]() {
+        document_to_string(doc);
+    });
+
     measure("serialize object to DOM", [&]() {
-        rapidjson::Document doc;
-        serialize_to_document(items, doc);
+        serialize_to_document(items);
     });
-    measure("deserialize DOM from string", [&]() {
-        rapidjson::Document doc;
-        doc.Parse(json.data());
+    measure("deserialize object from DOM with exceptions disabled", [&]() {
+        std::vector<TestDataTransferObject> obj;
+        deserialize(doc, obj);
     });
-    measure("deserialize object from string via DOM with exceptions enabled", [&]() {
-        deserialize<std::vector<TestDataTransferObject>>(json);
+    measure("deserialize object from DOM with exceptions enabled", [&]() {
+        deserialize<std::vector<TestDataTransferObject>>(doc);
     });
+
     measure("deserialize object from string via DOM with exceptions disabled", [&]() {
         std::vector<TestDataTransferObject> obj;
         deserialize(json, obj);
     });
-    auto&& values = measure("parse object from string", [&]() {
-        return parse<std::vector<TestDataTransferObject>>(json);
+    measure("deserialize object from string via DOM with exceptions enabled", [&]() {
+        deserialize<std::vector<TestDataTransferObject>>(json);
     });
-    EXPECT_GT(values.size(), 0);
 }
 #endif
 
