@@ -7,12 +7,12 @@
 namespace persistence
 {
     template<>
-    struct JsonParser<std::nullptr_t> : JsonParseSingleHandler<JsonValueNull>
+    struct JsonParser<std::nullptr_t> : JsonParseHandler<JsonValueNull>
     {
         using json_type = JsonValueNull;
 
         JsonParser(ReaderContext& context, std::nullptr_t& ref)
-            : JsonParseSingleHandler<JsonValueNull>(context)
+            : JsonParseHandler(context)
             , ref(ref)
         {}
 
@@ -28,12 +28,12 @@ namespace persistence
     };
 
     template<>
-    struct JsonParser<bool> : JsonParseSingleHandler<JsonValueBoolean>
+    struct JsonParser<bool> : JsonParseHandler<JsonValueBoolean>
     {
         using json_type = JsonValueBoolean;
 
         JsonParser(ReaderContext& context, bool& ref)
-            : JsonParseSingleHandler<JsonValueBoolean>(context)
+            : JsonParseHandler(context)
             , ref(ref)
         {}
 
@@ -80,12 +80,12 @@ namespace persistence
     };
 
     template<typename T>
-    struct JsonNumberParser : JsonParseSingleHandler<JsonValueNumber>
+    struct JsonNumberParser : JsonParseHandler<JsonValueNumber>
     {
         using json_type = JsonValueNumber;
 
         JsonNumberParser(ReaderContext& context, T& ref)
-            : JsonParseSingleHandler<JsonValueNumber>(context)
+            : JsonParseHandler(context)
             , ref(ref)
         {}
 

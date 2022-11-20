@@ -5,12 +5,12 @@
 namespace persistence
 {
     template<>
-    struct JsonParser<byte_vector> : JsonParseSingleHandler<JsonValueString>
+    struct JsonParser<byte_vector> : JsonParseHandler<JsonValueString>
     {
         using json_type = JsonValueString;
 
         JsonParser(ReaderContext& context, byte_vector& ref)
-            : JsonParseSingleHandler<JsonValueString>(context)
+            : JsonParseHandler(context)
             , ref(ref)
         {}
 

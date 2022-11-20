@@ -13,7 +13,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
 
-if (MSVC)
+if(MSVC)
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
     # set warning level 4 and treat all warnings as errors
     add_compile_options(/W4 /WX /Zc:__cplusplus,rvalueCast,strictStrings)
@@ -22,11 +22,18 @@ else()
     add_compile_options(-Wall -Wextra -pedantic -Werror -Wfatal-errors -Wno-ambiguous-reversed-operator -Wno-deprecated-declarations)
 endif()
 
-# locate RapidJSON
+# locate dependency: RapidJSON
 find_package(RapidJSON CONFIG REQUIRED)
-add_compile_definitions(RAPIDJSON_HAS_STDSTRING)
 
-# locate GoogleTest
+# locate test dependency: Boost (optional)
+find_package(Boost)
+if(Boost_FOUND)
+    if(NOT MSVC)
+        add_compile_options(-Wno-gnu-zero-variadic-macro-arguments)
+    endif()
+endif()
+
+# locate test dependency: GoogleTest
 include(FetchContent)
 FetchContent_Declare(
     googletest
@@ -35,45 +42,30 @@ FetchContent_Declare(
 )
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
-
-# test configuration
 enable_testing()
 
 # project configuration
-add_executable(json-persistence-tests
-    ${CMAKE_SOURCE_DIR}/test/detail.cpp
-    ${CMAKE_SOURCE_DIR}/test/main.cpp
+file(GLOB JSON_LIBRARY_SOURCES ${CMAKE_SOURCE_DIR}/test/*.cpp)
+file(GLOB JSON_LIBRARY_HEADERS ${CMAKE_SOURCE_DIR}/include/*.hpp)
+add_executable(json-persistence-tests ${JSON_LIBRARY_SOURCES})
 
-    ${CMAKE_SOURCE_DIR}/test/schema.cpp
-
-    ${CMAKE_SOURCE_DIR}/test/serialize_bytes.cpp
-    ${CMAKE_SOURCE_DIR}/test/serialize_container.cpp
-    ${CMAKE_SOURCE_DIR}/test/serialize_datetime.cpp
-    ${CMAKE_SOURCE_DIR}/test/serialize_enum.cpp
-    ${CMAKE_SOURCE_DIR}/test/serialize_fundamental.cpp
-    ${CMAKE_SOURCE_DIR}/test/serialize_object.cpp
-    ${CMAKE_SOURCE_DIR}/test/serialize_string.cpp
-    ${CMAKE_SOURCE_DIR}/test/serialize_tuple.cpp
-    ${CMAKE_SOURCE_DIR}/test/serialize_variant.cpp
-
-    ${CMAKE_SOURCE_DIR}/test/deserialize_bytes.cpp
-    ${CMAKE_SOURCE_DIR}/test/deserialize_container.cpp
-    ${CMAKE_SOURCE_DIR}/test/deserialize_datetime.cpp
-    ${CMAKE_SOURCE_DIR}/test/deserialize_enum.cpp
-    ${CMAKE_SOURCE_DIR}/test/deserialize_fundamental.cpp
-    ${CMAKE_SOURCE_DIR}/test/deserialize_object.cpp
-    ${CMAKE_SOURCE_DIR}/test/deserialize_string.cpp
-    ${CMAKE_SOURCE_DIR}/test/deserialize_tuple.cpp
-    ${CMAKE_SOURCE_DIR}/test/deserialize_variant.cpp
-)
+# include directories
 target_include_directories(json-persistence-tests PRIVATE ${CMAKE_SOURCE_DIR}/include ${RAPIDJSON_INCLUDE_DIRS})
+if(Boost_FOUND)
+    add_compile_definitions(PERSISTENCE_BOOST_DESCRIBE)
+    target_include_directories(json-persistence-tests PRIVATE ${Boost_INCLUDE_DIRS})
+endif()
+
+# link directories
 target_link_libraries(json-persistence-tests GTest::gtest_main)
 
+# build configuration
 include(CheckIPOSupported)
 check_ipo_supported(RESULT ipo_result)
 if(ipo_result)
     set_property(TARGET json-persistence-tests PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
+# test configuration
 include(GoogleTest)
 gtest_discover_tests(json-persistence-tests)

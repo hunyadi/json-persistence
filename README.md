@@ -21,6 +21,7 @@ This header-only library for C++17 and later provides type-safe serialization of
 * (De-)serialize pointer types such as `shared_ptr<T>` and `unique_ptr<T>`.
 * Back-reference support for (de-)serialization of C++ pointer types via JSON pointer `{"$ref": "/path/to/previous/occurrence"}`.
 * Serialize C++ objects that share pointers only once. De-serialize back-references as C++ pointers to the same object.
+* Can use the reflection library [Boost.Describe](https://www.boost.org/doc/libs/1_80_0/libs/describe/doc/html/describe.html) for parsing, writing and (de-)serializing enumerations as strings.
 
 ## Design goals
 
@@ -104,6 +105,7 @@ Add new template specializations to support (de-)serializing new types:
 * Built on top of [RapidJSON](https://rapidjson.org/).
 * Uses RapidJSON [SAX interface](https://rapidjson.org/md_doc_sax.html) for writing and parsing JSON strings directly, bypassing the JSON DOM.
 * Uses a polymorphic stack to reduce dynamic memory allocations on heap.
+* Infers type and range compatibility at compile-time when possible.
 * Unrolls loops at compile-time for bounded-length data structures such as pairs, tuples and object properties.
 
 ### Platform-neutral
@@ -229,6 +231,15 @@ namespace persistence
 ```
 
 Use utility function `make_enum_converter` and class `EnumConverter<E, N>` to implement `to_string` and `from_string` with less boilerplate code.
+
+If the reflection library [Boost.Describe](https://www.boost.org/doc/libs/1_80_0/libs/describe/doc/html/describe.html) is enabled, provide reflection metadata for enumerations with `BOOST_DESCRIBE_ENUM`. The string names assigned with this macro are used in parsing, writing and (de-)serializing enumerations.
+
+In order to enable Boost.Describe reflections, compile your project with the preprocessor macro `PERSISTENCE_BOOST_DESCRIBE`. Make sure the following headers are available:
+
+```cpp
+#include <boost/describe/enum_to_string.hpp>
+#include <boost/describe/enum_from_string.hpp>
+```
 
 ## Error reporting
 
@@ -357,3 +368,7 @@ JSON parser does not support back-references (`{"$ref": "/path/to/previous/occur
 Parsing and de-serializing raw pointers is not permitted due to lack of clarity around ownership. Use `unique_ptr` and `shared_ptr` instead. Writing and serializing raw pointers is allowed, the pointee object is written.
 
 JSON parser does not support variant types. Instead, read the JSON string into a JSON DOM with the utility function `string_to_document`, and then de-serialize the data from JSON DOM with `deserialize`. JSON writer, serializer and de-serializer support variant types.
+
+## Comparison to other libraries
+
+Unlike [Boost.JSON](https://www.boost.org/doc/libs/1_80_0/libs/json/doc/html/index.html) and [nlohmann/json](https://github.com/nlohmann/json), this library does not introduce a variant JSON `value` type whose contents you can manipulate with accessors at run time. Instead, this library uses the original C++ data types, and employs compile-time inference to perform the appropriate action on parsing, writing and (de-)serialization.

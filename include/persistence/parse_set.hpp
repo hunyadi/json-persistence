@@ -1,5 +1,6 @@
 #pragma once
 #include "parse_base.hpp"
+#include "parse_items.hpp"
 #include "parse_fundamental.hpp"
 #include "detail/unlikely.hpp"
 #include <set>
@@ -11,10 +12,10 @@ namespace persistence
      * Parses a JSON array of possibly composite values into a C++ `set<T>`.
      */
     template<typename T>
-    struct JsonSetParser : JsonParseHandler
+    struct JsonSetParser : JsonArrayItemParseHandler<T>
     {
         JsonSetParser(ReaderContext& context, std::set<T>& container)
-            : JsonParseHandler(context)
+            : JsonArrayItemParseHandler<T>(context)
             , container(container)
         {}
 
@@ -24,14 +25,15 @@ namespace persistence
                 container.insert(std::move(item));
             }
             storage.clear();
-            context.pop();
+            this->context.pop();
             return true;
         }
 
         bool parse(const typename JsonParser<T>::json_type& json_item) override
         {
             storage.emplace_back();
-            auto&& handler = context.emplace<JsonParser<T>>(context, storage.back());
+            ReaderContext& ctx = this->context;
+            auto&& handler = ctx.emplace<JsonParser<T>>(ctx, storage.back());
             return handler.parse(json_item);
         }
 
@@ -44,7 +46,7 @@ namespace persistence
      * Parses a JSON array of boolean values into a C++ `set<bool>` efficiently.
      */
     template<>
-    struct JsonSetParser<bool> : JsonParseHandler
+    struct JsonSetParser<bool> : JsonParseHandler<JsonValueBoolean, JsonArrayEnd>
     {
         JsonSetParser(ReaderContext& context, std::set<bool>& container)
             : JsonParseHandler(context)
@@ -73,7 +75,7 @@ namespace persistence
      * @tparam Integer or floating-point type.
      */
     template<typename T>
-    struct JsonNumberSetParser : JsonParseHandler
+    struct JsonNumberSetParser : JsonParseHandler<JsonValueNumber, JsonArrayEnd>
     {
         static_assert(std::is_arithmetic_v<T>, "T must be an arithmetic type");
 
@@ -202,7 +204,7 @@ namespace persistence
     };
 
     template<>
-    struct JsonSetParser<std::string> : JsonParseHandler
+    struct JsonSetParser<std::string> : JsonParseHandler<JsonValueString, JsonArrayEnd>
     {
         JsonSetParser(ReaderContext& context, std::set<std::string>& container)
             : JsonParseHandler(context)
@@ -226,12 +228,12 @@ namespace persistence
     };
 
     template<typename T>
-    struct JsonParser<std::set<T>> : JsonParseSingleHandler<JsonArrayStart>
+    struct JsonParser<std::set<T>> : JsonParseHandler<JsonArrayStart>
     {
         using json_type = JsonArrayStart;
 
         JsonParser(ReaderContext& context, std::set<T>& ref)
-            : JsonParseSingleHandler<JsonArrayStart>(context)
+            : JsonParseHandler(context)
             , ref(ref)
         {}
 

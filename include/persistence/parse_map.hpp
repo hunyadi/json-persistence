@@ -6,7 +6,7 @@
 namespace persistence
 {
     template<typename C>
-    struct JsonMapParser : JsonParseHandler
+    struct JsonMapParser : JsonParseHandler<JsonObjectKey, JsonObjectEnd>
     {
         JsonMapParser(ReaderContext& context, C& container)
             : JsonParseHandler(context)
@@ -34,12 +34,12 @@ namespace persistence
     };
 
     template<typename C>
-    struct JsonMappedTypeParser : JsonParseSingleHandler<JsonObjectStart>
+    struct JsonMappedTypeParser : JsonParseHandler<JsonObjectStart>
     {
         using json_type = JsonObjectStart;
 
         JsonMappedTypeParser(ReaderContext& context, C& container)
-            : JsonParseSingleHandler<JsonObjectStart>(context)
+            : JsonParseHandler(context)
             , container(container)
         {}
 

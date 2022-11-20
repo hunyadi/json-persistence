@@ -58,6 +58,8 @@ namespace persistence
         std::string error_message;
     };
 
+    /** Attempts to parse one of the expected JSON tokens. */
+    template<typename ExpectToken, typename... ExpectTokens>
     struct JsonParseHandler : JsonParseEvent
     {
         JsonParseHandler(ReaderContext& context)
@@ -67,95 +69,13 @@ namespace persistence
         template<typename FoundToken>
         bool fail()
         {
-            context.fail("unexpected JSON token " + std::string(FoundToken::name));
-            return false;
-        }
-
-        bool parse(const JsonValueNull&) override
-        {
-            return fail<JsonValueNull>();
-        }
-
-        bool parse(const JsonValueBoolean&) override
-        {
-            return fail<JsonValueBoolean>();
-        }
-
-        bool parse(const JsonValueInteger&) override
-        {
-            return fail<JsonValueInteger>();
-        }
-
-        bool parse(const JsonValueUnsigned&) override
-        {
-            return fail<JsonValueUnsigned>();
-        }
-
-        bool parse(const JsonValueInteger64&) override
-        {
-            return fail<JsonValueInteger64>();
-        }
-
-        bool parse(const JsonValueUnsigned64&) override
-        {
-            return fail<JsonValueUnsigned64>();
-        }
-
-        bool parse(const JsonValueDouble&) override
-        {
-            return fail<JsonValueDouble>();
-        }
-
-        bool parse(const JsonValueNumber&) override
-        {
-            return fail<JsonValueNumber>();
-        }
-
-        bool parse(const JsonValueString&) override
-        {
-            return fail<JsonValueString>();
-        }
-
-        bool parse(const JsonObjectStart&) override
-        {
-            return fail<JsonObjectStart>();
-        }
-
-        bool parse(const JsonObjectKey&) override
-        {
-            return fail<JsonObjectKey>();
-        }
-
-        bool parse(const JsonObjectEnd&) override
-        {
-            return fail<JsonObjectEnd>();
-        }
-
-        bool parse(const JsonArrayStart&) override
-        {
-            return fail<JsonArrayStart>();
-        }
-
-        bool parse(const JsonArrayEnd&) override
-        {
-            return fail<JsonArrayEnd>();
-        }
-
-    protected:
-        ReaderContext& context;
-    };
-
-    template<typename ExpectToken>
-    struct JsonParseSingleHandler : JsonParseEvent
-    {
-        JsonParseSingleHandler(ReaderContext& context)
-            : context(context)
-        {}
-
-        template<typename FoundToken>
-        bool fail()
-        {
-            context.fail("expected JSON token " + std::string(ExpectToken::name) + "; got: " + std::string(FoundToken::name));
+            std::string expected_tokens;
+            if constexpr (sizeof...(ExpectTokens) > 0) {
+                expected_tokens = std::string(ExpectToken::name) + (... + (" or " + std::string(ExpectTokens::name)));
+            } else {
+                expected_tokens = ExpectToken::name;
+            }
+            context.fail("expected JSON token: " + expected_tokens + "; got: " + std::string(FoundToken::name));
             return false;
         }
 

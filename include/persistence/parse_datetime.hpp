@@ -6,12 +6,12 @@
 namespace persistence
 {
     template<>
-    struct JsonParser<timestamp> : JsonParseSingleHandler<JsonValueString>
+    struct JsonParser<timestamp> : JsonParseHandler<JsonValueString>
     {
         using json_type = JsonValueString;
 
         JsonParser(ReaderContext& context, timestamp& ref)
-            : JsonParseSingleHandler<JsonValueString>(context)
+            : JsonParseHandler(context)
             , ref(ref)
         {}
 

@@ -4,6 +4,13 @@
 
 namespace persistence
 {
+    /** Attempts to parse the JSON type associated with a given C++ type. */
+    template<typename T>
+    struct JsonFixedItemParseHandler : JsonParseHandler<typename JsonParser<T>::json_type>
+    {
+        using JsonParseHandler<typename JsonParser<T>::json_type>::JsonParseHandler;
+    };
+
     /**
      * Parses the elements of a tuple-like type.
      * @tparam C A tuple-like type such as an `array`, `pair` or `tuple`.
@@ -11,7 +18,7 @@ namespace persistence
      * @tparam N The remaining number of items, including JSON array start/end brackets.
      */
     template<typename C, std::size_t I, std::size_t N>
-    struct JsonFixedArrayParser : JsonParseSingleHandler<typename JsonParser<std::tuple_element_t<I - 1, C>>::json_type>
+    struct JsonFixedArrayParser : JsonFixedItemParseHandler<std::tuple_element_t<I - 1, C>>
     {
         using element_type = std::tuple_element_t<I - 1, C>;
         using element_parser_type = JsonParser<element_type>;
@@ -19,7 +26,7 @@ namespace persistence
         using next_parser_type = JsonFixedArrayParser<C, I + 1, N - 1>;
 
         JsonFixedArrayParser(ReaderContext& context, C& container)
-            : JsonParseSingleHandler<element_json_type>(context)
+            : JsonFixedItemParseHandler<std::tuple_element_t<I - 1, C>>(context)
             , container(container)
         {}
 
@@ -93,10 +100,10 @@ namespace persistence
 
     /** Parses the start of a tuple-like type. */
     template<typename C, std::size_t N>
-    struct JsonFixedArrayParser<C, 0, N> : JsonParseSingleHandler<JsonArrayStart>
+    struct JsonFixedArrayParser<C, 0, N> : JsonParseHandler<JsonArrayStart>
     {
         JsonFixedArrayParser(ReaderContext& context, C& container)
-            : JsonParseSingleHandler<JsonArrayStart>(context)
+            : JsonParseHandler(context)
             , container(container)
         {}
 
@@ -112,10 +119,10 @@ namespace persistence
 
     /** Parses the end of a tuple-like type. */
     template<typename C, std::size_t I>
-    struct JsonFixedArrayParser<C, I, 0> : JsonParseSingleHandler<JsonArrayEnd>
+    struct JsonFixedArrayParser<C, I, 0> : JsonParseHandler<JsonArrayEnd>
     {
         JsonFixedArrayParser(ReaderContext& context, C& container)
-            : JsonParseSingleHandler<JsonArrayEnd>(context)
+            : JsonParseHandler(context)
             , container(container)
         {}
 
