@@ -46,22 +46,22 @@ namespace persistence
                         return false;
                     }
 
-                    pointer = std::reinterpret_pointer_cast<T>(context.get(object));
-                    PERSISTENCE_IF_UNLIKELY(!pointer) {
+                    auto ref = context.get(object);
+                    PERSISTENCE_IF_UNLIKELY(!ref.has_value()) {
                         return false;
                     }
 
+                    pointer = std::reinterpret_pointer_cast<T>(ref.value());
                     return true;
                 }
             }
 
-            auto p = std::make_shared<T>();
-            PERSISTENCE_IF_UNLIKELY(!deserialize<Exception>(json, *p, context)) {
+            pointer = std::make_shared<T>();
+            PERSISTENCE_IF_UNLIKELY(!deserialize<Exception>(json, *pointer, context)) {
                 return false;
             }
 
-            context.put(&json, p);
-            pointer.swap(p);
+            context.put(&json, pointer);
             return true;
         }
     };

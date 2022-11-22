@@ -48,7 +48,7 @@ namespace persistence
             auto result = std::from_chars(n.literal.data(), last, value);
 
             PERSISTENCE_IF_UNLIKELY(result.ec != std::errc() || result.ptr != last) {
-                context.fail("expected an enumeration numeric value; got: " + std::string(n.literal.data(), n.literal.size()));
+                context.fail("expected an enumeration numeric value; got: " + std::string(n.literal));
                 return false;
             }
 
@@ -94,7 +94,7 @@ namespace persistence
             );
 
             PERSISTENCE_IF_UNLIKELY(!enum_traits<T>::from_string(s.literal, ref)) {
-                context.fail("expected an enumeration string value; got: " + std::string(s.literal.data(), s.literal.size()));
+                context.fail("expected an enumeration string value; got: " + std::string(s.literal));
                 return false;
             }
 
@@ -119,7 +119,7 @@ namespace persistence
         bool parse(const JsonValueString& s) override
         {
             PERSISTENCE_IF_UNLIKELY(!::boost::describe::enum_from_string(s.literal.data(), ref)) {
-                context.fail("expected an enumeration string value; got: " + std::string(s.literal.data(), s.literal.size()));
+                context.fail("expected an enumeration string value; got: " + std::string(s.literal));
                 return false;
             }
 

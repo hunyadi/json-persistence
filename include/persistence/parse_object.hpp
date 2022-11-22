@@ -48,13 +48,12 @@ namespace persistence
 
         bool parse(const JsonObjectKey& json_key) override
         {
-            std::string_view key = json_key.identifier;
-            bool result = std::apply([=](const auto&... members) {
-                return (parse_member(key, members) || ...);
+            bool result = std::apply([&](const auto&... members) {
+                return (parse_member(json_key.identifier, members) || ...);
             }, members);
 
             PERSISTENCE_IF_UNLIKELY(!result) {
-                context.fail("expected class member name; got: " + std::string(key.data(), key.size()));
+                context.fail("expected class member name; got: " + std::string(json_key.identifier));
                 return false;
             }
 

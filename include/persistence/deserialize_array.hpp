@@ -22,14 +22,15 @@ namespace persistence
             }
 
             std::array<T, N> output;
-            std::size_t idx = 0;
-            for (auto&& it = json.Begin(); it != json.End(); ++it) {
+            T* out = output.data();
+            std::size_t index = 0;
+            for (auto&& it = json.Begin(); it != json.End(); ++it, ++out, ++index) {
                 T item;
-                DeserializerContext item_context(context, Segment(idx));
+                DeserializerContext item_context(context, Segment(index));
                 PERSISTENCE_IF_UNLIKELY(!deserialize<Exception>(*it, item, item_context)) {
                     return false;
                 }
-                output[idx++] = item;
+                *out = item;
             }
             container = std::move(output);
             return true;

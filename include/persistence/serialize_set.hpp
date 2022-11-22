@@ -16,7 +16,7 @@ namespace persistence
             json.SetArray();
             json.Reserve(static_cast<rapidjson::SizeType>(container.size()), context.global().allocator());
             std::size_t k = 0;
-            for (const auto& item : container) {
+            for (auto&& item : container) {
                 rapidjson::Value item_json;
                 SerializerContext item_context(context, Segment(k));
                 PERSISTENCE_IF_UNLIKELY(!serialize<T>(item, item_json, context)) {

@@ -22,7 +22,7 @@ namespace persistence
         {
             timestamp ts;
             PERSISTENCE_IF_UNLIKELY(!parse_date(s.literal.data(), s.literal.size(), ts)) {
-                context.fail("invalid ISO-8601 date; expected: YYYY-MM-DD, got: " + std::string(s.literal.data(), s.literal.size()));
+                context.fail("invalid ISO-8601 date; expected: YYYY-MM-DD, got: " + std::string(s.literal));
                 return false;
             }
 

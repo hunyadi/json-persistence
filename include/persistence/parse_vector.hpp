@@ -213,7 +213,7 @@ namespace persistence
 
         bool parse(const JsonValueString& s) override
         {
-            container.emplace_back(s.literal.begin(), s.literal.end());
+            container.emplace_back(s.literal);
             return true;
         }
 

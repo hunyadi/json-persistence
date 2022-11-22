@@ -48,24 +48,48 @@ namespace persistence
         }
     };
 
+    namespace encoding
+    {
+        struct Base64
+        {
+            static constexpr const char* identifier = "base64";
+        };
+    }
+
+    namespace format
+    {
+        struct Date
+        {
+            static constexpr const char* identifier = "date";
+        };
+
+        struct DateTime
+        {
+            static constexpr const char* identifier = "date-time";
+        };
+    }
+
     struct JsonSchemaFundamentalType
     {
-        struct Base64 {};
-
         JsonSchemaFundamentalType() = default;
 
         JsonSchemaFundamentalType(const std::string_view& type)
             : type(type)
         {}
 
-        JsonSchemaFundamentalType(const std::string_view& type, Base64)
-            : type(type)
-            , contentEncoding("base64")
+        JsonSchemaFundamentalType(encoding::Base64)
+            : type("string")
+            , contentEncoding(encoding::Base64::identifier)
         {}
 
-        JsonSchemaFundamentalType(const std::string_view& type, const std::string_view& format)
-            : type(type)
-            , format(format)
+        JsonSchemaFundamentalType(format::DateTime)
+            : type("string")
+            , format(format::DateTime::identifier)
+        {}
+
+        JsonSchemaFundamentalType(format::Date)
+            : type("string")
+            , format(format::Date::identifier)
         {}
 
         std::string_view type;
@@ -277,7 +301,7 @@ namespace persistence
     {
         static auto type()
         {
-            return JsonSchemaFundamentalType("string", JsonSchemaFundamentalType::Base64());
+            return JsonSchemaFundamentalType(encoding::Base64());
         }
     };
 
@@ -286,7 +310,7 @@ namespace persistence
     {
         static auto type()
         {
-            return JsonSchemaFundamentalType("string", "date-time");
+            return JsonSchemaFundamentalType(format::DateTime());
         }
     };
 
@@ -296,7 +320,7 @@ namespace persistence
     {
         static auto type()
         {
-            return JsonSchemaFundamentalType("string", "date");
+            return JsonSchemaFundamentalType(format::Date());
         }
     };
 #endif

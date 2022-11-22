@@ -12,7 +12,7 @@ namespace persistence
     struct Path
     {
         Path() = default;
-        Path(Segments segments) : segments(segments) {}
+        Path(Segments&& segments) : segments(std::move(segments)) {}
 
         std::string str() const
         {

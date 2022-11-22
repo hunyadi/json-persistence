@@ -187,7 +187,7 @@ namespace persistence
 
     namespace detail
     {
-        constexpr std::array<std::uint8_t, 256> decode_table {
+        constexpr std::array<unsigned char, 256> decode_table {
             0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
             0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
             0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x3E, 0xFF, 0xFF, 0xFF, 0x3F,
@@ -217,10 +217,10 @@ namespace persistence
          */
         inline bool decode_quadruplet(char in_a, char in_b, char in_c, char in_d, std::byte* out)
         {
-            auto out_a = decode_table[in_a];
-            auto out_b = decode_table[in_b];
-            auto out_c = decode_table[in_c];
-            auto out_d = decode_table[in_d];
+            auto out_a = decode_table[static_cast<unsigned char>(in_a)];
+            auto out_b = decode_table[static_cast<unsigned char>(in_b)];
+            auto out_c = decode_table[static_cast<unsigned char>(in_c)];
+            auto out_d = decode_table[static_cast<unsigned char>(in_d)];
 
             PERSISTENCE_IF_UNLIKELY(((out_a | out_b | out_c | out_d) & 0b11000000) != 0) {
                 return false;

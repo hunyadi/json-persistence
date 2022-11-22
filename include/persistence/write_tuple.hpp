@@ -25,11 +25,11 @@ namespace persistence
         template<std::size_t... I>
         bool serialize_elements(const C& container, StringWriter& writer, std::index_sequence<I...>) const
         {
-            return (serialize_element(
+            return (... && serialize_element(
                 I,
                 std::get<I>(container),
                 writer
-            ) && ...);
+            ));
         }
 
         template<typename T>

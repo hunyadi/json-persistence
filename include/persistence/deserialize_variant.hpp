@@ -15,7 +15,7 @@ namespace persistence
 
         bool operator()(const rapidjson::Value& json, std::variant<Ts...>& value) const
         {
-            PERSISTENCE_IF_UNLIKELY(!(deserialize_variant<Ts>(json, value) || ...)) {
+            PERSISTENCE_IF_UNLIKELY(!(... || deserialize_variant<Ts>(json, value))) {
                 if constexpr (Exception) {
                     throw JsonDeserializationError(
                         "unable to match either of the variant types",

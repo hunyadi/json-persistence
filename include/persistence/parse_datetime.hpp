@@ -18,7 +18,7 @@ namespace persistence
         bool parse(const JsonValueString& s) override
         {
             PERSISTENCE_IF_UNLIKELY(!parse_datetime(s.literal.data(), s.literal.size(), ref)) {
-                context.fail("invalid ISO-8601 date-time; expected: YYYY-MM-DDTHH:MM:SSZ, got: " + std::string(s.literal.data(), s.literal.size()));
+                context.fail("invalid ISO-8601 date-time; expected: YYYY-MM-DDTHH:MM:SSZ, got: " + std::string(s.literal));
                 return false;
             }
 

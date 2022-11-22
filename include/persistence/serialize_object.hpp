@@ -54,11 +54,12 @@ namespace persistence
 
             rapidjson::Value member_json;
             SerializerContext member_context(context, Segment(name));
-            result = serialize(ref, member_json, member_context);
-            if (result) {
-                rapidjson::Value::StringRefType str(name.data(), static_cast<rapidjson::SizeType>(name.size()));
-                json_object.AddMember(str, member_json, context.global().allocator());
+            PERSISTENCE_IF_UNLIKELY(!serialize(ref, member_json, member_context)) {
+                return *this;
             }
+
+            rapidjson::Value::StringRefType str(name.data(), static_cast<rapidjson::SizeType>(name.size()));
+            json_object.AddMember(str, member_json, context.global().allocator());
             return *this;
         }
 

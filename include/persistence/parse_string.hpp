@@ -16,7 +16,7 @@ namespace persistence
 
         bool parse(const JsonValueString& s) override
         {
-            ref.assign(s.literal.begin(), s.literal.end());
+            ref = s.literal;
             context.pop();
             return true;
         }

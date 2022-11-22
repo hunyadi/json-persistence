@@ -37,9 +37,9 @@ namespace persistence
 
         bool operator()(const std::shared_ptr<T>& pointer, StringWriter& writer) const
         {
-            auto&& segments = context.get(pointer);
-            if (!segments.empty()) {
-                std::string ref = Path(segments).str();
+            auto segments = context.get(pointer);
+            if (segments) {
+                std::string ref = Path(std::move(*segments)).str();
 
                 // create a {"$ref": "/path/to/earlier/occurrence"}
                 writer.StartObject();

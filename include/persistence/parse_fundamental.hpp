@@ -66,7 +66,7 @@ namespace persistence
         static bool parse(ReaderContext& context, const std::string_view& literal, T& ref)
         {
             PERSISTENCE_IF_UNLIKELY(!parse_number(literal, ref)) {
-                auto value = std::string(literal.data(), literal.size());
+                auto value = std::string(literal);
                 if constexpr (std::is_integral_v<T>) {
                     context.fail("expected an integer; got: " + value);
                 } else if constexpr (std::is_floating_point_v<T>) {

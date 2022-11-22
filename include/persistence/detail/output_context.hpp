@@ -1,6 +1,7 @@
 #pragma once
 #include "references.hpp"
 #include "segment.hpp"
+#include <memory>
 
 namespace persistence
 {
@@ -23,14 +24,14 @@ namespace persistence
             , segment(segment)
         {}
 
-        Segments get(std::shared_ptr<void> pointer) const
+        std::optional<Segments> get(const std::shared_ptr<void>& pointer) const
         {
             return global_context.references.get(pointer);
         }
 
         void put(std::shared_ptr<void> pointer)
         {
-            global_context.references.put(pointer, segments());
+            global_context.references.put(std::move(pointer), segments());
         }
 
         GlobalContext& global()

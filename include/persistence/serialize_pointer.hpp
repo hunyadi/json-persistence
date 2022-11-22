@@ -37,9 +37,9 @@ namespace persistence
 
         bool operator()(const std::shared_ptr<T>& pointer, rapidjson::Value& json) const
         {
-            auto&& segments = context.get(pointer);
-            if (!segments.empty()) {
-                std::string ref = Path(segments).str();
+            auto segments = context.get(pointer);
+            if (segments) {
+                std::string ref = Path(std::move(*segments)).str();
 
                 // create a JSON string "/path/to/earlier/occurrence"
                 rapidjson::Value ref_json;

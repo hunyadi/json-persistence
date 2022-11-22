@@ -26,14 +26,14 @@ namespace persistence
             , segment(segment)
         {}
 
-        std::shared_ptr<void> get(const rapidjson::Value* pointer) const
+        std::optional<std::shared_ptr<void>> get(const rapidjson::Value* pointer) const
         {
             return global.references.get(pointer);
         }
 
         void put(const rapidjson::Value* pointer, std::shared_ptr<void> object)
         {
-            global.references.put(pointer, object);
+            global.references.put(std::move(pointer), std::move(object));
         }
 
         rapidjson::Document& document()
