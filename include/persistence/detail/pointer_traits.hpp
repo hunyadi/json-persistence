@@ -19,7 +19,7 @@ namespace persistence
     template<typename T>
     struct is_pointer_like
     {
-        static constexpr bool value = std::is_pointer<T>::value || is_smart_pointer<T>::value;
+        constexpr static bool value = std::is_pointer<T>::value || is_smart_pointer<T>::value;
     };
 
     template<typename T>

@@ -16,8 +16,8 @@ namespace persistence
             , json_object(json_object)
         {}
 
-        template<typename T, typename B>
-        JsonObjectSerializer& operator&(const member_variable<std::optional<T>, B>& member)
+        template<typename T, class B, auto P>
+        JsonObjectSerializer& operator&(const member_variable<std::optional<T>, B, P>& member)
         {
             static_assert(std::is_base_of_v<B, C>, "expected a member variable part of the class inheritance chain");
             if (member.ref(object).has_value()) {
@@ -27,8 +27,15 @@ namespace persistence
             }
         }
 
-        template<typename T, typename B>
-        JsonObjectSerializer& operator&(const member_variable<T, B>& member)
+        template<typename T, class B, auto P>
+        JsonObjectSerializer& operator&(const member_variable<T, B, P>& member)
+        {
+            static_assert(std::is_base_of_v<B, C>, "expected a member variable part of the class inheritance chain");
+            return write(member.name(), member.ref(object));
+        }
+
+        template<typename T, class B, auto P>
+        JsonObjectSerializer& operator&(const member_variable_default<T, B, P>& member)
         {
             static_assert(std::is_base_of_v<B, C>, "expected a member variable part of the class inheritance chain");
             return write(member.name(), member.ref(object));

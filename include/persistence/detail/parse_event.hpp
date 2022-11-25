@@ -5,12 +5,12 @@ namespace persistence
 {
     struct JsonValueNull
     {
-        static constexpr const char* name = "null";
+        constexpr static const char* name = "null";
     };
 
     struct JsonValueBoolean
     {
-        static constexpr const char* name = "boolean";
+        constexpr static const char* name = "boolean";
 
         bool value;
 
@@ -19,7 +19,7 @@ namespace persistence
 
     struct JsonValueInteger
     {
-        static constexpr const char* name = "number";
+        constexpr static const char* name = "number";
 
         int value;
 
@@ -28,7 +28,7 @@ namespace persistence
 
     struct JsonValueUnsigned
     {
-        static constexpr const char* name = "number";
+        constexpr static const char* name = "number";
 
         unsigned int value;
 
@@ -37,7 +37,7 @@ namespace persistence
 
     struct JsonValueInteger64
     {
-        static constexpr const char* name = "number";
+        constexpr static const char* name = "number";
 
         std::int64_t value;
 
@@ -46,7 +46,7 @@ namespace persistence
 
     struct JsonValueUnsigned64
     {
-        static constexpr const char* name = "number";
+        constexpr static const char* name = "number";
 
         std::uint64_t value;
 
@@ -55,7 +55,7 @@ namespace persistence
 
     struct JsonValueDouble
     {
-        static constexpr const char* name = "number";
+        constexpr static const char* name = "number";
 
         double value;
 
@@ -64,7 +64,7 @@ namespace persistence
 
     struct JsonValueNumber
     {
-        static constexpr const char* name = "number";
+        constexpr static const char* name = "number";
 
         std::string_view literal;
 
@@ -74,7 +74,7 @@ namespace persistence
 
     struct JsonValueString
     {
-        static constexpr const char* name = "string";
+        constexpr static const char* name = "string";
 
         std::string_view literal;
 
@@ -84,12 +84,12 @@ namespace persistence
 
     struct JsonObjectStart
     {
-        static constexpr const char* name = "'{'";
+        constexpr static const char* name = "'{'";
     };
 
     struct JsonObjectKey
     {
-        static constexpr const char* name = "key name";
+        constexpr static const char* name = "key name";
 
         std::string_view identifier;
 
@@ -99,17 +99,17 @@ namespace persistence
 
     struct JsonObjectEnd
     {
-        static constexpr const char* name = "'}'";
+        constexpr static const char* name = "'}'";
     };
 
     struct JsonArrayStart
     {
-        static constexpr const char* name = "'['";
+        constexpr static const char* name = "'['";
     };
 
     struct JsonArrayEnd
     {
-        static constexpr const char* name = "']'";
+        constexpr static const char* name = "']'";
     };
 
     struct JsonParseEvent

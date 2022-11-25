@@ -1,53 +1,67 @@
 #pragma once
 #include "object.hpp"
+#include "detail/make_array.hpp"
 #include <tuple>
 
 namespace persistence
 {
-    namespace detail
+    /**
+    * Enumerates member variables of a class at compile-time.
+    */
+    template<typename Class, typename... Members>
+    struct ObjectMemberBuilder
     {
-        template<typename T, typename... Ts>
-        constexpr std::tuple<Ts..., T> tuple_append(const std::tuple<Ts...>& tup, const T& elem) {
-            return std::tuple_cat(tup, std::make_tuple(elem));
+        using member_types = std::tuple<Members...>;
+
+        constexpr ObjectMemberBuilder(Members... members)
+            : members(member_types(members...))
+        {}
+
+        template<typename T, class B, auto P>
+        constexpr auto operator&(const member_variable<T, B, P>& member) const
+        {
+            static_assert(std::is_base_of_v<B, Class>, "expected a member variable part of the class inheritance chain");
+            return std::apply([=](auto&&... args) {
+                return ObjectMemberBuilder<Class, Members..., member_variable<T, B, P>>(args..., member);
+            }, members);
         }
 
-        /**
-        * Enumerates member variables of a class at compile-time.
-        */
-        template<typename Class, typename MemberList>
-        struct ObjectMemberBuilder
+        template<typename T, class B, auto P>
+        constexpr auto operator&(const member_variable_default<T, B, P>& member) const
         {
-            constexpr ObjectMemberBuilder(const MemberList& members)
-                : members(members)
-            {}
+            static_assert(std::is_base_of_v<B, Class>, "expected a member variable part of the class inheritance chain");
+            return std::apply([=](auto&&... args) {
+                return ObjectMemberBuilder<Class, Members..., member_variable_default<T, B, P>>(args..., member);
+            }, members);
+        }
 
-            template<typename T, typename Base>
-            constexpr auto operator&(const member_variable<T, Base>& member) const
-            {
-                static_assert(std::is_base_of_v<Base, Class>, "expected a member variable part of the class inheritance chain");
-                auto tpl = tuple_append(members, member);
-                return ObjectMemberBuilder<Class, decltype(tpl)>(tpl);
-            }
+        member_types members;
+    };
 
-            MemberList members;
-        };
+    template<auto... Ts>
+    struct item_list
+    {};
 
-        template<typename Class>
-        struct ObjectMemberBuilder<Class, std::tuple<>>
+    /**
+    * Enumerates member variable pointers of a class at compile-time.
+    */
+    template<typename Class, auto... Pointers>
+    struct ObjectPointerBuilder
+    {
+        using pointers = item_list<Pointers...>;
+
+        template<typename T, class B, auto P>
+        constexpr auto operator&(const member_variable<T, B, P>&) const
         {
-            constexpr ObjectMemberBuilder() = default;
+            return ObjectPointerBuilder<Class, Pointers..., P>();
+        }
 
-            template<typename T, typename Base>
-            constexpr auto operator&(const member_variable<T, Base>& member) const
-            {
-                static_assert(std::is_base_of_v<Base, Class>, "expected a member variable part of the class inheritance chain");
-                auto tpl = std::make_tuple(member);
-                return ObjectMemberBuilder<Class, decltype(tpl)>(tpl);
-            }
-
-            std::tuple<> members;
-        };
-    }
+        template<typename T, class B, auto P>
+        constexpr auto operator&(const member_variable_default<T, B, P>&) const
+        {
+            return ObjectPointerBuilder<Class, Pointers..., P>();
+        }
+    };
 
     template<typename Class, std::size_t Count = 0>
     struct ObjectMemberCounter
@@ -56,19 +70,48 @@ namespace persistence
 
         constexpr ObjectMemberCounter() = default;
 
-        template<typename T, typename Base>
-        constexpr auto operator&(const member_variable<T, Base>&) const
+        template<typename T, class B, auto P>
+        constexpr auto operator&(const member_variable<T, B, P>&) const
         {
-            static_assert(std::is_base_of_v<Base, Class>, "expected a member variable part of the class inheritance chain");
             return ObjectMemberCounter<Class, Count + 1>();
         }
+
+        template<typename T, class B, auto P>
+        constexpr auto operator&(const member_variable_default<T, B, P>&) const
+        {
+            return ObjectMemberCounter<Class, Count + 1>();
+        }
+    };
+
+    template<typename Class>
+    struct object_member_traits
+    {
+        using member_types = typename decltype(
+            std::declval<Class&>().persist(std::declval<ObjectMemberBuilder<Class>&>())
+        )::member_types;
+
+        constexpr inline static auto pointers = decltype(
+            std::declval<Class&>().persist(std::declval<ObjectPointerBuilder<Class>&>())
+        )::pointers;
     };
 
     template<typename Class>
     constexpr auto member_variables(const Class& cls)
     {
         static_assert(std::is_class_v<Class>, "expected a class type");
-        constexpr auto builder = detail::ObjectMemberBuilder<Class, std::tuple<>>();
-        return const_cast<Class&>(cls).persist(builder).members;
+        constexpr auto builder = ObjectMemberBuilder<Class>();
+        auto result = const_cast<Class&>(cls).persist(builder);
+        return result.members;
+    }
+
+    template<typename Class>
+    constexpr auto member_names(const Class& cls)
+    {
+        static_assert(std::is_class_v<Class>, "expected a class type");
+        constexpr auto builder = ObjectMemberBuilder<Class>();
+        auto result = const_cast<Class&>(cls).persist(builder);
+        return std::apply([=](auto&&... args) {
+            return make_array(args.name()...);
+        }, result.members);
     }
 }

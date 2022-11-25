@@ -2,12 +2,64 @@
 #include "object.hpp"
 #include "object_members.hpp"
 #include "parse_base.hpp"
+#include "detail/perfect_hash.hpp"
 #include "detail/traits.hpp"
 #include "detail/unlikely.hpp"
 #include <optional>
 
 namespace persistence
 {
+    namespace detail
+    {
+        template<std::size_t S, std::size_t I>
+        struct visit_impl
+        {
+            template<typename T, typename F>
+            static void visit(T& tup, std::size_t idx, F fun)
+            {
+                if (idx == S - I) {
+                    fun(std::get<S - I>(tup));
+                } else {
+                    visit_impl<S, I - 1>::visit(tup, idx, fun);
+                }
+            }
+        };
+
+        template<std::size_t S>
+        struct visit_impl<S, 0>
+        {
+            template<typename T, typename F>
+            static void visit(T&, std::size_t, F)
+            {}
+        };
+    }
+
+    /**
+     * Evaluates a function on the n-th element of a tuple.
+     *
+     * @param tup The tuple on whose element to evaluate the function.
+     * @param idx The zero-based index of the tuple element on which to invoke the function.
+     * @param fun The function to evaluate.
+     */
+    template<typename F, typename... Ts>
+    void visit_at(const std::tuple<Ts...>& tup, std::size_t idx, F fun)
+    {
+        detail::visit_impl<sizeof...(Ts), sizeof...(Ts)>::visit(tup, idx, fun);
+    }
+
+    /**
+     * Evaluates a function on the n-th element of a tuple.
+     *
+     * @param tup The tuple on whose element to evaluate the function.
+     * @param idx The zero-based index of the tuple element on which to invoke the function.
+     * @param fun The function to evaluate.
+     */
+    template<typename F, typename... Ts>
+    void visit_at(std::tuple<Ts...>& tup, std::size_t idx, F fun)
+    {
+        detail::visit_impl<sizeof...(Ts), sizeof...(Ts)>::visit(tup, idx, fun);
+    }
+
     template<typename T>
     struct required_type {
         using type = T;
@@ -48,33 +100,24 @@ namespace persistence
 
         bool parse(const JsonObjectKey& json_key) override
         {
-            bool result = std::apply([&](const auto&... members) {
-                return (parse_member(json_key.identifier, members) || ...);
-            }, members);
-
-            PERSISTENCE_IF_UNLIKELY(!result) {
+            std::string_view identifier = json_key.identifier;
+            std::size_t k = hash_map.index(identifier);
+            PERSISTENCE_IF_UNLIKELY(names[k] != identifier) {
                 context.fail("expected class member name; got: " + std::string(json_key.identifier));
                 return false;
             }
 
+            visit_at(members, k, [&](auto&& member) {
+                using parser_type = JsonParser<unqualified_t<decltype(member.ref(ref))>>;
+                context.emplace<parser_type>(context, member.ref(ref));
+            });
             return true;
         }
 
     private:
-        template<typename T, typename B>
-        bool parse_member(const std::string_view& key, const member_variable<T, B>& member)
-        {
-            static_assert(std::is_base_of_v<B, C>, "expected a member variable part of the class inheritance chain");
-            if (member.name() != key) {
-                return false;
-            } else {
-                context.emplace<JsonParser<T>>(context, member.ref(ref));
-                return true;
-            }
-        }
-
-    private:
         inline static auto members = member_variables(C());
+        inline static auto names = member_names(C());
+        inline static auto hash_map = PerfectHash(names);
         C& ref;
     };
 

@@ -46,7 +46,7 @@ TEST(Performance, Object)
     std::default_random_engine engine;
 
     std::vector<TestDataTransferObject> items;
-    for (std::size_t k = 0; k < 1000000; ++k) {
+    for (std::size_t k = 0; k < 100000; ++k) {
         TestDataTransferObject item;
         item.bool_value = random_bool(engine);
         item.bool_list = random_items(engine, [](std::default_random_engine& engine) { return random_bool(engine); }, 0, 100);

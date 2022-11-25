@@ -52,7 +52,7 @@ namespace persistence
     {
         struct Base64
         {
-            static constexpr const char* identifier = "base64";
+            constexpr static const char* identifier = "base64";
         };
     }
 
@@ -60,12 +60,12 @@ namespace persistence
     {
         struct Date
         {
-            static constexpr const char* identifier = "date";
+            constexpr static const char* identifier = "date";
         };
 
         struct DateTime
         {
-            static constexpr const char* identifier = "date-time";
+            constexpr static const char* identifier = "date-time";
         };
     }
 
@@ -424,8 +424,8 @@ namespace persistence
             , required(required)
         {}
 
-        template<typename T, typename B>
-        JsonSchemaVisitor& operator&(const member_variable<std::optional<T>, B>& member)
+        template<typename T, class B, auto P>
+        JsonSchemaVisitor& operator&(const member_variable<std::optional<T>, B, P>& member)
         {
             static_assert(std::is_base_of_v<B, C>, "expected a member variable part of the class inheritance chain");
             properties.push_back(
@@ -434,8 +434,8 @@ namespace persistence
             return *this;
         }
 
-        template<typename T, typename B>
-        JsonSchemaVisitor& operator&(const member_variable<T, B>& member)
+        template<typename T, class B, auto P>
+        JsonSchemaVisitor& operator&(const member_variable<T, B, P>& member)
         {
             static_assert(std::is_base_of_v<B, C>, "expected a member variable part of the class inheritance chain");
             properties.push_back(

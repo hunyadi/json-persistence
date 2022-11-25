@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "persistence/detail/numeric_traits.hpp"
+#include "persistence/detail/perfect_hash.hpp"
 #include "persistence/detail/polymorphic_stack.hpp"
 #include "persistence/base64.hpp"
 #include "persistence/object_members.hpp"
@@ -143,12 +144,20 @@ TEST(Utility, PolymorphicStack)
 TEST(Utility, Members)
 {
     const Example object;
+
     constexpr auto members = member_variables(object);
     EXPECT_EQ(std::get<0>(members).name(), "bool_value");
     EXPECT_EQ(std::get<1>(members).name(), "string_value");
     EXPECT_EQ(std::get<2>(members).name(), "string_list");
     EXPECT_EQ(std::get<3>(members).name(), "optional_value");
     EXPECT_EQ(std::get<4>(members).name(), "custom_value");
+
+    constexpr auto names = member_names(object);
+    EXPECT_EQ(names[0], "bool_value");
+    EXPECT_EQ(names[1], "string_value");
+    EXPECT_EQ(names[2], "string_list");
+    EXPECT_EQ(names[3], "optional_value");
+    EXPECT_EQ(names[4], "custom_value");
 }
 
 testing::AssertionResult test_base64(const std::string_view& str, std::string_view ref)
@@ -220,6 +229,25 @@ TEST(Utility, Base64)
     EXPECT_FALSE(test_base64_decode("OOOO=AAA"));
     EXPECT_FALSE(test_base64_decode("OOOOAAA."));
     EXPECT_FALSE(test_base64_decode("OOOO.AAA"));
+}
+
+TEST(Utility, PerfectHash)
+{
+    constexpr std::string_view items_single[] = { "a" };
+    constexpr auto map_single = PerfectHash(items_single);
+    EXPECT_EQ(map_single.index("a"), 0);
+
+    constexpr std::string_view items_some[] = { "a", "b", "c" };
+    constexpr auto map_some = PerfectHash(items_some);
+    EXPECT_EQ(map_some.index("a"), 0);
+    EXPECT_EQ(map_some.index("b"), 1);
+    EXPECT_EQ(map_some.index("c"), 2);
+
+    // words "creamwove" and "quists" cause a hash conflict for FNV-1
+    constexpr std::string_view items_conflict[] = { "a", "creamwove", "quists" };
+    constexpr auto map_conflict = PerfectHash(items_conflict);
+    EXPECT_EQ(map_conflict.index("creamwove"), 1);
+    EXPECT_EQ(map_conflict.index("quists"), 2);
 }
 
 #ifndef _DEBUG

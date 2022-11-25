@@ -8,7 +8,7 @@ namespace persistence
     template<>
     struct enum_traits<Esper>
     {
-        inline static constexpr auto converter = make_enum_converter({
+        inline constexpr static auto converter = make_enum_converter({
             make_enum(Esper::Unu, "Unu"),
             make_enum(Esper::Du, "Du"),
             make_enum(Esper::Tri, "Tri"),

@@ -10,8 +10,8 @@ namespace persistence
 {
     namespace detail
     {
-        template<typename T, typename C>
-        rapidjson::Value::ConstMemberIterator find_object_member(const rapidjson::Value& json_object, const member_variable<T, C>& member)
+        template<typename Member>
+        rapidjson::Value::ConstMemberIterator find_object_member(const rapidjson::Value& json_object, const Member& member)
         {
             rapidjson::Value name(rapidjson::StringRef(member.name().data(), member.name().size()));
             return json_object.FindMember(name);
@@ -27,8 +27,8 @@ namespace persistence
             , object(object)
         {}
 
-        template<typename T, typename B>
-        JsonObjectDeserializer& operator&(const member_variable<std::optional<T>, B>& member)
+        template<typename T, class B, auto P>
+        JsonObjectDeserializer& operator&(const member_variable<std::optional<T>, B, P>& member)
         {
             static_assert(std::is_base_of_v<B, C>, "expected a member variable part of the class inheritance chain");
 
@@ -44,8 +44,8 @@ namespace persistence
             return *this;
         }
 
-        template<typename T, typename B>
-        JsonObjectDeserializer& operator&(const member_variable<T, B>& member)
+        template<typename T, class B, auto P>
+        JsonObjectDeserializer& operator&(const member_variable<T, B, P>& member)
         {
             static_assert(std::is_base_of_v<B, C>, "expected a member variable part of the class inheritance chain");
 
@@ -67,8 +67,8 @@ namespace persistence
             }
         }
 
-        template<typename T, typename B>
-        JsonObjectDeserializer& operator&(const member_variable_default<T, B>& member)
+        template<typename T, class B, auto P>
+        JsonObjectDeserializer& operator&(const member_variable_default<T, B, P>& member)
         {
             static_assert(std::is_base_of_v<B, C>, "expected a member variable part of the class inheritance chain");
 

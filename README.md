@@ -349,17 +349,19 @@ In this case, the output may look like as follows:
 
 ## Performance
 
-The following table shows relative performance of writing, parsing and (de-)serializing a C++ `vector` object of 1 million elements. Each element is a composite object holding (vectors of) boolean, integer and string values. When represented as JSON, the string takes approximately 1 GB. DOM is the `Document` object constructed by RapidJSON when de-serializing a JSON string.
+The following table shows relative performance of writing, parsing and (de-)serializing a C++ `vector` object of 100,000 elements. Each element is a composite object holding (vectors of) boolean, integer and string values. When represented as JSON, the string takes approximately 100 MB. DOM is the `Document` object constructed by RapidJSON when de-serializing a JSON string.
 
-| Operation                                                    | Duration |
-|:------------------------------------------------------------ | --------:|
-| write object to string                                       |  3047 ms |
-| parse object from string                                     |  6554 ms |
-| deserialize DOM from string                                  |  3694 ms |
-| serialize DOM to string                                      |  3699 ms |
-| serialize object to DOM                                      |  5527 ms |
-| deserialize object from DOM with exceptions disabled         |  4242 ms |
-| deserialize object from DOM with exceptions enabled          |  4572 ms |
+| Case | Operation                                                    | Duration |
+|:---- |:------------------------------------------------------------ | --------:|
+|    1 | write object to string                                       |   310 ms |
+|    2 | parse object from string                                     |   672 ms |
+|    3 | serialize DOM to string                                      |   336 ms |
+|    4 | deserialize DOM from string                                  |   411 ms |
+|    5 | serialize object to DOM                                      |   223 ms |
+|    6 | deserialize object from DOM with exceptions disabled         |   365 ms |
+|    7 | deserialize object from DOM with exceptions enabled          |   386 ms |
+
+Cases 1 and 2 capture the end-to-end performance of this header-only library. Cases 3 and 4 reflect functionality provided by RapidJSON out of the box, and act as reference values; accessors are needed to get data out of DOM instead of manipulating C++ objects directly. Cases 5, 6 and 7 help estimate the relative cost of (de-)serializing an object to/from DOM, as a step towards a JSON string. Comparison of Case 1 with Cases 3 + 5, and of Case 2 with Cases 4 + (6 or 7) gives an estimate of the savings gained by translating from a C++ object directly to/from a JSON string.
 
 ## Limitations and workarounds
 
