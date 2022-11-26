@@ -55,7 +55,7 @@ TEST(Deserialization, Object)
     ref.string_value = "test string";
     ref.string_list = { "one","two","three" };
     TestDataTransferSubObject o;
-    o.member_value = "value";
+    o.value = "value";
     ref.object_value = o;
     ref.object_list = { o, o };
     EXPECT_TRUE(test_deserialize(json, ref));

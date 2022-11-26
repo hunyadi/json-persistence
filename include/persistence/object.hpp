@@ -2,11 +2,17 @@
 #include <string_view>
 #include <type_traits>
 
+#define PERSISTENCE_MEMBER_NAME(variable_name) \
+    []{ \
+        struct descriptor { constexpr static std::string_view name() noexcept { return (variable_name); } }; \
+        return descriptor(); \
+    }()
+
 /**
  * Helps enumerate member variables in a persistence template function.
  */
 #define NAMED_MEMBER_VARIABLE(name, variable) \
-    ::persistence::class_member_variable<&std::remove_reference_t<decltype(*this)>::variable>(name)
+    ::persistence::class_member_variable<&std::remove_reference_t<decltype(*this)>::variable>(PERSISTENCE_MEMBER_NAME(name))
 
 /**
  * Helps enumerate member variables in a persistence template function.
@@ -18,7 +24,7 @@
  * Helps enumerate member variables in a persistence template function.
  */
 #define NAMED_MEMBER_VARIABLE_DEFAULT(name, variable) \
-    ::persistence::class_member_variable_default<&std::remove_reference_t<decltype(*this)>::variable>(name)
+    ::persistence::class_member_variable_default<&std::remove_reference_t<decltype(*this)>::variable>(PERSISTENCE_MEMBER_NAME(name))
 
 /**
  * Helps enumerate member variables in a persistence template function.
@@ -41,11 +47,12 @@ namespace persistence
 
     /**
      * Represents a member variable in a (de-)serialization declaration.
+     *
      * @tparam Type The type of the member variable bound by this structure.
      * @tparam Class The type of the encapsulating object.
      * @tparam Pointer The member pointer value.
      */
-    template<typename Type, class Class, Type Class::* Pointer>
+    template<typename Type, class Class, Type Class::* Pointer, typename Descriptor>
     struct member_variable_declaration
     {
         using pointer_type = decltype(Pointer);
@@ -54,20 +61,16 @@ namespace persistence
         /** The type of the encapsulating object. */
         using class_type = Class;
 
-        constexpr member_variable_declaration(const std::string_view& name)
-            : member_name(name)
-        {}
-
         /**
          * The name of the member variable as a constant string literal.
          */
-        constexpr const std::string_view& name() const
+        constexpr std::string_view name() const
         {
-            return member_name;
+            return Descriptor::name();
         }
 
         /**
-         * The member variable pointer. 
+         * The member variable pointer.
          */
         constexpr pointer_type pointer() const
         {
@@ -90,39 +93,54 @@ namespace persistence
             return obj.*Pointer;
         }
 
-    private:
-        std::string_view member_name;
-    };
-    
-    template<typename Type, class Class, auto Pointer>
-    struct member_variable : member_variable_declaration<Type, Class, Pointer>
-    {
-        using member_variable_declaration<Type, Class, Pointer>::member_variable_declaration;
+    protected:
+        constexpr member_variable_declaration() = default;
     };
 
-    template<typename Type, class Class, auto Pointer>
-    struct member_variable_default : member_variable_declaration<Type, Class, Pointer>
+    /**
+     * Represents a member variable in a (de-)serialization declaration with no default value.
+     *
+     * @tparam Type The type of the member variable bound by this structure.
+     * @tparam Class The type of the encapsulating object.
+     * @tparam Pointer The member pointer value.
+     */
+    template<typename Type, class Class, auto Pointer, typename Descriptor>
+    struct member_variable final : member_variable_declaration<Type, Class, Pointer, Descriptor>
     {
-        using member_variable_declaration<Type, Class, Pointer>::member_variable_declaration;
+        using member_variable_declaration<Type, Class, Pointer, Descriptor>::member_variable_declaration;
     };
 
-    template<auto MemberPointer>
-    constexpr auto class_member_variable(const std::string_view& name)
+    /**
+     * Represents a member variable in a (de-)serialization declaration with default value assigned
+     * using a member initializer.
+     *
+     * @tparam Type The type of the member variable bound by this structure.
+     * @tparam Class The type of the encapsulating object.
+     * @tparam Pointer The member pointer value.
+     */
+    template<typename Type, class Class, auto Pointer, typename Descriptor>
+    struct member_variable_default final : member_variable_declaration<Type, Class, Pointer, Descriptor>
+    {
+        using member_variable_declaration<Type, Class, Pointer, Descriptor>::member_variable_declaration;
+    };
+
+    template<auto MemberPointer, typename Descriptor>
+    constexpr auto class_member_variable(Descriptor)
     {
         using pointer_type = decltype(MemberPointer);
         static_assert(std::is_member_object_pointer_v<pointer_type>, "expected a non-static member object pointer");
         using Type = typename member_pointer_traits<pointer_type>::member_type;
         using Class = typename member_pointer_traits<pointer_type>::class_type;
-        return member_variable<Type, Class, MemberPointer>(name);
+        return member_variable<Type, Class, MemberPointer, Descriptor>();
     }
 
-    template<auto MemberPointer>
-    constexpr auto class_member_variable_default(const std::string_view& name)
+    template<auto MemberPointer, typename Descriptor>
+    constexpr auto class_member_variable_default(Descriptor)
     {
         using pointer_type = decltype(MemberPointer);
         static_assert(std::is_member_object_pointer_v<pointer_type>, "expected a non-static member object pointer");
         using Type = typename member_pointer_traits<pointer_type>::member_type;
         using Class = typename member_pointer_traits<pointer_type>::class_type;
-        return member_variable_default<Type, Class, MemberPointer>(name);
+        return member_variable_default<Type, Class, MemberPointer, Descriptor>();
     }
 }

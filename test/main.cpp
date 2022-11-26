@@ -65,7 +65,7 @@ TEST(Performance, Object)
     measure("parse object from string", [&]() {
         parse<std::vector<TestDataTransferObject>>(json);
     });
-    
+
     auto doc = measure("deserialize DOM from string", [&]() {
         return string_to_document(json);
     });

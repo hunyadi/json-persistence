@@ -143,21 +143,17 @@ TEST(Utility, PolymorphicStack)
 
 TEST(Utility, Members)
 {
-    const Example object;
+    using member_types = class_traits<Example>::member_types;
+    using member_type = std::tuple_element<0, member_types>::type;
+    constexpr std::string_view name = member_type().name();
+    EXPECT_EQ(name, "bool_value");
 
-    constexpr auto members = member_variables(object);
+    constexpr auto members = member_types();
     EXPECT_EQ(std::get<0>(members).name(), "bool_value");
     EXPECT_EQ(std::get<1>(members).name(), "string_value");
     EXPECT_EQ(std::get<2>(members).name(), "string_list");
     EXPECT_EQ(std::get<3>(members).name(), "optional_value");
     EXPECT_EQ(std::get<4>(members).name(), "custom_value");
-
-    constexpr auto names = member_names(object);
-    EXPECT_EQ(names[0], "bool_value");
-    EXPECT_EQ(names[1], "string_value");
-    EXPECT_EQ(names[2], "string_list");
-    EXPECT_EQ(names[3], "optional_value");
-    EXPECT_EQ(names[4], "custom_value");
 }
 
 testing::AssertionResult test_base64(const std::string_view& str, std::string_view ref)

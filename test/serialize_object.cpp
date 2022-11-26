@@ -53,7 +53,7 @@ TEST(Serialization, Object)
     dto.string_value = "test string";
     dto.string_list = { "one","two","three" };
     TestDataTransferSubObject o;
-    o.member_value = "value";
+    o.value = "value";
     dto.object_value = o;
     dto.object_list = { o, o };
     const char* json = "{"

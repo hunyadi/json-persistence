@@ -2,6 +2,7 @@
 #include "object.hpp"
 #include "object_members.hpp"
 #include "parse_base.hpp"
+#include "detail/make_array.hpp"
 #include "detail/perfect_hash.hpp"
 #include "detail/traits.hpp"
 #include "detail/unlikely.hpp"
@@ -115,8 +116,15 @@ namespace persistence
         }
 
     private:
-        inline static auto members = member_variables(C());
-        inline static auto names = member_names(C());
+        constexpr static auto member_names()
+        {
+            return std::apply([=](auto&&... args) {
+                return make_array(args.name()...);
+            }, typename class_traits<C>::member_types());
+        }
+
+        constexpr static auto members = typename class_traits<C>::member_types();
+        inline static auto names = member_names();
         inline static auto hash_map = PerfectHash(names);
         C& ref;
     };

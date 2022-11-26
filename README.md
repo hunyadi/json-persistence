@@ -104,6 +104,7 @@ Add new template specializations to support (de-)serializing new types:
 
 * Built on top of [RapidJSON](https://rapidjson.org/).
 * Uses RapidJSON [SAX interface](https://rapidjson.org/md_doc_sax.html) for writing and parsing JSON strings directly, bypassing the JSON DOM.
+* Uses [perfect hashing](https://en.wikipedia.org/wiki/Perfect_hash_function) during parsing to look up the member variable corresponding to a JSON object property name.
 * Uses a polymorphic stack to reduce dynamic memory allocations on heap.
 * Infers type and range compatibility at compile-time when possible.
 * Unrolls loops at compile-time for bounded-length data structures such as pairs, tuples and object properties.
@@ -112,6 +113,7 @@ Add new template specializations to support (de-)serializing new types:
 
 * Uses standard C++17 features only (with the exception of RapidJSON engine).
 * Compiles on Linux, MacOS and Windows.
+* Compiles with Clang and MSVC.
 
 ## Data transformation modes
 

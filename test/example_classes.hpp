@@ -112,19 +112,19 @@ struct TestNonCopyable
 class TestDataTransferSubObject
 {
 public:
-    std::string member_value;
+    std::string value;
 
     template <typename Archive>
     constexpr auto persist(Archive& ar)
     {
         return ar
-            & MEMBER_VARIABLE(member_value)
+            & NAMED_MEMBER_VARIABLE("member_value", value)
             ;
     }
 
     bool operator==(const TestDataTransferSubObject& op) const
     {
-        return member_value == op.member_value;
+        return value == op.value;
     }
 };
 
