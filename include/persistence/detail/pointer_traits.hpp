@@ -16,6 +16,7 @@ namespace persistence
     struct is_smart_pointer<std::unique_ptr<T>> : std::true_type
     {};
 
+    /** Checks if a type is a pointer or a smart pointer type. */
     template<typename T>
     struct is_pointer_like
     {

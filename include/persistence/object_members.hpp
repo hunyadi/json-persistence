@@ -5,8 +5,11 @@
 namespace persistence
 {
     /**
-    * Enumerates member variables of a class at compile-time.
-    */
+     * Enumerates member variables of a class at compile-time.
+     *
+     * @tparam Class A class with the member function `persist`.
+     * @tparam Members A list of persisted member variables that the class has.
+     */
     template<typename Class, typename... Members>
     struct ObjectMemberBuilder
     {
@@ -29,10 +32,12 @@ namespace persistence
         }
     };
 
-    template<auto... Ts>
-    struct item_list
-    {};
-
+    /**
+     * Counts the member variables of a class at compile-time.
+     *
+     * @tparam Class A class with the member function `persist`.
+     * @tparam Count The number of persisted member variables that the class has.
+     */
     template<typename Class, std::size_t Count = 0>
     struct ObjectMemberCounter
     {
@@ -53,7 +58,12 @@ namespace persistence
         }
     };
 
-    template<typename Class>
+    /**
+     * Gives information about a class type that supports persistence.
+     *
+     * @tparam Class A class with the member function `persist`.
+     */
+    template<class Class>
     struct class_traits
     {
         static_assert(std::is_class_v<Class>, "expected a class type");

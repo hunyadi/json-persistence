@@ -16,7 +16,7 @@ set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
 if(MSVC)
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
     # set warning level 4 and treat all warnings as errors
-    add_compile_options(/W4 /WX /Zc:__cplusplus,rvalueCast,strictStrings)
+    add_compile_options(/permissive- /W4 /WX /Zc:__cplusplus,enumTypes,lambda,referenceBinding,rvalueCast,strictStrings,ternary)
 else()
     # enable lots of warnings and treat all warnings as errors (except those originating from RapidJSON)
     add_compile_options(-Wall -Wextra -pedantic -Werror -Wfatal-errors -Wno-ambiguous-reversed-operator -Wno-deprecated-declarations)

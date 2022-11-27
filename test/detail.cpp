@@ -253,12 +253,12 @@ TEST(Performance, Base64)
     for (std::size_t k = 0; k < 1000000000; ++k) {
         vec.push_back(std::byte(k % 256));
     }
-    std::string enc = measure("Base64 encode", [&]() {
+    std::string enc = measure("Base64 encode", [&] {
         std::string out;
         base64_encode(vec, out);
         return out;
     });
-    measure("Base64 decode", [&]() {
+    measure("Base64 decode", [&] {
         byte_vector raw;
         base64_decode(enc, raw);
     });

@@ -5,33 +5,33 @@ namespace persistence
 {
     namespace detail
     {
-        template<class> struct is_ref_wrapper : std::false_type
+        template<typename> struct is_ref_wrapper : std::false_type
         {};
 
-        template<class T> struct is_ref_wrapper<std::reference_wrapper<T>> : std::true_type
+        template<typename T> struct is_ref_wrapper<std::reference_wrapper<T>> : std::true_type
         {};
 
-        template<class T>
+        template<typename T>
         using not_ref_wrapper = std::negation<is_ref_wrapper<std::decay_t<T>>>;
 
-        template <class D, class...>
+        template<typename D, typename...>
         struct return_type_helper
         {
             using type = D;
         };
 
-        template <class... Types>
+        template<typename... Types>
         struct return_type_helper<void, Types...> : std::common_type<Types...>
         {
             static_assert(std::conjunction_v<not_ref_wrapper<Types>...>,
-                "Types cannot contain reference_wrappers when D is void");
+                "types cannot contain reference wrappers when D is void");
         };
 
-        template <class D, class... Types>
+        template<typename D, typename... Types>
         using return_type = std::array<typename return_type_helper<D, Types...>::type, sizeof...(Types)>;
     }
 
-    template < class D = void, class... Types>
+    template<typename D = void, typename... Types>
     constexpr detail::return_type<D, Types...> make_array(Types&&... t)
     {
         return { std::forward<Types>(t)... };

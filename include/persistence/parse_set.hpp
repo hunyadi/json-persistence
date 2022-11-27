@@ -21,9 +21,11 @@ namespace persistence
 
         bool parse(const JsonArrayEnd&) override
         {
+            // special treatment for move-only types
             for (auto&& item : storage) {
                 container.insert(std::move(item));
             }
+
             storage.clear();
             this->context.pop();
             return true;
@@ -31,6 +33,7 @@ namespace persistence
 
         bool parse(const typename JsonParser<T>::json_type& json_item) override
         {
+            // use temporary storage for parsing, set elements are immutable
             storage.emplace_back();
             ReaderContext& ctx = this->context;
             auto&& handler = ctx.emplace<JsonParser<T>>(ctx, storage.back());

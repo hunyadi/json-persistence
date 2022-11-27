@@ -118,7 +118,7 @@ namespace persistence
     private:
         constexpr static auto member_names()
         {
-            return std::apply([=](auto&&... args) {
+            return std::apply([](auto&&... args) {
                 return make_array(args.name()...);
             }, typename class_traits<C>::member_types());
         }

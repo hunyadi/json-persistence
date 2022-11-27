@@ -23,6 +23,17 @@ namespace persistence
         struct defer : public std::false_type
         {};
 
+        /**
+         * Causes compile-time error when template specialization fails due to substitution error.
+         *
+         * Suppose a template is defined as follows:
+         * ```
+         * template<typename T> struct JsonParser {
+         *     static_assert(detail::fail<T>, "error message");
+         * };
+         * ```
+         * This construct triggers a compile-time error when none of the specialization of this template match.
+         */
         template<typename T>
         inline constexpr bool fail = defer<T>::value;
     }

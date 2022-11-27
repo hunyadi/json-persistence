@@ -2,9 +2,12 @@
 #include <string_view>
 #include <type_traits>
 
-#define PERSISTENCE_MEMBER_NAME(variable_name) \
+/**
+ * Provides compile-time access to a string literal.
+ */
+#define PERSISTENCE_MEMBER_NAME(string_literal) \
     []{ \
-        struct descriptor { constexpr static std::string_view name() noexcept { return (variable_name); } }; \
+        struct descriptor { constexpr static std::string_view name() noexcept { return (string_literal); } }; \
         return descriptor(); \
     }()
 
@@ -129,8 +132,9 @@ namespace persistence
     {
         using pointer_type = decltype(MemberPointer);
         static_assert(std::is_member_object_pointer_v<pointer_type>, "expected a non-static member object pointer");
-        using Type = typename member_pointer_traits<pointer_type>::member_type;
-        using Class = typename member_pointer_traits<pointer_type>::class_type;
+        using traits = member_pointer_traits<pointer_type>;
+        using Type = typename traits::member_type;
+        using Class = typename traits::class_type;
         return member_variable<Type, Class, MemberPointer, Descriptor>();
     }
 
@@ -139,8 +143,9 @@ namespace persistence
     {
         using pointer_type = decltype(MemberPointer);
         static_assert(std::is_member_object_pointer_v<pointer_type>, "expected a non-static member object pointer");
-        using Type = typename member_pointer_traits<pointer_type>::member_type;
-        using Class = typename member_pointer_traits<pointer_type>::class_type;
+        using traits = member_pointer_traits<pointer_type>;
+        using Type = typename traits::member_type;
+        using Class = typename traits::class_type;
         return member_variable_default<Type, Class, MemberPointer, Descriptor>();
     }
 }
