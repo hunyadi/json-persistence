@@ -1,13 +1,12 @@
 #pragma once
-#include <string_view>
-#include <type_traits>
+#include "detail/defer.hpp"
 
 /**
  * Provides compile-time access to a string literal.
  */
 #define PERSISTENCE_MEMBER_NAME(string_literal) \
     []{ \
-        struct descriptor { constexpr static std::string_view name() noexcept { return (string_literal); } }; \
+        struct descriptor { constexpr static const char* name() noexcept { return (string_literal); } }; \
         return descriptor(); \
     }()
 
@@ -15,7 +14,7 @@
  * Helps enumerate member variables in a persistence template function.
  */
 #define NAMED_MEMBER_VARIABLE(name, variable) \
-    ::persistence::class_member_variable<&std::remove_reference_t<decltype(*this)>::variable>(PERSISTENCE_MEMBER_NAME(name))
+    ::persistence::member_variable<&::persistence::remove_reference_t<decltype(*this)>::variable>(PERSISTENCE_MEMBER_NAME(name))
 
 /**
  * Helps enumerate member variables in a persistence template function.
@@ -27,7 +26,7 @@
  * Helps enumerate member variables in a persistence template function.
  */
 #define NAMED_MEMBER_VARIABLE_DEFAULT(name, variable) \
-    ::persistence::class_member_variable_default<&std::remove_reference_t<decltype(*this)>::variable>(PERSISTENCE_MEMBER_NAME(name))
+    ::persistence::member_variable_default<&::persistence::remove_reference_t<decltype(*this)>::variable>(PERSISTENCE_MEMBER_NAME(name))
 
 /**
  * Helps enumerate member variables in a persistence template function.
@@ -37,9 +36,36 @@
 
 namespace persistence
 {
+    /** Provides the member type which is the type referred to by T. */
+    template<typename T>
+    struct remove_reference
+    {
+        using type = T;
+    };
+
+    template<typename T>
+    struct remove_reference<T&>
+    {
+        using type = T;
+    };
+
+    template<typename T>
+    using remove_reference_t = typename remove_reference<T>::type;
+
+    namespace member
+    {
+        template<typename Type, class Class, auto Pointer, typename Descriptor>
+        struct variable;
+
+        template<typename Type, class Class, auto Pointer, typename Descriptor>
+        struct variable_default;
+    }
+
     template<typename Pointer>
     struct member_pointer_traits
-    {};
+    {
+        static_assert(detail::fail<Pointer>, "expected a non-static member pointer");
+    };
 
     template<class Class, typename Type>
     struct member_pointer_traits<Type Class::*>
@@ -49,103 +75,35 @@ namespace persistence
     };
 
     /**
-     * Represents a member variable in a (de-)serialization declaration.
+     * Represents a member variable in a (de-)serialization annotation that has no default value.
      *
-     * @tparam Type The type of the member variable bound by this structure.
-     * @tparam Class The type of the encapsulating object.
-     * @tparam Pointer The member pointer value.
+     * @tparam Pointer Pointer to the member being annotated.
+     * @tparam Descriptor Structure that provides compile-time access to the member name as a string literal.
      */
-    template<typename Type, class Class, Type Class::* Pointer, typename Descriptor>
-    struct member_variable_declaration
+    template<auto Pointer, typename Descriptor>
+    constexpr auto member_variable(Descriptor)
     {
-        using pointer_type = decltype(Pointer);
-        /** The type of the member variable bound by this structure. */
-        using member_type = Type;
-        /** The type of the encapsulating object. */
-        using class_type = Class;
-
-        /**
-         * The name of the member variable as a constant string literal.
-         */
-        constexpr std::string_view name() const
-        {
-            return Descriptor::name();
-        }
-
-        /**
-         * The member variable pointer.
-         */
-        constexpr pointer_type pointer() const
-        {
-            return Pointer;
-        }
-
-        /**
-         * A writable reference to the member variable value.
-         */
-        member_type& ref(class_type& obj) const
-        {
-            return obj.*Pointer;
-        }
-
-        /**
-         * A read-only reference to the member variable value.
-         */
-        const member_type& ref(const class_type& obj) const
-        {
-            return obj.*Pointer;
-        }
-
-    protected:
-        constexpr member_variable_declaration() = default;
-    };
-
-    /**
-     * Represents a member variable in a (de-)serialization declaration with no default value.
-     *
-     * @tparam Type The type of the member variable bound by this structure.
-     * @tparam Class The type of the encapsulating object.
-     * @tparam Pointer The member pointer value.
-     */
-    template<typename Type, class Class, auto Pointer, typename Descriptor>
-    struct member_variable final : member_variable_declaration<Type, Class, Pointer, Descriptor>
-    {
-        using member_variable_declaration<Type, Class, Pointer, Descriptor>::member_variable_declaration;
-    };
-
-    /**
-     * Represents a member variable in a (de-)serialization declaration with default value assigned
-     * using a member initializer.
-     *
-     * @tparam Type The type of the member variable bound by this structure.
-     * @tparam Class The type of the encapsulating object.
-     * @tparam Pointer The member pointer value.
-     */
-    template<typename Type, class Class, auto Pointer, typename Descriptor>
-    struct member_variable_default final : member_variable_declaration<Type, Class, Pointer, Descriptor>
-    {
-        using member_variable_declaration<Type, Class, Pointer, Descriptor>::member_variable_declaration;
-    };
-
-    template<auto MemberPointer, typename Descriptor>
-    constexpr auto class_member_variable(Descriptor)
-    {
-        using pointer_type = decltype(MemberPointer);
-        static_assert(std::is_member_object_pointer_v<pointer_type>, "expected a non-static member object pointer");
+        using pointer_type = decltype(Pointer);    
         using traits = member_pointer_traits<pointer_type>;
         using Type = typename traits::member_type;
         using Class = typename traits::class_type;
-        return member_variable<Type, Class, MemberPointer, Descriptor>();
+        return member::variable<Type, Class, Pointer, Descriptor>();
     }
 
-    template<auto MemberPointer, typename Descriptor>
-    constexpr auto class_member_variable_default(Descriptor)
+    /**
+     * Represents a member variable in a (de-)serialization annotation that has a default value assigned
+     * in a constructor or by a member initializer.
+     *
+     * @tparam Pointer Pointer to the member being annotated.
+     * @tparam Descriptor Structure that provides compile-time access to the member name as a string literal.
+     */
+    template<auto Pointer, typename Descriptor>
+    constexpr auto member_variable_default(Descriptor)
     {
-        using pointer_type = decltype(MemberPointer);
-        static_assert(std::is_member_object_pointer_v<pointer_type>, "expected a non-static member object pointer");
+        using pointer_type = decltype(Pointer);
         using traits = member_pointer_traits<pointer_type>;
         using Type = typename traits::member_type;
         using Class = typename traits::class_type;
-        return member_variable_default<Type, Class, MemberPointer, Descriptor>();
+        return member::variable_default<Type, Class, Pointer, Descriptor>();
     }
 }

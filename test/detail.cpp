@@ -4,6 +4,7 @@
 #include "persistence/detail/polymorphic_stack.hpp"
 #include "persistence/base64.hpp"
 #include "persistence/object_members.hpp"
+#include "persistence/object_reflection.hpp"
 #include "example_classes.hpp"
 #include "capture.hpp"
 #include "measure.hpp"

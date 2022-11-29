@@ -1,5 +1,6 @@
 #pragma once
 #include "object.hpp"
+#include "object_reflection.hpp"
 #include "serialize_base.hpp"
 #include "detail/serialize_aware.hpp"
 #include "detail/unlikely.hpp"
@@ -17,7 +18,7 @@ namespace persistence
         {}
 
         template<typename T, class B, auto P, typename D>
-        JsonObjectSerializer& operator&(const member_variable<std::optional<T>, B, P, D>& member)
+        JsonObjectSerializer& operator&(const member::variable<std::optional<T>, B, P, D>& member)
         {
             static_assert(std::is_base_of_v<B, C>, "expected a member variable part of the class inheritance chain");
             if (member.ref(object).has_value()) {
@@ -28,14 +29,14 @@ namespace persistence
         }
 
         template<typename T, class B, auto P, typename D>
-        JsonObjectSerializer& operator&(const member_variable<T, B, P, D>& member)
+        JsonObjectSerializer& operator&(const member::variable<T, B, P, D>& member)
         {
             static_assert(std::is_base_of_v<B, C>, "expected a member variable part of the class inheritance chain");
             return write(member.name(), member.ref(object));
         }
 
         template<typename T, class B, auto P, typename D>
-        JsonObjectSerializer& operator&(const member_variable_default<T, B, P, D>& member)
+        JsonObjectSerializer& operator&(const member::variable_default<T, B, P, D>& member)
         {
             static_assert(std::is_base_of_v<B, C>, "expected a member variable part of the class inheritance chain");
             return write(member.name(), member.ref(object));

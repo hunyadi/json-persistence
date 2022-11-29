@@ -1,5 +1,4 @@
 #pragma once
-#include <type_traits>
 
 namespace persistence
 {
@@ -20,8 +19,10 @@ namespace persistence
          * ```
          */
         template<typename T>
-        struct defer : public std::false_type
-        {};
+        struct defer
+        {
+            constexpr static bool value = false;
+        };
 
         /**
          * Causes compile-time error when template specialization fails due to substitution error.

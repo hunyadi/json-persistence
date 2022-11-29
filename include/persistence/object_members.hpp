@@ -18,17 +18,17 @@ namespace persistence
         constexpr ObjectMemberBuilder() = default;
 
         template<typename T, class B, auto P, typename D>
-        constexpr auto operator&(const member_variable<T, B, P, D>&) const
+        constexpr auto operator&(const member::variable<T, B, P, D>&) const
         {
             static_assert(std::is_base_of_v<B, Class>, "expected a member variable part of the class inheritance chain");
-            return ObjectMemberBuilder<Class, Members..., member_variable<T, B, P, D>>();
+            return ObjectMemberBuilder<Class, Members..., member::variable<T, B, P, D>>();
         }
 
         template<typename T, class B, auto P, typename D>
-        constexpr auto operator&(const member_variable_default<T, B, P, D>&) const
+        constexpr auto operator&(const member::variable_default<T, B, P, D>&) const
         {
             static_assert(std::is_base_of_v<B, Class>, "expected a member variable part of the class inheritance chain");
-            return ObjectMemberBuilder<Class, Members..., member_variable_default<T, B, P, D>>();
+            return ObjectMemberBuilder<Class, Members..., member::variable_default<T, B, P, D>>();
         }
     };
 
@@ -46,13 +46,13 @@ namespace persistence
         constexpr ObjectMemberCounter() = default;
 
         template<typename T, class B, auto P, typename D>
-        constexpr auto operator&(const member_variable<T, B, P, D>&) const
+        constexpr auto operator&(const member::variable<T, B, P, D>&) const
         {
             return ObjectMemberCounter<Class, Count + 1>();
         }
 
         template<typename T, class B, auto P, typename D>
-        constexpr auto operator&(const member_variable_default<T, B, P, D>&) const
+        constexpr auto operator&(const member::variable_default<T, B, P, D>&) const
         {
             return ObjectMemberCounter<Class, Count + 1>();
         }

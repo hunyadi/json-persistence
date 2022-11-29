@@ -1,5 +1,6 @@
 #pragma once
 #include "persistence/object.hpp"
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>

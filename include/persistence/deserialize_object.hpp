@@ -1,5 +1,6 @@
 #pragma once
 #include "object.hpp"
+#include "object_reflection.hpp"
 #include "deserialize_base.hpp"
 #include "deserialize_check.hpp"
 #include "detail/deserialize_aware.hpp"
@@ -28,7 +29,7 @@ namespace persistence
         {}
 
         template<typename T, class B, auto P, typename D>
-        JsonObjectDeserializer& operator&(const member_variable<std::optional<T>, B, P, D>& member)
+        JsonObjectDeserializer& operator&(const member::variable<std::optional<T>, B, P, D>& member)
         {
             static_assert(std::is_base_of_v<B, C>, "expected a member variable part of the class inheritance chain");
 
@@ -45,7 +46,7 @@ namespace persistence
         }
 
         template<typename T, class B, auto P, typename D>
-        JsonObjectDeserializer& operator&(const member_variable<T, B, P, D>& member)
+        JsonObjectDeserializer& operator&(const member::variable<T, B, P, D>& member)
         {
             static_assert(std::is_base_of_v<B, C>, "expected a member variable part of the class inheritance chain");
 
@@ -68,7 +69,7 @@ namespace persistence
         }
 
         template<typename T, class B, auto P, typename D>
-        JsonObjectDeserializer& operator&(const member_variable_default<T, B, P, D>& member)
+        JsonObjectDeserializer& operator&(const member::variable_default<T, B, P, D>& member)
         {
             static_assert(std::is_base_of_v<B, C>, "expected a member variable part of the class inheritance chain");
 

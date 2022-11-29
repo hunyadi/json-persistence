@@ -1,6 +1,7 @@
 #pragma once
 #include "object.hpp"
 #include "object_members.hpp"
+#include "object_reflection.hpp"
 #include "parse_base.hpp"
 #include "detail/make_array.hpp"
 #include "detail/perfect_hash.hpp"

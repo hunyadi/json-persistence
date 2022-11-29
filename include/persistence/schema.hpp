@@ -425,7 +425,7 @@ namespace persistence
         {}
 
         template<typename T, class B, auto P, typename D>
-        JsonSchemaVisitor& operator&(const member_variable<std::optional<T>, B, P, D>& member)
+        JsonSchemaVisitor& operator&(const member::variable<std::optional<T>, B, P, D>& member)
         {
             static_assert(std::is_base_of_v<B, C>, "expected a member variable part of the class inheritance chain");
             properties.push_back(
@@ -435,7 +435,7 @@ namespace persistence
         }
 
         template<typename T, class B, auto P, typename D>
-        JsonSchemaVisitor& operator&(const member_variable<T, B, P, D>& member)
+        JsonSchemaVisitor& operator&(const member::variable<T, B, P, D>& member)
         {
             static_assert(std::is_base_of_v<B, C>, "expected a member variable part of the class inheritance chain");
             properties.push_back(
