@@ -16,14 +16,14 @@ TEST(Deserialization, ErrorReporting)
         parse<Example>("{\"bool_value\": true, []}");
         FAIL();
     } catch (JsonParseError& e) {
-        EXPECT_EQ(e.offset, 21);
+        EXPECT_EQ(e.offset, 21u);
     }
 
     try {
         parse<Example>("{\"bool_value\": true, \"string_value\": []}");
         FAIL();
     } catch (JsonParseError& e) {
-        EXPECT_EQ(e.offset, 38);
+        EXPECT_EQ(e.offset, 38u);
     }
 
     try {
@@ -60,7 +60,7 @@ TEST(Performance, Object)
     auto json = measure("write object to string", [&] {
         return write_to_string(items);
     });
-    EXPECT_GT(json.size(), 0);
+    EXPECT_GT(json.size(), 0u);
     std::cout << "JSON string has size of " << json.size() << " B" << std::endl;
     measure("parse object from string", [&] {
         parse<std::vector<TestDataTransferObject>>(json);

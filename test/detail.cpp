@@ -232,19 +232,19 @@ TEST(Utility, PerfectHash)
 {
     constexpr std::string_view items_single[] = { "a" };
     constexpr auto map_single = PerfectHash(items_single);
-    EXPECT_EQ(map_single.index("a"), 0);
+    EXPECT_EQ(map_single.index("a"), 0u);
 
     constexpr std::string_view items_some[] = { "a", "b", "c" };
     constexpr auto map_some = PerfectHash(items_some);
-    EXPECT_EQ(map_some.index("a"), 0);
-    EXPECT_EQ(map_some.index("b"), 1);
-    EXPECT_EQ(map_some.index("c"), 2);
+    EXPECT_EQ(map_some.index("a"), 0u);
+    EXPECT_EQ(map_some.index("b"), 1u);
+    EXPECT_EQ(map_some.index("c"), 2u);
 
     // words "creamwove" and "quists" cause a hash conflict for FNV-1
     constexpr std::string_view items_conflict[] = { "a", "creamwove", "quists" };
     constexpr auto map_conflict = PerfectHash(items_conflict);
-    EXPECT_EQ(map_conflict.index("creamwove"), 1);
-    EXPECT_EQ(map_conflict.index("quists"), 2);
+    EXPECT_EQ(map_conflict.index("creamwove"), 1u);
+    EXPECT_EQ(map_conflict.index("quists"), 2u);
 }
 
 #ifndef _DEBUG

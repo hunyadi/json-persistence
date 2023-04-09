@@ -8,20 +8,6 @@ endif()
 
 project(json-persistence VERSION 0.1)
 
-# compiler configuration
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
-
-if(MSVC)
-    add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
-    # set warning level 4 and treat all warnings as errors
-    add_compile_options(/permissive- /W4 /WX /Zc:__cplusplus,enumTypes,lambda,referenceBinding,rvalueCast,strictStrings,ternary)
-else()
-    # enable lots of warnings and treat all warnings as errors (except those originating from RapidJSON)
-    add_compile_options(-Wall -Wextra -pedantic -Werror -Wfatal-errors -Wno-ambiguous-reversed-operator -Wno-deprecated-declarations)
-endif()
-
 # locate dependency: RapidJSON
 find_package(RapidJSON CONFIG REQUIRED)
 
@@ -44,28 +30,55 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 enable_testing()
 
-# project configuration
-file(GLOB JSON_LIBRARY_SOURCES ${CMAKE_SOURCE_DIR}/test/*.cpp)
-file(GLOB JSON_LIBRARY_HEADERS ${CMAKE_SOURCE_DIR}/include/*.hpp)
-add_executable(json-persistence-tests ${JSON_LIBRARY_SOURCES})
+# library target configuration
+file(GLOB JSON_LIBRARY_SOURCES
+    ${CMAKE_SOURCE_DIR}/test/*.cpp
+)
+file(GLOB JSON_LIBRARY_HEADERS
+    ${CMAKE_SOURCE_DIR}/include/persistence/*.hpp
+    ${CMAKE_SOURCE_DIR}/include/persistence/detail/*.hpp
+)
+add_library(json-persistence INTERFACE)
 
-# include directories
-target_include_directories(json-persistence-tests PRIVATE ${CMAKE_SOURCE_DIR}/include ${RAPIDJSON_INCLUDE_DIRS})
-if(Boost_FOUND)
-    add_compile_definitions(PERSISTENCE_BOOST_DESCRIBE)
-    target_include_directories(json-persistence-tests PRIVATE ${Boost_INCLUDE_DIRS})
+# compiler options
+target_compile_features(json-persistence INTERFACE cxx_std_17)
+set_property(TARGET json-persistence PROPERTY VISIBILITY_INLINES_HIDDEN ON)
+set_property(TARGET json-persistence PROPERTY PUBLIC_HEADER ${JSON_LIBRARY_HEADERS})
+
+if(MSVC)
+    target_compile_definitions(json-persistence INTERFACE _CRT_SECURE_NO_WARNINGS)
+    # set warning level 4 and treat all warnings as errors
+    target_compile_options(json-persistence INTERFACE /permissive- /W4 /WX /Zc:__cplusplus,enumTypes,lambda,referenceBinding,rvalueCast,strictStrings,ternary)
+else()
+    # enable lots of warnings and treat all warnings as errors (except those originating from RapidJSON)
+    target_compile_options(json-persistence INTERFACE -Wall -Wextra -pedantic -Werror -Wfatal-errors -Wno-ambiguous-reversed-operator -Wno-deprecated-declarations)
 endif()
 
-# link directories
-target_link_libraries(json-persistence-tests GTest::gtest_main)
+# include directories
+target_include_directories(json-persistence INTERFACE ${CMAKE_SOURCE_DIR}/include ${RAPIDJSON_INCLUDE_DIRS})
+if(Boost_FOUND)
+    target_compile_definitions(json-persistence INTERFACE PERSISTENCE_BOOST_DESCRIBE)
+    target_include_directories(json-persistence INTERFACE ${Boost_INCLUDE_DIRS})
+endif()
 
 # build configuration
 include(CheckIPOSupported)
 check_ipo_supported(RESULT ipo_result)
 if(ipo_result)
-    set_property(TARGET json-persistence-tests PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+    set_property(TARGET json-persistence PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
+
+# test target configuration
+add_executable(json-persistence-tests ${JSON_LIBRARY_SOURCES})
+target_link_libraries(json-persistence-tests json-persistence GTest::gtest_main)
 
 # test configuration
 include(GoogleTest)
 gtest_discover_tests(json-persistence-tests)
+
+# install configuration
+include(GNUInstallDirs)
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/persistence
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    FILES_MATCHING PATTERN "*.hpp"
+)
