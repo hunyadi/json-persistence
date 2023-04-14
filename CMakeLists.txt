@@ -12,7 +12,7 @@ project(json-persistence VERSION 0.1)
 find_package(RapidJSON CONFIG REQUIRED)
 
 # locate test dependency: Boost (optional)
-find_package(Boost)
+find_package(Boost 1.77)
 if(Boost_FOUND)
     if(NOT MSVC)
         add_compile_options(-Wno-gnu-zero-variadic-macro-arguments)

@@ -27,6 +27,7 @@ namespace persistence
         template<typename Iterator, std::size_t... Indices>
         bool deserialize_elements(Iterator it, C& container, std::index_sequence<Indices...>) const
         {
+            (void)it;  // silences wrong warning on some compilers
             return (... && deserialize_item<Indices>(
                 *it++,
                 std::get<Indices>(container)

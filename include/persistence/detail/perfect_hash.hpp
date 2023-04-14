@@ -100,7 +100,7 @@ namespace persistence
                     index_map[index] = item_index;
                 }
             }
-        };
+        }
 
         /**
          * Repeatedly tries different seed values until it finds one that places
