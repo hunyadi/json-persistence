@@ -84,6 +84,84 @@ namespace persistence
     };
 
     template<typename C>
+    struct JsonSoloObjectParser : JsonParseHandler<JsonObjectKey, JsonObjectEnd>
+    {
+        static_assert(std::is_class_v<C>, "expected a class type");
+
+    public:
+        JsonSoloObjectParser(ReaderContext& context, C& ref)
+            : JsonParseHandler(context)
+            , ref(ref)
+        {}
+
+        bool parse(const JsonObjectEnd&) override
+        {
+            context.pop();
+            return true;
+        }
+
+        bool parse(const JsonObjectKey& json_key) override
+        {
+            std::string_view identifier = json_key.identifier;
+            PERSISTENCE_IF_UNLIKELY(member_name != identifier) {
+                context.fail("expected class member name; got: " + std::string(json_key.identifier));
+                return false;
+            }
+
+            using parser_type = JsonParser<unqualified_t<decltype(member_type().ref(ref))>>;
+            context.emplace<parser_type>(context, member_type().ref(ref));
+            return true;
+        }
+
+    private:
+        using member_type = typename std::tuple_element<0, typename class_traits<C>::member_types>::type;
+        constexpr static std::string_view member_name = member_type().name();
+        C& ref;
+    };
+
+    template<typename C>
+    struct JsonPairObjectParser : JsonParseHandler<JsonObjectKey, JsonObjectEnd>
+    {
+        static_assert(std::is_class_v<C>, "expected a class type");
+
+    public:
+        JsonPairObjectParser(ReaderContext& context, C& ref)
+            : JsonParseHandler(context)
+            , ref(ref)
+        {}
+
+        bool parse(const JsonObjectEnd&) override
+        {
+            context.pop();
+            return true;
+        }
+
+        bool parse(const JsonObjectKey& json_key) override
+        {
+            std::string_view identifier = json_key.identifier;
+            if (identifier == first_member_name) {
+                using parser_type = JsonParser<unqualified_t<decltype(first_member_type().ref(ref))>>;
+                context.emplace<parser_type>(context, first_member_type().ref(ref));
+                return true;
+            } else if (identifier == second_member_name) {
+                using parser_type = JsonParser<unqualified_t<decltype(second_member_type().ref(ref))>>;
+                context.emplace<parser_type>(context, second_member_type().ref(ref));
+                return true;
+            } else {
+                context.fail("expected class member name; got: " + std::string(json_key.identifier));
+                return false;
+            }
+        }
+
+    private:
+        using first_member_type = typename std::tuple_element<0, typename class_traits<C>::member_types>::type;
+        constexpr static std::string_view first_member_name = first_member_type().name();
+        using second_member_type = typename std::tuple_element<1, typename class_traits<C>::member_types>::type;
+        constexpr static std::string_view second_member_name = second_member_type().name();
+        C& ref;
+    };
+
+    template<typename C>
     struct JsonObjectParser : JsonParseHandler<JsonObjectKey, JsonObjectEnd>
     {
         static_assert(std::is_class_v<C>, "expected a class type");
@@ -157,7 +235,13 @@ namespace persistence
 
         bool parse(const JsonObjectStart&) override
         {
-            context.replace<JsonObjectParser<T>>(context, ref);
+            if constexpr (class_traits<T>::member_count == 1) {
+                context.replace<JsonSoloObjectParser<T>>(context, ref);
+            } else if constexpr (class_traits<T>::member_count == 2) {
+                context.replace<JsonPairObjectParser<T>>(context, ref);
+            } else {
+                context.replace<JsonObjectParser<T>>(context, ref);
+            }
             return true;
         }
 

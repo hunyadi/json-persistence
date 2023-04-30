@@ -98,6 +98,8 @@ namespace persistence
     template<typename T>
     T deserialize(const std::string& str)
     {
+        static_assert(!std::is_const_v<T> && !std::is_volatile_v<T> && !std::is_reference_v<T>, "expected a type without qualifiers");
+
         rapidjson::Document doc;
         doc.Parse(str.data());
         return deserialize<T>(doc);
@@ -109,6 +111,8 @@ namespace persistence
     template<typename T>
     T deserialize(std::string&& str)
     {
+        static_assert(!std::is_const_v<T> && !std::is_volatile_v<T> && !std::is_reference_v<T>, "expected a type without qualifiers");
+
         rapidjson::Document doc;
         doc.ParseInsitu(str.data());
         return deserialize<T>(doc);

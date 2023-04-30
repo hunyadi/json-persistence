@@ -155,6 +155,18 @@ TEST(Utility, Members)
     EXPECT_EQ(std::get<2>(members).name(), "string_list");
     EXPECT_EQ(std::get<3>(members).name(), "optional_value");
     EXPECT_EQ(std::get<4>(members).name(), "custom_value");
+
+    using pair_member_types = class_traits<TestPair>::member_types;
+    using first_member_type = std::tuple_element<0, pair_member_types>::type;
+    constexpr std::string_view first_name = first_member_type().name();
+    EXPECT_EQ(first_name, "first");
+    using second_member_type = std::tuple_element<1, pair_member_types>::type;
+    constexpr std::string_view second_name = second_member_type().name();
+    EXPECT_EQ(second_name, "second");
+
+    constexpr auto pair_members = pair_member_types();
+    EXPECT_EQ(std::get<0>(pair_members).name(), "first");
+    EXPECT_EQ(std::get<1>(pair_members).name(), "second");
 }
 
 testing::AssertionResult test_base64(const std::string_view& str, std::string_view ref)

@@ -4,19 +4,41 @@
 
 namespace persistence
 {
-    /** Fowler–Noll–Vo hash function variant FNV-1. */
-    inline constexpr std::uint32_t hash(std::uint32_t d, const std::string_view& str) {
-        if (d == 0) {
-            d = 0x811c9dc5;
-        }
+    namespace detail
+    {
+        using hash_t = std::size_t;
+    
+        /** Fowler–Noll–Vo hash function variant FNV-1. */
+        inline constexpr hash_t hash(hash_t d, const std::string_view& str)
+        {
+            if constexpr (sizeof(hash_t) == sizeof(std::uint32_t)) {
+                // Fowler–Noll–Vo hash function variant FNV-1 for 32 bits
+                if (d == 0) {
+                    d = 0x811c9dc5;
+                }
 
-        for (std::size_t i = 0; i < str.length(); ++i) {
-            // multiply by the 32 bit FNV magic prime mod 2^32
-            d += (d << 1) + (d << 4) + (d << 7) + (d << 8) + (d << 24);
-            // xor the bottom with the current octet
-            d ^= str[i];
+                for (std::size_t i = 0; i < str.length(); ++i) {
+                    // multiply by the 32 bit FNV magic prime mod 2^32
+                    d += (d << 1) + (d << 4) + (d << 7) + (d << 8) + (d << 24);
+                    // xor the bottom with the current octet
+                    d ^= str[i];
+                }
+                return d & 0x7fffffff;
+            } else if constexpr (sizeof(hash_t) == sizeof(std::uint64_t)) {
+                // Fowler–Noll–Vo hash function variant FNV-1 for 64 bits
+                if (d == 0) {
+                    d = 0xcbf29ce484222325;
+                }
+
+                for (std::size_t i = 0; i < str.length(); ++i) {
+                    // multiply by the 64 bit FNV magic prime mod 2^64
+                    d += (d << 1) + (d << 4) + (d << 5) + (d << 7) + (d << 8) + (d << 40);
+                    // xor the bottom with the current octet
+                    d ^= str[i];
+                }
+                return d & 0x7fffffffffffffff;
+            }
         }
-        return d & 0x7fffffff;
     }
 
     /** A lookup table with perfect hashing. */
@@ -39,10 +61,12 @@ namespace persistence
          */
         constexpr std::size_t index(const std::string_view& key) const
         {
-            std::uint32_t d = G[hash(0, key) % Size];
-            constexpr std::uint32_t first_bit = ~(~std::uint32_t() >> 1);
+            using namespace detail;
+
+            hash_t d = G[hash(0, key) % Size];
+            constexpr hash_t first_bit = ~(~hash_t() >> 1);
             if ((d & first_bit) != 0) {
-                std::uint32_t di = ~d;
+                hash_t di = ~d;
                 return index_map[di];
             } else {
                 return index_map[hash(d, key) % Size];
@@ -53,6 +77,8 @@ namespace persistence
         template<typename Indexable>
         constexpr PerfectHash(const Indexable& items, std::size_t)
         {
+            using namespace detail;
+
             // place all of the items into buckets
             BitSet<Size> buckets[Size];
             for (std::size_t k = 0; k < Size; ++k) {
@@ -69,7 +95,7 @@ namespace persistence
                     }
 
                     // find a seed that places all items into free slots
-                    std::uint32_t d = scatter(items, buckets[i], taken);
+                    hash_t d = scatter(items, buckets[i], taken);
                     G[hash(0, items[buckets[i].first_set()]) % Size] = d;
 
                     // assign items to free slots
@@ -77,7 +103,7 @@ namespace persistence
                         auto item_index = buckets[i].pick(k);
                         auto bucket_item = items[item_index];
 
-                        std::uint32_t index = hash(d, bucket_item) % Size;
+                        hash_t index = hash(d, bucket_item) % Size;
 
                         taken.set(index);
                         index_map[index] = item_index;
@@ -94,7 +120,7 @@ namespace persistence
                     std::size_t index = taken.first_unset();
 
                     // ones' complement indicates that this fast path was taken
-                    G[hash(0, bucket_item) % Size] = ~static_cast<std::uint32_t>(index);
+                    G[hash(0, bucket_item) % Size] = ~static_cast<hash_t>(index);
 
                     taken.set(index);
                     index_map[index] = item_index;
@@ -111,9 +137,9 @@ namespace persistence
          * @param taken A mask that identifies occupied slots.
          */
         template<typename Indexable>
-        constexpr std::uint32_t scatter(const Indexable& items, const BitSet<Size>& mask, const BitSet<Size>& taken)
+        constexpr detail::hash_t scatter(const Indexable& items, const BitSet<Size>& mask, const BitSet<Size>& taken)
         {
-            std::uint32_t d = 1;
+            detail::hash_t d = 1;
             while (!is_distributable(d, items, mask, taken)) {
                 ++d;
             }
@@ -129,14 +155,14 @@ namespace persistence
          * @param taken A mask that identifies occupied slots.
          */
         template<typename Indexable>
-        constexpr bool is_distributable(std::uint32_t d, const Indexable& items, const BitSet<Size>& mask, BitSet<Size> taken)
+        constexpr bool is_distributable(detail::hash_t d, const Indexable& items, const BitSet<Size>& mask, BitSet<Size> taken)
         {
             for (std::size_t k = 0; k < Size; ++k) {
                 if (!mask.get(k)) {
                     continue;
                 }
 
-                auto key = hash(d, items[k]) % Size;
+                auto key = detail::hash(d, items[k]) % Size;
                 if (taken.get(key)) {
                     return false;
                 }
@@ -147,6 +173,6 @@ namespace persistence
 
     private:
         std::size_t index_map[Size] = { 0 };
-        std::uint32_t G[Size] = { 0 };
+        detail::hash_t G[Size] = { 0 };
     };
 }

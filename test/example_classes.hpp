@@ -110,6 +110,26 @@ struct TestNonCopyable
     }
 };
 
+struct TestPair
+{
+    int first = 1;
+    int second = 2;
+
+    template <typename Archive>
+    constexpr auto persist(Archive& ar)
+    {
+        return ar
+            & MEMBER_VARIABLE(first)
+            & MEMBER_VARIABLE(second)
+            ;
+    }
+
+    bool operator==(const TestPair& op) const
+    {
+        return first == op.first && second == op.second;
+    }
+};
+
 class TestDataTransferSubObject
 {
 public:

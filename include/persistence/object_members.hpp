@@ -67,8 +67,13 @@ namespace persistence
     struct class_traits
     {
         static_assert(std::is_class_v<Class>, "expected a class type");
+        
         using member_types = typename decltype(
             std::declval<Class&>().persist(std::declval<ObjectMemberBuilder<Class>&>())
         )::member_types;
+        
+        constexpr static std::size_t member_count = decltype(
+            std::declval<Class&>().persist(std::declval<ObjectMemberCounter<Class>&>())
+        )::count;
     };
 }

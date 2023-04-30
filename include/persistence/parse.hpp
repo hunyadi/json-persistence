@@ -33,6 +33,8 @@ namespace persistence
     template<typename T>
     T parse(const std::string& str)
     {
+        static_assert(!std::is_const_v<T> && !std::is_volatile_v<T> && !std::is_reference_v<T>, "expected a type without qualifiers");
+
         T obj;
         JsonParseEventDispatcher dispatcher;
         ReaderContext context(dispatcher);

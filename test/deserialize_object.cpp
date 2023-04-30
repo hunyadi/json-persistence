@@ -33,6 +33,7 @@ TEST(Deserialization, Object)
     EXPECT_TRUE(test_deserialize("{}", TestDefault("default")));
     EXPECT_TRUE(test_deserialize("{\"value\":\"test string\"}", TestDefault("test string")));
     EXPECT_TRUE(test_deserialize("{\"value\":\"base\",\"member\":\"derived\"}", TestDerived("base", "derived")));
+    EXPECT_TRUE(test_deserialize("{\"first\":1,\"second\":2}", TestPair()));
 
     const char* json =
         "{"
